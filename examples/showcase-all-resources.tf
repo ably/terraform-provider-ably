@@ -14,10 +14,10 @@ resource "ably-app" "app1" {
 resource "ably-api-key" "api-key-1" {
   app         = ably-app.app1.app_id
   name        = "KeyName"
-  capability  = [
-    "channel1": [...],
-    "channel2": [...]
-  ]
+  capability  = {
+    channel1 = [""]
+   	channel2 = [""]
+  }
 }
 
 # Namespaces
