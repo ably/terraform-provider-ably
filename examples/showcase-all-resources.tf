@@ -2,17 +2,17 @@
 
 resource "ably_app" "app1" {
   status                 = "enabled"
-  tlsOnly                = "false"
-  fcmKey                 = "AABBQ1KyxCE:APA91bCCYs7r_Q-sqW8HMP_hV4t3vMYx...cJ8344-MhGWODZEuAmg_J4MUJcVQEyDn...I"
-  apnsCertificate        = "-----BEGIN CERTIFICATE-----MIIFaDCC...EXAMPLE...3Dc=-----END CERTIFICATE-----"
-  apnsPrivateKey         = "-----BEGIN PRIVATE KEY-----ABCFaDCC...EXAMPLE...3Dc=-----END PRIVATE KEY-----"
-  apnsUseSandboxEndpoint = false
+  tls_only                = "false"
+  fcm_key                 = "AABBQ1KyxCE:APA91bCCYs7r_Q-sqW8HMP_hV4t3vMYx...cJ8344-MhGWODZEuAmg_J4MUJcVQEyDn...I"
+  apns_certificate        = "-----BEGIN CERTIFICATE-----MIIFaDCC...EXAMPLE...3Dc=-----END CERTIFICATE-----"
+  apns_privateKey         = "-----BEGIN PRIVATE KEY-----ABCFaDCC...EXAMPLE...3Dc=-----END PRIVATE KEY-----"
+  apns_use_sandbox_endpoint = false
 }
 
 # Keys
 
 resource "ably_api_key" "api_key_1" {
-  app  = ably-app.app1.app_id
+  app  = ably_app.app1.app_id
   name = "KeyName"
   capability = {
     channel1 = [""]
@@ -23,7 +23,7 @@ resource "ably_api_key" "api_key_1" {
 # Namespaces
 
 resource "ably_namespace" "namespace1" {
-  app = ably-app.app1.app_id
+  app = ably_app.app1.app_id
   #...
 }
 
@@ -46,38 +46,38 @@ resource "ably_http_rule_target" "example_http_rule_target" {
       value = "headerValue"
     }
   ]
-  signingKeyId = "bw66AB"
+  signing_key_id = "bw66AB"
   enveloped    = true
   format       = "json"
 }
 
 resource "ably_rule" "example_http_rule" {
-  app         = ably-app.app1.app_id
-  requestMode = "single"
-  source      = ably-rule-source.example-rule-source-1
-  target      = ably-http-rule-target.example-http-rule-target
+  app         = ably_app.app1.app_id
+  request_mode = "single"
+  source      = ably_rule_source.example_rule_source_1
+  target      = ably_http_rule_target.example_http_rule_target
 }
 
-resource "ably_aws_lambda_rule_target" "example-lambda-rule-target" {
+resource "ably_aws_lambda_rule_target" "example_lambda_rule_target" {
   region       = "us-west-1"
-  functionName = "myFunctionName"
+  function_name = "myFunctionName"
   authentication = {
-    authenticationMode = "credentials",
-    accessKeyId        = "AKIAIOSFODNN7EXAMPLE"
-    secretAccessKey    = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+    authentication_mode = "credentials",
+    access_key_id        = "AKIAIOSFODNN7EXAMPLE"
+    secret_access_key    = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
   }
   enveloped = true
 }
 
-resource "ably_rule" "example-http-rule" {
-  app         = ably-app.app1.app_id
-  requestMode = "single"
-  source      = ably-rule-source.example-rule-source-1
-  target      = ably-aws-lambda-rule-target.example-lambda-rule-target
+resource "ably_rule" "example_http_rule" {
+  app         = ably_app.app1.app_id
+  request_mode = "single"
+  source      = ably_rule_source.example_rule_source_1
+  target      = ably_aws_lambda_rule_target.example_lambda_rule_target
 }
 
-resource "ably_kafka_rule_target" "example-kafka-rule-target" {
-  routingKey = "partitionKey"
+resource "ably_kafka_rule_target" "example_kafka_rule_target" {
+  routing_key = "partitionKey"
   brokers = [
     "kafka.ci.ably.io:19092",
     "kafka.ci.ably.io:19093"
@@ -93,11 +93,11 @@ resource "ably_kafka_rule_target" "example-kafka-rule-target" {
   format    = "json"
 }
 
-resource "ably_rule" "example-kafka-rule" {
-  app         = ably-app.app1.app_id
-  requestMode = "single"
-  source      = ably-rule-source.example-rule-source-1
-  target      = ably-kafka-rule-target.example-kafka-rule-target
+resource "ably_rule" "example_kafka_rule" {
+  app         = ably_app.app1.app_id
+  request_mode = "single"
+  source      = ably_rule_source.example_rule_source_1
+  target      = ably_kafka_rule_target.example_kafka_rule_target
 }
 
 
