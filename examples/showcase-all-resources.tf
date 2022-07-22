@@ -99,7 +99,3 @@ resource "ably_rule" "example_kafka_rule" {
   source      = ably_rule_source.example_rule_source_1
   target      = ably_kafka_rule_target.example_kafka_rule_target
 }
-
-
-
-
