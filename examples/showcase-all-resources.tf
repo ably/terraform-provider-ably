@@ -13,8 +13,8 @@ resource "ably_app" "app1" {
 # Keys
 
 resource "ably_api_key" "api_key_1" {
-  app  = ably_app.app1.app_id
-  name = "KeyName"
+  app_id = ably_app.app1.app_id
+  name   = "KeyName"
   capability = {
     channel1 = [""]
     channel2 = [""]
@@ -24,7 +24,7 @@ resource "ably_api_key" "api_key_1" {
 # Namespaces
 
 resource "ably_namespace" "namespace1" {
-  app = ably_app.app1.app_id
+  app_id = ably_app.app1.app_id
   #...
 }
 
@@ -53,7 +53,7 @@ resource "ably_http_rule_target" "example_http_rule_target" {
 }
 
 resource "ably_rule" "example_http_rule" {
-  app          = ably_app.app1.app_id
+  app_id       = ably_app.app1.app_id
   request_mode = "single"
   source       = ably_rule_source.example_rule_source_1
   target       = ably_http_rule_target.example_http_rule_target
@@ -71,7 +71,7 @@ resource "ably_aws_lambda_rule_target" "example_lambda_rule_target" {
 }
 
 resource "ably_rule" "example_http_rule" {
-  app          = ably_app.app1.app_id
+  app_id       = ably_app.app1.app_id
   request_mode = "single"
   source       = ably_rule_source.example_rule_source_1
   target       = ably_aws_lambda_rule_target.example_lambda_rule_target
@@ -95,7 +95,7 @@ resource "ably_kafka_rule_target" "example_kafka_rule_target" {
 }
 
 resource "ably_rule" "example_kafka_rule" {
-  app          = ably_app.app1.app_id
+  app_id       = ably_app.app1.app_id
   request_mode = "single"
   source       = ably_rule_source.example_rule_source_1
   target       = ably_kafka_rule_target.example_kafka_rule_target
