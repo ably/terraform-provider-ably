@@ -106,3 +106,14 @@ resource "ably_rule" "example_kafka_rule" {
   source       = ably_rule_source.example_rule_source_1
   target       = ably_kafka_rule_target.example_kafka_rule_target
 }
+
+# Queues
+
+resource "ably_queue" "example_queue" {
+  app_id     = ably_app.app1.app_id
+  name       = "queue_name"
+  ttl        = 60
+  max_length = 10000
+  region     = "us-east-1-a"
+}
+
