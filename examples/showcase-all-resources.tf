@@ -1,11 +1,12 @@
 # App
 
 resource "ably_app" "app1" {
-  status                 = "enabled"
-  tls_only                = "false"
-  fcm_key                 = "AABBQ1KyxCE:APA91bCCYs7r_Q-sqW8HMP_hV4t3vMYx...cJ8344-MhGWODZEuAmg_J4MUJcVQEyDn...I"
-  apns_certificate        = "-----BEGIN CERTIFICATE-----MIIFaDCC...EXAMPLE...3Dc=-----END CERTIFICATE-----"
-  apns_privateKey         = "-----BEGIN PRIVATE KEY-----ABCFaDCC...EXAMPLE...3Dc=-----END PRIVATE KEY-----"
+  name                      = "app_name"
+  status                    = "enabled"
+  tls_only                  = "false"
+  fcm_key                   = "AABBQ1KyxCE:APA91bCCYs7r_Q-sqW8HMP_hV4t3vMYx...cJ8344-MhGWODZEuAmg_J4MUJcVQEyDn...I"
+  apns_certificate          = "-----BEGIN CERTIFICATE-----MIIFaDCC...EXAMPLE...3Dc=-----END CERTIFICATE-----"
+  apns_privateKey           = "-----BEGIN PRIVATE KEY-----ABCFaDCC...EXAMPLE...3Dc=-----END PRIVATE KEY-----"
   apns_use_sandbox_endpoint = false
 }
 
@@ -47,33 +48,33 @@ resource "ably_http_rule_target" "example_http_rule_target" {
     }
   ]
   signing_key_id = "bw66AB"
-  enveloped    = true
-  format       = "json"
+  enveloped      = true
+  format         = "json"
 }
 
 resource "ably_rule" "example_http_rule" {
-  app         = ably_app.app1.app_id
+  app          = ably_app.app1.app_id
   request_mode = "single"
-  source      = ably_rule_source.example_rule_source_1
-  target      = ably_http_rule_target.example_http_rule_target
+  source       = ably_rule_source.example_rule_source_1
+  target       = ably_http_rule_target.example_http_rule_target
 }
 
 resource "ably_aws_lambda_rule_target" "example_lambda_rule_target" {
-  region       = "us-west-1"
+  region        = "us-west-1"
   function_name = "myFunctionName"
   authentication = {
     authentication_mode = "credentials",
-    access_key_id        = "AKIAIOSFODNN7EXAMPLE"
-    secret_access_key    = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+    access_key_id       = "AKIAIOSFODNN7EXAMPLE"
+    secret_access_key   = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
   }
   enveloped = true
 }
 
 resource "ably_rule" "example_http_rule" {
-  app         = ably_app.app1.app_id
+  app          = ably_app.app1.app_id
   request_mode = "single"
-  source      = ably_rule_source.example_rule_source_1
-  target      = ably_aws_lambda_rule_target.example_lambda_rule_target
+  source       = ably_rule_source.example_rule_source_1
+  target       = ably_aws_lambda_rule_target.example_lambda_rule_target
 }
 
 resource "ably_kafka_rule_target" "example_kafka_rule_target" {
@@ -94,8 +95,8 @@ resource "ably_kafka_rule_target" "example_kafka_rule_target" {
 }
 
 resource "ably_rule" "example_kafka_rule" {
-  app         = ably_app.app1.app_id
+  app          = ably_app.app1.app_id
   request_mode = "single"
-  source      = ably_rule_source.example_rule_source_1
-  target      = ably_kafka_rule_target.example_kafka_rule_target
+  source       = ably_rule_source.example_rule_source_1
+  target       = ably_kafka_rule_target.example_kafka_rule_target
 }
