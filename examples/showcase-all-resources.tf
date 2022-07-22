@@ -1,6 +1,6 @@
 # App
 
-resource "ably-app" "app1" {
+resource "ably_app" "app1" {
   status                 = "enabled"
   tlsOnly                = "false"
   fcmKey                 = "AABBQ1KyxCE:APA91bCCYs7r_Q-sqW8HMP_hV4t3vMYx...cJ8344-MhGWODZEuAmg_J4MUJcVQEyDn...I"
@@ -11,7 +11,7 @@ resource "ably-app" "app1" {
 
 # Keys
 
-resource "ably-api-key" "api-key-1" {
+resource "ably_api_key" "api_key_1" {
   app  = ably-app.app1.app_id
   name = "KeyName"
   capability = {
@@ -22,19 +22,19 @@ resource "ably-api-key" "api-key-1" {
 
 # Namespaces
 
-resource "ably-namespace" "namespace1" {
+resource "ably_namespace" "namespace1" {
   app = ably-app.app1.app_id
   #...
 }
 
 # Rules
 
-resource "ably-rule-source" "example-rule-source-1" {
+resource "ably_rule_source" "example_rule_source_1" {
   channelFilter = "^my-channel.*"
   type          = "channel.message"
 }
 
-resource "ably-http-rule-target" "example-http-rule-target" {
+resource "ably_http_rule_target" "example_http_rule_target" {
   url = "https://example.com/webhooks"
   headers = [
     {
@@ -51,14 +51,14 @@ resource "ably-http-rule-target" "example-http-rule-target" {
   format       = "json"
 }
 
-resource "ably-rule" "example-http-rule" {
+resource "ably_rule" "example_http_rule" {
   app         = ably-app.app1.app_id
   requestMode = "single"
   source      = ably-rule-source.example-rule-source-1
   target      = ably-http-rule-target.example-http-rule-target
 }
 
-resource "ably-aws-lambda-rule-target" "example-lambda-rule-target" {
+resource "ably_aws_lambda_rule_target" "example-lambda-rule-target" {
   region       = "us-west-1"
   functionName = "myFunctionName"
   authentication = {
@@ -69,14 +69,14 @@ resource "ably-aws-lambda-rule-target" "example-lambda-rule-target" {
   enveloped = true
 }
 
-resource "ably-rule" "example-http-rule" {
+resource "ably_rule" "example-http-rule" {
   app         = ably-app.app1.app_id
   requestMode = "single"
   source      = ably-rule-source.example-rule-source-1
   target      = ably-aws-lambda-rule-target.example-lambda-rule-target
 }
 
-resource "ably-kafka-rule-target" "example-kafka-rule-target" {
+resource "ably_kafka_rule_target" "example-kafka-rule-target" {
   routingKey = "partitionKey"
   brokers = [
     "kafka.ci.ably.io:19092",
@@ -93,7 +93,7 @@ resource "ably-kafka-rule-target" "example-kafka-rule-target" {
   format    = "json"
 }
 
-resource "ably-rule" "example-kafka-rule" {
+resource "ably_rule" "example-kafka-rule" {
   app         = ably-app.app1.app_id
   requestMode = "single"
   source      = ably-rule-source.example-rule-source-1
