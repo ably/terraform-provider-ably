@@ -10,6 +10,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+const CONTROL_API_DEFAULT_URL = "https://control.ably.net/v1"
+
 func New() tfsdk.Provider {
 	return &provider{}
 }
@@ -24,13 +26,13 @@ func (p *provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics)
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"token": {
-				Type:     types.StringType,
+				Type:      types.StringType,
 				Sensitive: true,
-				Required: true,
+				Optional:  true,
 			},
 			"url": {
-				Type:      types.StringType,
-				Required: true,
+				Type:     types.StringType,
+				Optional: true,
 			},
 		},
 	}, nil
@@ -39,7 +41,7 @@ func (p *provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics)
 // Provider schema struct
 type providerData struct {
 	Token types.String `tfsdk:"token"`
-	Url types.String `tfsdk:"url"`
+	Url   types.String `tfsdk:"url"`
 }
 
 func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderRequest, resp *tfsdk.ConfigureProviderResponse) {
@@ -57,7 +59,7 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 		// Cannot connect to client with an unknown value
 		resp.Diagnostics.AddWarning(
 			"Unable to create client",
-			"Ably Token required",
+			"Ably API Token required",
 		)
 		return
 	}
@@ -71,8 +73,8 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 	if token == "" {
 		// Error vs warning - empty value must stop execution
 		resp.Diagnostics.AddError(
-			"Unable to find Ably token",
-			"Username cannot be an empty string",
+			"Unable to find Ably API token",
+			"Ably API token cannot be an empty string. Ensure the providers token parameter is configured",
 		)
 		return
 	}
@@ -83,7 +85,7 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 		// Cannot connect to client with an unknown value
 		resp.Diagnostics.AddError(
 			"Unable to create client",
-			"Cannot use unknown value as Urlt",
+			"Cannot use unknown value as Ably Control API URL. Ensure the provider's url parameter is configured",
 		)
 		return
 	}
@@ -94,17 +96,13 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 		url = config.Url.Value
 	}
 
-	if url == "" {
-		// Error vs warning - empty value must stop execution
-		resp.Diagnostics.AddError(
-			"Unable to find url",
-			"Url cannot be an empty string",
-		)
-		return
-	}
-
 	// Create a new Ably client and set it to the provider client
+	// Use const CONTROL_API_DEFAULT_URL if url is empty
+	if url == "" {
+		url = CONTROL_API_DEFAULT_URL
+	}
 	c, _, err := ably_control_go.NewClientWithURL(token, url)
+
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create client",
@@ -112,15 +110,14 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 		)
 		return
 	}
-	
+
 	p.client = &c
 	p.configured = true
 }
 
 // GetResources - Defines provider resources
 func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
-	return map[string]tfsdk.ResourceType{
-	}, nil
+	return map[string]tfsdk.ResourceType{}, nil
 }
 
 // GetDataSources - Defines provider data sources
