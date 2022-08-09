@@ -18,6 +18,4 @@ terraform {
 
 # You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 provider "ably" {
-  token = "INSERT"
-  url   =  "https://control.ably.net/v1"
 }
