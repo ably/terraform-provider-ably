@@ -32,12 +32,12 @@ func (r resourceAppType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 			},
 			"status": {
 				Type:        types.StringType,
-				Required:    true,
+				Optional:    true,
 				Description: "The Ably App Status. Can be 'enabled' or 'disabled'",
 			},
 			"tls_only": {
 				Type:        types.BoolType,
-				Required:    true,
+				Optional:    true,
 				Description: "Whether the Ably App accept only TLS Connections",
 			},
 		},
