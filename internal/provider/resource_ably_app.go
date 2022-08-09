@@ -61,7 +61,7 @@ func (r resourceApp) Create(ctx context.Context, req tfsdk.CreateResourceRequest
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
-			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
+			"The provider hasn't been configured before apply",
 		)
 		return
 	}
