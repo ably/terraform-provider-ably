@@ -17,16 +17,16 @@ description: |-
 
 ### Required
 
-- `name` (String) The Ably App Name
+- `name` (String) The application name.
 
 ### Optional
 
-- `status` (String) The Ably App Status. When creating an App, ensure that it's status is set to 'enabled'. Values after app creating, can be 'enabled' or 'disabled'
-- `tls_only` (Boolean) Whether the Ably App accept only TLS Connections
+- `status` (String) The application status. Disabled applications will not accept new connections and will return an error to all clients. When creating a new application, ensure that its status is set to enabled.
+- `tls_only` (Boolean) Enforce TLS for all connections. This setting overrides any channel setting.
 
 ### Read-Only
 
-- `account_id` (String) The Ably Account ID
-- `id` (String) The Ably App ID
+- `account_id` (String) The ID of your Ably account.
+- `id` (String) The application ID.
 
 

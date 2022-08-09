@@ -18,28 +18,28 @@ func (r resourceAppType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 			"id": {
 				Type:        types.StringType,
 				Computed:    true,
-				Description: "The Ably App ID",
+				Description: "The application ID.",
 			},
 			"account_id": {
 				Type:        types.StringType,
 				Computed:    true,
-				Description: "The Ably Account ID",
+				Description: "The ID of your Ably account.",
 			},
 			"name": {
 				Type:        types.StringType,
 				Required:    true,
-				Description: "The Ably App Name",
+				Description: "The application name.",
 			},
 			"status": {
 				Type:        types.StringType,
 				Optional:    true,
 				// TODO: Update this after Control API bug has been fixed.
-				Description: "The Ably App Status. When creating an App, ensure that it's status is set to 'enabled'. Values after app creating, can be 'enabled' or 'disabled'",
+				Description: "The application status. Disabled applications will not accept new connections and will return an error to all clients. When creating a new application, ensure that its status is set to enabled.",
 			},
 			"tls_only": {
 				Type:        types.BoolType,
 				Optional:    true,
-				Description: "Whether the Ably App accept only TLS Connections",
+				Description: "Enforce TLS for all connections. This setting overrides any channel setting.",
 			},
 		},
 	}, nil
