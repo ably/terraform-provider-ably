@@ -33,7 +33,8 @@ func (r resourceAppType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 			"status": {
 				Type:        types.StringType,
 				Optional:    true,
-				Description: "The Ably App Status. Can be 'enabled' or 'disabled'",
+				// TODO: Update this after Control API bug has been fixed.
+				Description: "The Ably App Status. When creating an App, ensure that it's status is set to 'enabled'. Values after app creating, can be 'enabled' or 'disabled'",
 			},
 			"tls_only": {
 				Type:        types.BoolType,

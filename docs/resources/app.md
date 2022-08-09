@@ -18,7 +18,10 @@ description: |-
 ### Required
 
 - `name` (String) The Ably App Name
-- `status` (String) The Ably App Status. Can be 'enabled' or 'disabled'
+
+### Optional
+
+- `status` (String) The Ably App Status. When creating an App, ensure that it's status is set to 'enabled'. Values after app creating, can be 'enabled' or 'disabled'
 - `tls_only` (Boolean) Whether the Ably App accept only TLS Connections
 
 ### Read-Only
