@@ -152,6 +152,58 @@ func (r resourceApp) Read(ctx context.Context, req tfsdk.ReadResourceRequest, re
 
 // Update resource
 func (r resourceApp) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+	// Get plan values
+	var plan AblyApp
+	diags := req.Plan.Get(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Get current state
+	var state AblyApp
+	diags = req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Gets the app ID
+	app_id := state.ID.Value
+
+	// Instantiates struct of type ably_control_go.App and sets values to output of plan
+	app_values := ably_control_go.App{
+		ID:        plan.ID.Value,
+		AccountID: plan.AccountID.Value,
+		Name:      plan.Name.Value,
+		Status:    plan.Status.Value,
+		TLSOnly:   plan.TLSOnly.Value,
+	}
+
+	// Updates an Ably App. The function invokes the Client Library UpdateApp method.
+	ably_app, err := r.p.client.UpdateApp(app_id, &app_values)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error updating Resource",
+			"Could not update resource, unexpected error: "+err.Error(),
+		)
+		return
+	}
+
+	resp_apps := AblyApp{
+		ID:        types.String{Value: ably_app.ID},
+		AccountID: types.String{Value: ably_app.AccountID},
+		Name:      types.String{Value: ably_app.Name},
+		Status:    types.String{Value: ably_app.Status},
+		TLSOnly:   types.Bool{Value: ably_app.TLSOnly},
+	}
+
+	// Sets state to new app.
+	diags = resp.State.Set(ctx, resp_apps)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 }
 
 // Delete resource
