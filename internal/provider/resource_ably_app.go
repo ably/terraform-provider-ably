@@ -5,6 +5,7 @@ import (
 
 	ably_control_go "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -230,4 +231,11 @@ func (r resourceApp) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest
 
 	// Remove resource from state
 	resp.State.RemoveResource(ctx)
+}
+
+// Import resource
+func (r resourceApp) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
+	// Save the import identifier in the id attribute
+	// Recent PR in TF Plugin Framework for paths but Hashicorp examples not updated - https://github.com/hashicorp/terraform-plugin-framework/pull/390
+	tfsdk.ResourceImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
