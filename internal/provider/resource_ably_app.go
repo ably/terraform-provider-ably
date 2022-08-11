@@ -208,4 +208,26 @@ func (r resourceApp) Update(ctx context.Context, req tfsdk.UpdateResourceRequest
 
 // Delete resource
 func (r resourceApp) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+	// Get current state
+	var state AblyApp
+	diags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Gets the current state. If it is unable to, the provider responds with an error.
+	app_id := state.ID.Value
+
+	err := r.p.client.DeleteApp(app_id)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error deleting Resource",
+			"Could not delete resource, unexpected error: "+err.Error(),
+		)
+		return
+	}
+
+	// Remove resource from state
+	resp.State.RemoveResource(ctx)
 }
