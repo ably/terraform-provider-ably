@@ -35,9 +35,6 @@ func init() {
 }
 
 func testAccPreCheck(t *testing.T) {
-	if v := os.Getenv("ABLY_URL"); v == "" {
-		t.Fatal("ABLY_URL must be set for acceptance tests")
-	}
 	if v := os.Getenv("ABLY_ACCOUNT_TOKEN"); v == "" {
 		t.Fatal("ABLY_ACCOUNT_TOKEN must be set for acceptance tests")
 	}
