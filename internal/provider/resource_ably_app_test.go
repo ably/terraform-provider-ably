@@ -54,7 +54,7 @@ func TestAccAblyAppDisabledStatus(t *testing.T) {
 				Config: testAccAblyAppConfig(app_name, "disabled", "false"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
-					resource.TestCheckResourceAttr("ably_app.app0", "status", "enabled"),
+					resource.TestCheckResourceAttr("ably_app.app0", "status", "disabled"),
 					resource.TestCheckResourceAttr("ably_app.app0", "tls_only", "false"),
 				),
 			},
