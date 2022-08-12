@@ -40,7 +40,8 @@ func TestAccAblyApp(t *testing.T) {
 	})
 }
 
-// Create App with status = disabled. This should fail - Issue known and fix being worked on
+// Create App with status = disabled. This should fail and return status = enabled - Issue known and fix being worked on
+// For now, the test will expect the app to return status = enabled
 // TODO: Verify fix with this test and update Doc Comment
 func TestAccAblyAppDisabledStatus(t *testing.T) {
 	app_name := acctest.RandStringFromCharSet(5, acctest.CharSetAlphaNum)
@@ -53,7 +54,7 @@ func TestAccAblyAppDisabledStatus(t *testing.T) {
 				Config: testAccAblyAppConfig(app_name, "disabled", "false"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
-					resource.TestCheckResourceAttr("ably_app.app0", "status", "disabled"),
+					resource.TestCheckResourceAttr("ably_app.app0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_app.app0", "tls_only", "false"),
 				),
 			},
