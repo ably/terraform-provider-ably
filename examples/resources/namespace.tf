@@ -1,6 +1,6 @@
 resource "ably_namespace" "namespace1" {
-  app_id            = ably_app.app1.app_id
-  namespace_id      = "namespace"
+  app_id            = ably_app.app1.id
+  id      = "namespace"
   authenticated     = false
   persisted         = false
   persist_last      = false
