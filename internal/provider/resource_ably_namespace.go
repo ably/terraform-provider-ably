@@ -2,6 +2,8 @@ package ably_control
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	ably_control_go "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -272,7 +274,16 @@ func (r resourceNamespace) Delete(ctx context.Context, req tfsdk.DeleteResourceR
 
 // Import resource
 func (r resourceNamespace) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
-	// Save the import identifier in the id attribute
-	// Recent PR in TF Plugin Framework for paths but Hashicorp examples not updated - https://github.com/hashicorp/terraform-plugin-framework/pull/390
-	tfsdk.ResourceImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+	idParts := strings.Split(req.ID, ",")
+
+	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
+		resp.Diagnostics.AddError(
+			"Unexpected Import Identifier",
+			fmt.Sprintf("Expected import identifier with format: app_id,namespace_id. Got: %q", req.ID),
+		)
+		return
+	}
+
+	tfsdk.ResourceImportStatePassthroughID(ctx, path.Root("app_id"), tfsdk.ImportResourceStateRequest{ID: idParts[0]}, resp)
+	tfsdk.ResourceImportStatePassthroughID(ctx, path.Root("id"), tfsdk.ImportResourceStateRequest{ID: idParts[1]}, resp)
 }
