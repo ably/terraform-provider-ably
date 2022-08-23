@@ -2,9 +2,11 @@ package ably_control
 
 import (
 	"fmt"
+	"testing"
+
+	ably_control_go "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"testing"
 )
 
 func TestAccAblyNamespace(t *testing.T) {
@@ -16,7 +18,15 @@ func TestAccAblyNamespace(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing of ably_app.app0
 			{
-				Config: testAccAblyNamespaceConfig(app_name, namespace_name, true, true, true, true, true, true),
+				Config: testAccAblyNamespaceConfig(app_name, ably_control_go.Namespace{
+					ID:               namespace_name,
+					Authenticated:    true,
+					Persisted:        true,
+					PersistLast:      true,
+					PushEnabled:      true,
+					TlsOnly:          true,
+					ExposeTimeserial: true,
+				}),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "id", namespace_name),
@@ -30,10 +40,39 @@ func TestAccAblyNamespace(t *testing.T) {
 			},
 			// Update and Read testing of ably_app.app0
 			{
-				Config: testAccAblyNamespaceConfig(app_name, namespace_name, false, false, false, false, false, false),
+				Config: testAccAblyNamespaceConfig(app_name, ably_control_go.Namespace{
+					ID:               namespace_name,
+					Authenticated:    false,
+					Persisted:        false,
+					PersistLast:      false,
+					PushEnabled:      false,
+					TlsOnly:          false,
+					ExposeTimeserial: false,
+				}),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "id", namespace_name),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "authenticated", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "persisted", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "persist_last", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "push_enabled", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "tls_only", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "expose_timeserial", "false"),
+				),
+			},
+			{
+				Config: testAccAblyNamespaceConfig(app_name, ably_control_go.Namespace{
+					ID:               namespace_name + "new",
+					Authenticated:    false,
+					Persisted:        false,
+					PersistLast:      false,
+					PushEnabled:      false,
+					TlsOnly:          false,
+					ExposeTimeserial: false,
+				}),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "id", namespace_name+"new"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "authenticated", "false"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "persisted", "false"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "persist_last", "false"),
@@ -49,7 +88,7 @@ func TestAccAblyNamespace(t *testing.T) {
 
 // Function with inline HCL to provision an ably_app resource
 // Takes App name, status and tls_only status as function params.
-func testAccAblyNamespaceConfig(appName string, namespaceName string, authenticated, peristed, persistLast, pushEnabled, tlsOnly, exposeTimeserial bool) string {
+func testAccAblyNamespaceConfig(appName string, namespace ably_control_go.Namespace) string {
 	return fmt.Sprintf(`
 terraform {
 	required_providers {
@@ -79,5 +118,5 @@ resource "ably_namespace" "namespace0" {
   expose_timeserial = %[8]t
 }
 
-`, appName, namespaceName, authenticated, peristed, persistLast, pushEnabled, tlsOnly, exposeTimeserial)
+`, appName, namespace.ID, namespace.Authenticated, namespace.Persisted, namespace.PersistLast, namespace.PushEnabled, namespace.TlsOnly, namespace.ExposeTimeserial)
 }

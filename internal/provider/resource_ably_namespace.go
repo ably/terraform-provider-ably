@@ -27,6 +27,9 @@ func (r resourceNamespaceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 				Type:        types.StringType,
 				Required:    true,
 				Description: "The namespace or channel name that the channel rule will apply to.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					tfsdk.RequiresReplace(),
+				},
 			},
 			"authenticated": {
 				Type:        types.BoolType,
