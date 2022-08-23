@@ -128,7 +128,14 @@ func (r resourceApp) Read(ctx context.Context, req tfsdk.ReadResourceRequest, re
 
 	// Fetches all Ably Apps in the account. The function invokes the Client Library Apps() method.
 	// NOTE: Control API & Client Lib do not currently support fetching single app given app id
-	apps, _ := r.p.client.Apps()
+	apps, err := r.p.client.Apps()
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error reading Resource",
+			"Could not create resource, unexpected error: "+err.Error(),
+		)
+		return
+	}
 
 	// Loops through apps and if account id matches, sets state.
 	for _, v := range apps {
