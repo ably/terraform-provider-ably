@@ -10,6 +10,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
+	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
+	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
 type resourceKeyType struct{}
@@ -67,7 +69,7 @@ func (r resourceKeyType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 }
 
 // New resource instance
-func (r resourceKeyType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
+func (r resourceKeyType) NewResource(_ context.Context, p tfsdk_provider.Provider) (tfsdk_resource.Resource, diag.Diagnostics) {
 	return resourceKey{
 		p: *(p.(*provider)),
 	}, nil
@@ -78,7 +80,7 @@ type resourceKey struct {
 }
 
 // Create a new resource
-func (r resourceKey) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
+func (r resourceKey) Create(ctx context.Context, req tfsdk_resource.CreateRequest, resp *tfsdk_resource.CreateResponse) {
 	// Checks whether the provider and API Client are configured. If they are not, the provider responds with an error.
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
@@ -132,7 +134,7 @@ func (r resourceKey) Create(ctx context.Context, req tfsdk.CreateResourceRequest
 }
 
 // Read resource
-func (r resourceKey) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+func (r resourceKey) Read(ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var state AblyKey
 	diags := req.State.Get(ctx, &state)
@@ -173,7 +175,7 @@ func (r resourceKey) Read(ctx context.Context, req tfsdk.ReadResourceRequest, re
 }
 
 // Update resource
-func (r resourceKey) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+func (r resourceKey) Update(ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
 	// Get plan values
 	var plan AblyKey
 	diags := req.Plan.Get(ctx, &plan)
@@ -229,7 +231,7 @@ func (r resourceKey) Update(ctx context.Context, req tfsdk.UpdateResourceRequest
 }
 
 // Delete resource
-func (r resourceKey) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+func (r resourceKey) Delete(ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
 	// Get current state
 	var state AblyKey
 	diags := req.State.Get(ctx, &state)
@@ -256,7 +258,7 @@ func (r resourceKey) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest
 }
 
 // // Import resource
-func (r resourceKey) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
+func (r resourceKey) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
 	// Save the import identifier in the id attribute
 	// identifier should be in the format app_id,key_id
 	idParts := strings.Split(req.ID, ",")
