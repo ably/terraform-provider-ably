@@ -8,6 +8,8 @@ import (
 	ably_control_go "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
+	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -28,7 +30,7 @@ func (r resourceNamespaceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 				Required:    true,
 				Description: "The namespace or channel name that the channel rule will apply to.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk.RequiresReplace(),
+					tfsdk_resource.RequiresReplace(),
 				},
 			},
 			"authenticated": {
@@ -66,7 +68,7 @@ func (r resourceNamespaceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 }
 
 // New resource instance
-func (r resourceNamespaceType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
+func (r resourceNamespaceType) NewResource(_ context.Context, p tfsdk_provider.Provider) (tfsdk_resource.Resource, diag.Diagnostics) {
 	return resourceNamespace{
 		p: *(p.(*provider)),
 	}, nil
@@ -77,7 +79,7 @@ type resourceNamespace struct {
 }
 
 // Create a new resource
-func (r resourceNamespace) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
+func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.CreateRequest, resp *tfsdk_resource.CreateResponse) {
 	// Checks whether the provider and API Client are configured. If they are not, the provider responds with an error.
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
@@ -137,7 +139,7 @@ func (r resourceNamespace) Create(ctx context.Context, req tfsdk.CreateResourceR
 }
 
 // Read resource
-func (r resourceNamespace) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+func (r resourceNamespace) Read(ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var state AblyNamespace
 	diags := req.State.Get(ctx, &state)
@@ -187,7 +189,7 @@ func (r resourceNamespace) Read(ctx context.Context, req tfsdk.ReadResourceReque
 }
 
 // Update resource
-func (r resourceNamespace) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+func (r resourceNamespace) Update(ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
 	// Get plan values
 	var plan AblyNamespace
 	diags := req.Plan.Get(ctx, &plan)
@@ -249,7 +251,7 @@ func (r resourceNamespace) Update(ctx context.Context, req tfsdk.UpdateResourceR
 }
 
 // Delete resource
-func (r resourceNamespace) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+func (r resourceNamespace) Delete(ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
 	// Get current state
 	var state AblyNamespace
 	diags := req.State.Get(ctx, &state)
@@ -276,7 +278,7 @@ func (r resourceNamespace) Delete(ctx context.Context, req tfsdk.DeleteResourceR
 }
 
 // Import resource
-func (r resourceNamespace) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
+func (r resourceNamespace) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
 	idParts := strings.Split(req.ID, ",")
 
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
@@ -287,6 +289,6 @@ func (r resourceNamespace) ImportState(ctx context.Context, req tfsdk.ImportReso
 		return
 	}
 
-	tfsdk.ResourceImportStatePassthroughID(ctx, path.Root("app_id"), tfsdk.ImportResourceStateRequest{ID: idParts[0]}, resp)
-	tfsdk.ResourceImportStatePassthroughID(ctx, path.Root("id"), tfsdk.ImportResourceStateRequest{ID: idParts[1]}, resp)
+	tfsdk_resource.ImportStatePassthroughID(ctx, path.Root("app_id"), tfsdk_resource.ImportStateRequest{ID: idParts[0]}, resp)
+	tfsdk_resource.ImportStatePassthroughID(ctx, path.Root("id"), tfsdk_resource.ImportStateRequest{ID: idParts[1]}, resp)
 }
