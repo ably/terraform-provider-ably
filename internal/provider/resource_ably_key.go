@@ -2,14 +2,14 @@ package ably_control
 
 import (
 	"context"
-
+	"strings"
 	"fmt"
-	ably_control_go "github.com/ably/ably-control-go"
+
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"strings"
+	ably_control_go "github.com/ably/ably-control-go"
 	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 )
@@ -153,7 +153,7 @@ func (r resourceKey) Read(ctx context.Context, req tfsdk_resource.ReadRequest, r
 
 	// Loops through apps and if account id and key id match, sets state.
 	for _, v := range keys {
-		if v.AppID == app_id && v.ID == key_id {
+		if v.AppID == app_id && v.ID == key_id && v.Status == 0 {
 			resp_key := AblyKey{
 				ID:         types.String{Value: v.ID},
 				AppID:      types.String{Value: v.AppID},
