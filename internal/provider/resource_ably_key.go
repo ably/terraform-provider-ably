@@ -42,7 +42,7 @@ func (r resourceKeyType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 					},
 				},
 				Required:    true,
-				Description: "The capabilities that this key has. More information on capabilities can be found in the Ably documentation.",
+				Description: "The capabilities that this key has. More information on capabilities can be found in the [Ably documentation](https://ably.com/docs/core-features/authentication#capabilities-explained)",
 			},
 			"status": {
 				Type:        types.Int64Type,
