@@ -6,6 +6,8 @@ import (
 	ably_control_go "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
+	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -47,7 +49,7 @@ func (r resourceAppType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 }
 
 // New resource instance
-func (r resourceAppType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
+func (r resourceAppType) NewResource(_ context.Context, p tfsdk_provider.Provider) (tfsdk_resource.Resource, diag.Diagnostics) {
 	return resourceApp{
 		p: *(p.(*provider)),
 	}, nil
@@ -58,7 +60,7 @@ type resourceApp struct {
 }
 
 // Create a new resource
-func (r resourceApp) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
+func (r resourceApp) Create(ctx context.Context, req tfsdk_resource.CreateRequest, resp *tfsdk_resource.CreateResponse) {
 	// Checks whether the provider and API Client are configured. If they are not, the provider responds with an error.
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
@@ -113,7 +115,7 @@ func (r resourceApp) Create(ctx context.Context, req tfsdk.CreateResourceRequest
 }
 
 // Read resource
-func (r resourceApp) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+func (r resourceApp) Read(ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var state AblyApp
 	diags := req.State.Get(ctx, &state)
@@ -128,7 +130,14 @@ func (r resourceApp) Read(ctx context.Context, req tfsdk.ReadResourceRequest, re
 
 	// Fetches all Ably Apps in the account. The function invokes the Client Library Apps() method.
 	// NOTE: Control API & Client Lib do not currently support fetching single app given app id
-	apps, _ := r.p.client.Apps()
+	apps, err := r.p.client.Apps()
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error reading Resource",
+			"Could not create resource, unexpected error: "+err.Error(),
+		)
+		return
+	}
 
 	// Loops through apps and if account id matches, sets state.
 	for _, v := range apps {
@@ -152,7 +161,7 @@ func (r resourceApp) Read(ctx context.Context, req tfsdk.ReadResourceRequest, re
 }
 
 // Update resource
-func (r resourceApp) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+func (r resourceApp) Update(ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
 	// Get plan values
 	var plan AblyApp
 	diags := req.Plan.Get(ctx, &plan)
@@ -208,7 +217,7 @@ func (r resourceApp) Update(ctx context.Context, req tfsdk.UpdateResourceRequest
 }
 
 // Delete resource
-func (r resourceApp) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+func (r resourceApp) Delete(ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
 	// Get current state
 	var state AblyApp
 	diags := req.State.Get(ctx, &state)
@@ -234,8 +243,8 @@ func (r resourceApp) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest
 }
 
 // Import resource
-func (r resourceApp) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
+func (r resourceApp) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
 	// Save the import identifier in the id attribute
 	// Recent PR in TF Plugin Framework for paths but Hashicorp examples not updated - https://github.com/hashicorp/terraform-plugin-framework/pull/390
-	tfsdk.ResourceImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+	tfsdk_resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }

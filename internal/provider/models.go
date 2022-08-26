@@ -12,3 +12,27 @@ type AblyApp struct {
 	Status    types.String `tfsdk:"status"`
 	TLSOnly   types.Bool   `tfsdk:"tls_only"`
 }
+
+// Ably Namespace
+type AblyNamespace struct {
+	AppID            types.String `tfsdk:"app_id"`
+	ID               types.String `tfsdk:"id"`
+	Authenticated    types.Bool   `tfsdk:"authenticated"`
+	Persisted        types.Bool   `tfsdk:"persisted"`
+	PersistLast      types.Bool   `tfsdk:"persist_last"`
+	PushEnabled      types.Bool   `tfsdk:"push_enabled"`
+	TlsOnly          types.Bool   `tfsdk:"tls_only"`
+	ExposeTimeserial types.Bool   `tfsdk:"expose_timeserial"`
+}
+
+// Ably Key
+type AblyKey struct {
+	ID         types.String        `tfsdk:"id"`
+	AppID      types.String        `tfsdk:"app_id"`
+	Name       types.String        `tfsdk:"name"`
+	Capability map[string][]string `tfsdk:"capabilities"`
+	Status     types.Int64         `tfsdk:"status"`
+	Key        types.String        `tfsdk:"key"`
+	Created    types.Int64         `tfsdk:"created"`
+	Modified   types.Int64         `tfsdk:"modified"`
+}

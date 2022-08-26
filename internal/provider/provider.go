@@ -6,13 +6,14 @@ import (
 
 	ably_control_go "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 const CONTROL_API_DEFAULT_URL = "https://control.ably.net/v1"
 
-func New() tfsdk.Provider {
+func New() tfsdk_provider.Provider {
 	return &provider{}
 }
 
@@ -44,7 +45,7 @@ type providerData struct {
 	Url   types.String `tfsdk:"url"`
 }
 
-func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderRequest, resp *tfsdk.ConfigureProviderResponse) {
+func (p *provider) Configure(ctx context.Context, req tfsdk_provider.ConfigureRequest, resp *tfsdk_provider.ConfigureResponse) {
 	// Retrieve provider data from configuration
 	var config providerData
 	diags := req.Config.Get(ctx, &config)
@@ -116,13 +117,15 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 }
 
 // GetResources - Defines provider resources
-func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
-	return map[string]tfsdk.ResourceType{
-		"ably_app": resourceAppType{},
+func (p *provider) GetResources(_ context.Context) (map[string]tfsdk_provider.ResourceType, diag.Diagnostics) {
+	return map[string]tfsdk_provider.ResourceType{
+		"ably_app":       resourceAppType{},
+		"ably_namespace": resourceNamespaceType{},
+		"ably_api_key":   resourceKeyType{},
 	}, nil
 }
 
 // GetDataSources - Defines provider data sources
-func (p *provider) GetDataSources(_ context.Context) (map[string]tfsdk.DataSourceType, diag.Diagnostics) {
-	return map[string]tfsdk.DataSourceType{}, nil
+func (p *provider) GetDataSources(_ context.Context) (map[string]tfsdk_provider.DataSourceType, diag.Diagnostics) {
+	return map[string]tfsdk_provider.DataSourceType{}, nil
 }
