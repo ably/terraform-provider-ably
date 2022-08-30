@@ -122,6 +122,7 @@ func (p *provider) GetResources(_ context.Context) (map[string]tfsdk_provider.Re
 		"ably_app":       resourceAppType{},
 		"ably_namespace": resourceNamespaceType{},
 		"ably_api_key":   resourceKeyType{},
+		"ably_queue":     resourceQueueType{},
 	}, nil
 }
 
