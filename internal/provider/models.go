@@ -6,11 +6,15 @@ import (
 
 // Ably App
 type AblyApp struct {
-	AccountID types.String `tfsdk:"account_id"`
-	ID        types.String `tfsdk:"id"`
-	Name      types.String `tfsdk:"name"`
-	Status    types.String `tfsdk:"status"`
-	TLSOnly   types.Bool   `tfsdk:"tls_only"`
+	AccountID              types.String `tfsdk:"account_id"`
+	ID                     types.String `tfsdk:"id"`
+	Name                   types.String `tfsdk:"name"`
+	Status                 types.String `tfsdk:"status"`
+	TLSOnly                types.Bool   `tfsdk:"tls_only"`
+	FcmKey                 types.String `tfsdk:"fcm_key"`
+	ApnsCertificate        types.String `tfsdk:"apns_certificate"`
+	ApnsPrivateKey         types.String `tfsdk:"apns_private_key"`
+	ApnsUseSandboxEndpoint types.Bool   `tfsdk:"apns_use_sandbox_endpoint"`
 }
 
 // Ably Namespace
@@ -60,4 +64,10 @@ type AblyQueue struct {
 	StatsAcknowledgementRate types.Int64  `tfsdk:"stats_acknowledgement_rate"`
 	Deadletter               types.Bool   `tfsdk:"deadletter"`
 	DeadletterID             types.String `tfsdk:"deadletter_id"`
+}
+
+func emptyStringToNull(v *types.String) {
+	if v.Value == "" {
+		v.Null = true
+	}
 }

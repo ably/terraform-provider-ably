@@ -2,16 +2,16 @@ package ably_control
 
 import (
 	"context"
-	"strings"
 	"fmt"
+	"strings"
 
+	ably_control_go "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
-	ably_control_go "github.com/ably/ably-control-go"
 	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type resourceKeyType struct{}
@@ -48,6 +48,9 @@ func (r resourceKeyType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 				Type:        types.Int64Type,
 				Computed:    true,
 				Description: "The status of the key. 0 is enabled, 1 is revoked.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					DefaultAttribute(types.Int64{Value: 0}),
+				},
 			},
 			"created": {
 				Type:        types.Int64Type,
