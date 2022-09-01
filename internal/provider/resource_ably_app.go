@@ -51,11 +51,13 @@ func (r resourceAppType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 			"fcm_key": {
 				Type:        types.StringType,
 				Optional:    true,
+				Sensitive:   true,
 				Description: "The Firebase Cloud Messaging key.",
 			},
 			"apns_certificate": {
 				Type:        types.StringType,
 				Optional:    true,
+				Sensitive:   true,
 				Description: "The Apple Push Notification service certificate.",
 			},
 			"apns_private_key": {
@@ -137,9 +139,9 @@ func (r resourceApp) Create(ctx context.Context, req tfsdk_resource.CreateReques
 		Name:                   types.String{Value: ably_app.Name},
 		Status:                 types.String{Value: ably_app.Status},
 		TLSOnly:                types.Bool{Value: ably_app.TLSOnly},
-		FcmKey:                 types.String{Value: ably_app.FcmKey},
-		ApnsCertificate:        types.String{Value: ably_app.ApnsCertificate},
-		ApnsPrivateKey:         types.String{Value: ably_app.ApnsPrivateKey},
+		FcmKey:                 plan.FcmKey,
+		ApnsCertificate:        plan.ApnsCertificate,
+		ApnsPrivateKey:         plan.ApnsPrivateKey,
 		ApnsUseSandboxEndpoint: types.Bool{Value: ably_app.ApnsUseSandboxEndpoint},
 	}
 	emptyStringToNull(&resp_apps.FcmKey)
@@ -188,9 +190,9 @@ func (r resourceApp) Read(ctx context.Context, req tfsdk_resource.ReadRequest, r
 				Name:                   types.String{Value: v.Name},
 				Status:                 types.String{Value: v.Status},
 				TLSOnly:                types.Bool{Value: v.TLSOnly},
-				FcmKey:                 types.String{Value: v.FcmKey},
-				ApnsCertificate:        types.String{Value: v.ApnsCertificate},
-				ApnsPrivateKey:         types.String{Value: v.ApnsPrivateKey},
+				FcmKey:                 state.FcmKey,
+				ApnsCertificate:        state.ApnsCertificate,
+				ApnsPrivateKey:         state.ApnsPrivateKey,
 				ApnsUseSandboxEndpoint: types.Bool{Value: v.ApnsUseSandboxEndpoint},
 			}
 			emptyStringToNull(&resp_apps.FcmKey)
@@ -258,9 +260,9 @@ func (r resourceApp) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 		Name:                   types.String{Value: ably_app.Name},
 		Status:                 types.String{Value: ably_app.Status},
 		TLSOnly:                types.Bool{Value: ably_app.TLSOnly},
-		FcmKey:                 types.String{Value: ably_app.FcmKey},
-		ApnsCertificate:        types.String{Value: ably_app.ApnsCertificate},
-		ApnsPrivateKey:         types.String{Value: ably_app.ApnsPrivateKey},
+		FcmKey:                 plan.FcmKey,
+		ApnsCertificate:        plan.ApnsCertificate,
+		ApnsPrivateKey:         plan.ApnsPrivateKey,
 		ApnsUseSandboxEndpoint: types.Bool{Value: ably_app.ApnsUseSandboxEndpoint},
 	}
 	emptyStringToNull(&resp_apps.FcmKey)
