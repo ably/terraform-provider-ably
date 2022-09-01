@@ -19,8 +19,8 @@ This provider supports the following systems/architectures:
 
 To install Ably Terraform provider:
 
-1. Create a Control API token by logging into your Ably account and going to https://ably.com/users/access_tokens (Account -> My Access Tokens). This token should have permissions for the operations that you plan to do with with Terraform provider. More details are available in [Ably documentation](https://ably.com/docs/control-api#authentication).
-2. Set environment varable `ABLY_ACCOUNT_TOKEN` to the token you have created.
+1. Create a Control API token by logging into your Ably account and going to https://ably.com/users/access_tokens (Account -> My Access Tokens). This token should have permissions for the operations that you plan to do with Terraform provider. More details are available in [Ably documentation](https://ably.com/docs/control-api#authentication).
+2. Set the environment variable `ABLY_ACCOUNT_TOKEN` to the token you have created.
 3. Add the following to your Terraform configuration file
 
 ```terraform
