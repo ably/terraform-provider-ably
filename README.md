@@ -53,7 +53,7 @@ provider "ably" {
 
 ## Using Ably Terraform provider
 
-This readme gives a basic example; for more examples see the [examples/](examples/) folder, rendered documentation on the Terraform Registry, or [docs/] folder. 
+This readme gives a basic example; for more examples see the [examples/](examples/) folder, rendered documentation on the Terraform Registry, or [docs](docs/index.md) in this repository. 
 
 
 ```terraform
