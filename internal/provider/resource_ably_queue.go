@@ -122,6 +122,7 @@ func (r resourceQueueType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 				Description: "The ID of the dead letter queue.",
 			},
 		},
+		MarkdownDescription: "The ably_queue resource allows you to create and manage Ably queues. Read more about Ably queues in Ably documentation: https://ably.com/docs/general/queues.",
 	}, nil
 }
 
