@@ -48,6 +48,9 @@ func (r resourceKeyType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 				Type:        types.Int64Type,
 				Computed:    true,
 				Description: "The status of the key. 0 is enabled, 1 is revoked.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					DefaultAttribute(types.Int64{Value: 0}),
+				},
 			},
 			"created": {
 				Type:        types.Int64Type,

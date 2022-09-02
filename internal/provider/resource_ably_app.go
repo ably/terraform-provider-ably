@@ -33,16 +33,47 @@ func (r resourceAppType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 				Required:    true,
 				Description: "The application name.",
 			},
+			// TODO: Update this after Control API bug has been fixed.
 			"status": {
-				Type:     types.StringType,
-				Optional: true,
-				// TODO: Update this after Control API bug has been fixed.
+				Type:        types.StringType,
+				Optional:    true,
+				Computed:    true,
 				Description: "The application status. Disabled applications will not accept new connections and will return an error to all clients. When creating a new application, ensure that its status is set to enabled.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					DefaultAttribute(types.String{Value: "enabled"}),
+				},
 			},
 			"tls_only": {
 				Type:        types.BoolType,
 				Optional:    true,
 				Description: "Enforce TLS for all connections. This setting overrides any channel setting.",
+			},
+			"fcm_key": {
+				Type:        types.StringType,
+				Optional:    true,
+				Sensitive:   true,
+				Description: "The Firebase Cloud Messaging key.",
+			},
+			"apns_certificate": {
+				Type:        types.StringType,
+				Optional:    true,
+				Sensitive:   true,
+				Description: "The Apple Push Notification service certificate.",
+			},
+			"apns_private_key": {
+				Type:        types.StringType,
+				Optional:    true,
+				Sensitive:   true,
+				Description: "The Apple Push Notification service private key.",
+			},
+			"apns_use_sandbox_endpoint": {
+				Type:        types.BoolType,
+				Optional:    true,
+				Computed:    true,
+				Description: "The Apple Push Notification service sandbox endpoint.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					DefaultAttribute(types.Bool{Value: false}),
+				},
 			},
 		},
 		MarkdownDescription: "The `ably_app` resource allows you to create and manage Ably Apps.",
@@ -81,11 +112,15 @@ func (r resourceApp) Create(ctx context.Context, req tfsdk_resource.CreateReques
 
 	// Generates an API request body from the plan values
 	app_values := ably_control_go.App{
-		ID:        plan.ID.Value,
-		AccountID: plan.AccountID.Value,
-		Name:      plan.Name.Value,
-		Status:    plan.Status.Value,
-		TLSOnly:   plan.TLSOnly.Value,
+		ID:                     plan.ID.Value,
+		AccountID:              plan.AccountID.Value,
+		Name:                   plan.Name.Value,
+		Status:                 plan.Status.Value,
+		TLSOnly:                plan.TLSOnly.Value,
+		FcmKey:                 plan.FcmKey.Value,
+		ApnsCertificate:        plan.ApnsCertificate.Value,
+		ApnsPrivateKey:         plan.ApnsPrivateKey.Value,
+		ApnsUseSandboxEndpoint: plan.ApnsUseSandboxEndpoint.Value,
 	}
 
 	// Creates a new Ably App by invoking the CreateApp function from the Client Library
@@ -100,12 +135,19 @@ func (r resourceApp) Create(ctx context.Context, req tfsdk_resource.CreateReques
 
 	// Maps response body to resource schema attributes.
 	resp_apps := AblyApp{
-		ID:        types.String{Value: ably_app.ID},
-		AccountID: types.String{Value: ably_app.AccountID},
-		Name:      types.String{Value: ably_app.Name},
-		Status:    types.String{Value: ably_app.Status},
-		TLSOnly:   types.Bool{Value: ably_app.TLSOnly},
+		AccountID:              types.String{Value: ably_app.AccountID},
+		ID:                     types.String{Value: ably_app.ID},
+		Name:                   types.String{Value: ably_app.Name},
+		Status:                 types.String{Value: ably_app.Status},
+		TLSOnly:                types.Bool{Value: ably_app.TLSOnly},
+		FcmKey:                 plan.FcmKey,
+		ApnsCertificate:        plan.ApnsCertificate,
+		ApnsPrivateKey:         plan.ApnsPrivateKey,
+		ApnsUseSandboxEndpoint: types.Bool{Value: ably_app.ApnsUseSandboxEndpoint},
 	}
+	emptyStringToNull(&resp_apps.FcmKey)
+	emptyStringToNull(&resp_apps.ApnsCertificate)
+	emptyStringToNull(&resp_apps.ApnsPrivateKey)
 
 	// Sets state for the new Ably App.
 	diags = resp.State.Set(ctx, resp_apps)
@@ -144,12 +186,20 @@ func (r resourceApp) Read(ctx context.Context, req tfsdk_resource.ReadRequest, r
 	for _, v := range apps {
 		if v.ID == app_id {
 			resp_apps := AblyApp{
-				ID:        types.String{Value: v.ID},
-				AccountID: types.String{Value: v.AccountID},
-				Name:      types.String{Value: v.Name},
-				Status:    types.String{Value: v.Status},
-				TLSOnly:   types.Bool{Value: v.TLSOnly},
+				AccountID:              types.String{Value: v.AccountID},
+				ID:                     types.String{Value: v.ID},
+				Name:                   types.String{Value: v.Name},
+				Status:                 types.String{Value: v.Status},
+				TLSOnly:                types.Bool{Value: v.TLSOnly},
+				FcmKey:                 state.FcmKey,
+				ApnsCertificate:        state.ApnsCertificate,
+				ApnsPrivateKey:         state.ApnsPrivateKey,
+				ApnsUseSandboxEndpoint: types.Bool{Value: v.ApnsUseSandboxEndpoint},
 			}
+			emptyStringToNull(&resp_apps.FcmKey)
+			emptyStringToNull(&resp_apps.ApnsCertificate)
+			emptyStringToNull(&resp_apps.ApnsPrivateKey)
+
 			// Sets state to app values.
 			diags = resp.State.Set(ctx, &resp_apps)
 
@@ -184,11 +234,15 @@ func (r resourceApp) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 
 	// Instantiates struct of type ably_control_go.App and sets values to output of plan
 	app_values := ably_control_go.App{
-		ID:        plan.ID.Value,
-		AccountID: plan.AccountID.Value,
-		Name:      plan.Name.Value,
-		Status:    plan.Status.Value,
-		TLSOnly:   plan.TLSOnly.Value,
+		ID:                     plan.ID.Value,
+		AccountID:              plan.AccountID.Value,
+		Name:                   plan.Name.Value,
+		Status:                 plan.Status.Value,
+		TLSOnly:                plan.TLSOnly.Value,
+		FcmKey:                 plan.FcmKey.Value,
+		ApnsCertificate:        plan.ApnsCertificate.Value,
+		ApnsPrivateKey:         plan.ApnsPrivateKey.Value,
+		ApnsUseSandboxEndpoint: plan.ApnsUseSandboxEndpoint.Value,
 	}
 
 	// Updates an Ably App. The function invokes the Client Library UpdateApp method.
@@ -202,12 +256,19 @@ func (r resourceApp) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 	}
 
 	resp_apps := AblyApp{
-		ID:        types.String{Value: ably_app.ID},
-		AccountID: types.String{Value: ably_app.AccountID},
-		Name:      types.String{Value: ably_app.Name},
-		Status:    types.String{Value: ably_app.Status},
-		TLSOnly:   types.Bool{Value: ably_app.TLSOnly},
+		ID:                     types.String{Value: ably_app.ID},
+		AccountID:              types.String{Value: ably_app.AccountID},
+		Name:                   types.String{Value: ably_app.Name},
+		Status:                 types.String{Value: ably_app.Status},
+		TLSOnly:                types.Bool{Value: ably_app.TLSOnly},
+		FcmKey:                 plan.FcmKey,
+		ApnsCertificate:        plan.ApnsCertificate,
+		ApnsPrivateKey:         plan.ApnsPrivateKey,
+		ApnsUseSandboxEndpoint: types.Bool{Value: ably_app.ApnsUseSandboxEndpoint},
 	}
+	emptyStringToNull(&resp_apps.FcmKey)
+	emptyStringToNull(&resp_apps.ApnsCertificate)
+	emptyStringToNull(&resp_apps.ApnsPrivateKey)
 
 	// Sets state to new app.
 	diags = resp.State.Set(ctx, resp_apps)
