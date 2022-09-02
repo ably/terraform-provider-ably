@@ -6,3 +6,7 @@ terraform {
     }
   }
 }
+
+provider "ably" {
+  token = <Control API token>
+}

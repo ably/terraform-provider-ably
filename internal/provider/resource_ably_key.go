@@ -68,6 +68,7 @@ func (r resourceKeyType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 				Description: "Unix timestamp representing the date and time of the last modification of the key.",
 			},
 		},
+		MarkdownDescription: "The `ably_key` resource allows you to create and manage Ably API keys.",
 	}, nil
 }
 
