@@ -64,6 +64,7 @@ func (r resourceNamespaceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 				Description: "If true, messages received on a channel will contain a unique timeserial that can be referenced by later messages for use with message interactions.",
 			},
 		},
+		MarkdownDescription: "The ably_namespace resource allows you to manage namespaces for channel rules in Ably. Read more in the Ably documentation: https://ably.com/docs/general/channel-rules-namespaces.",
 	}, nil
 }
 
