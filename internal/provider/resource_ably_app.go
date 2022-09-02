@@ -45,6 +45,7 @@ func (r resourceAppType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 				Description: "Enforce TLS for all connections. This setting overrides any channel setting.",
 			},
 		},
+		MarkdownDescription: "The Ably App resource allows you to create and manage Ably Apps.",
 	}, nil
 }
 
