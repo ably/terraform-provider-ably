@@ -2,12 +2,12 @@
 page_title: "ably_app Resource - terraform-provider-ably"
 subcategory: ""
 description: |-
-  The Ably App resource allows you to create and manage Ably Apps.
+  The ably_app resource allows you to create and manage Ably Apps.
 ---
 
 # ably_app (Resource)
 
-The Ably App resource allows you to create and manage Ably Apps.
+The `ably_app` resource allows you to create and manage Ably Apps.
 
 
 ## Example Usage
