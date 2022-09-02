@@ -11,9 +11,12 @@
 #
 name: release
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version, without v prefix, appended to v to locate tag'
+        required: true
+  
 permissions:
   contents: write
 jobs:
@@ -23,6 +26,8 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: v${{ github.event.inputs.version }}
       -
         name: Unshallow
         run: git fetch --prune --unshallow
