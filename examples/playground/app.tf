@@ -9,7 +9,3 @@ resource "ably_app" "app1" {
   status   = "enabled"
   tls_only = true
 }
-
-resource "ably_app" "app21" {
-  name = "ably-tf-provider-app-0021"
-}
