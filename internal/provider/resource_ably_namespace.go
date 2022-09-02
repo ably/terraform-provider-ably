@@ -36,32 +36,56 @@ func (r resourceNamespaceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 			"authenticated": {
 				Type:        types.BoolType,
 				Optional:    true,
+				Computed:    true,
 				Description: "Require clients to be authenticated to use channels in this namespace.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					DefaultAttribute(types.Bool{Value: false}),
+				},
 			},
 			"persisted": {
 				Type:        types.BoolType,
 				Optional:    true,
+				Computed:    true,
 				Description: "If true, messages will be stored for 24 hours.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					DefaultAttribute(types.Bool{Value: false}),
+				},
 			},
 			"persist_last": {
 				Type:        types.BoolType,
 				Optional:    true,
+				Computed:    true,
 				Description: "If true, the last message on each channel will persist for 365 days.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					DefaultAttribute(types.Bool{Value: false}),
+				},
 			},
 			"push_enabled": {
 				Type:        types.BoolType,
 				Optional:    true,
+				Computed:    true,
 				Description: "If true, publishing messages with a push payload in the extras field is permitted.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					DefaultAttribute(types.Bool{Value: false}),
+				},
 			},
 			"tls_only": {
 				Type:        types.BoolType,
 				Optional:    true,
+				Computed:    true,
 				Description: "If true, only clients that are connected using TLS will be permitted to subscribe.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					DefaultAttribute(types.Bool{Value: false}),
+				},
 			},
 			"expose_timeserial": {
 				Type:        types.BoolType,
 				Optional:    true,
+				Computed:    true,
 				Description: "If true, messages received on a channel will contain a unique timeserial that can be referenced by later messages for use with message interactions.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					DefaultAttribute(types.Bool{Value: false}),
+				},
 			},
 		},
 	}, nil
