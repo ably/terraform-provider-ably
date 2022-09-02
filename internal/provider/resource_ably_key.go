@@ -2,16 +2,16 @@ package ably_control
 
 import (
 	"context"
-	"strings"
 	"fmt"
+	"strings"
 
+	ably_control_go "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
-	ably_control_go "github.com/ably/ably-control-go"
 	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type resourceKeyType struct{}
@@ -65,6 +65,7 @@ func (r resourceKeyType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 				Description: "Unix timestamp representing the date and time of the last modification of the key.",
 			},
 		},
+		MarkdownDescription: "The `ably_key` resource allows you to create and manage Ably API keys.",
 	}, nil
 }
 
