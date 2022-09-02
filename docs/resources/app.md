@@ -2,12 +2,12 @@
 page_title: "ably_app Resource - terraform-provider-ably"
 subcategory: ""
 description: |-
-  The ably_app resource allows you to create and manage Ably Apps.
+  The ably_app resource allows you to create and manage Ably Apps and configure Ably Push notifications. Read more about Ably Push Notifications in Ably documentation: https://ably.com/docs/general/push
 ---
 
 # ably_app (Resource)
 
-The `ably_app` resource allows you to create and manage Ably Apps.
+The `ably_app` resource allows you to create and manage Ably Apps and configure Ably Push notifications. Read more about Ably Push Notifications in Ably documentation: https://ably.com/docs/general/push
 
 
 ## Example Usage
@@ -39,6 +39,10 @@ resource "ably_app" "app1" {
 
 ### Optional
 
+- `apns_certificate` (String, Sensitive) The Apple Push Notification service certificate.
+- `apns_private_key` (String, Sensitive) The Apple Push Notification service private key.
+- `apns_use_sandbox_endpoint` (Boolean) The Apple Push Notification service sandbox endpoint.
+- `fcm_key` (String, Sensitive) The Firebase Cloud Messaging key.
 - `status` (String) The application status. Disabled applications will not accept new connections and will return an error to all clients. When creating a new application, ensure that its status is set to enabled.
 - `tls_only` (Boolean) Enforce TLS for all connections. This setting overrides any channel setting.
 
