@@ -16,7 +16,8 @@ With the Ably Terraform Provider you can create and manage:
 * API keys for an Ably app
 * [Namespaces](https://ably.com/docs/general/channel-rules-namespaces) (for channel rules)
 * [Queues](https://ably.com/docs/general/queues)
-* [Integration rules](https://ably.com/docs/general/integrations)
+
+Support for [Integration rules](https://ably.com/docs/general/integrations) will be added in a future versions.
 
 Repetitive operations such as creating, updating or deleting Ably apps, enumerating queues, creation of rules, and other tasks that would be time-consuming to carry out manually, can be automated using this provider. 
 
@@ -37,7 +38,5 @@ To start using the Ably Terraform Provider you need to authenticate with Ably. Y
 4. (Optional) Alternatively you can also specify Control API token in the provider configuration directly. This is not recommended and risks secret leakage should this file ever be committed to a public version control system.
 
 {{ tffile "examples/resources/main_alternative_auth.tf" }}
-
-## Schema
 
 {{ .SchemaMarkdown | trimspace }}
