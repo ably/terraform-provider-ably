@@ -14,9 +14,9 @@
 1. Merge all pull requests containing changes intended for this release to `main` branch
 2. Prepare a [Release Branch](#release-branch) and a corresponding pull request, obtain approval from reviewers and then merge to `main` branch
 3. Push Git [Version Tag](#version-tag)
-4. Create GitHub release
-5. New Github release will trigger the Release Workflow
-6. It will also send a webhook to Terraform Registry, which will in turn ingest the new release
+4. Trigger the Release Workflow to create a draft Github Release
+5. Review the draft GitHub release and publish it if everything is ok
+6. Publishing a Github release will send a webhook to Terraform Registry, which will in turn ingest the new release
 
 N.B. Releasing and publishing Terraform provider follows a process that is different from the [general release guidance for Ably SDKs](https://github.com/ably/engineering/blob/main/sdk/releases.md) due to the requirements of Terraform Registry.
 
