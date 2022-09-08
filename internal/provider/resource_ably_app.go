@@ -76,7 +76,7 @@ func (r resourceAppType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 				},
 			},
 		},
-		MarkdownDescription: "The `ably_app` resource allows you to create and manage Ably Apps "+
+		MarkdownDescription: "The `ably_app` resource allows you to create and manage Ably Apps " +
 			"and configure Ably Push notifications. Read more about Ably Push Notifications in Ably documentation: https://ably.com/docs/general/push",
 	}, nil
 }

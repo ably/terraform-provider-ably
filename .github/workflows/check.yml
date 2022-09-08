@@ -1,0 +1,48 @@
+# Based upon:
+#   https://github.com/actions/starter-workflows/blob/main/ci/go.yml
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go-version: [1.18, 1.19]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+
+      - name: Set up Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Download Packages
+        run: go get -t -v
+
+      - name: Format
+        run: if [ "$(gofmt -l . | wc -l)" -gt 0 ]; then exit 1; fi
+
+      - name: Vet
+        run: go vet
+
+      - name: Build
+        run: |
+          mkdir bin
+          go build -v -o bin
+
+      - name: Test
+        run: |
+          echo "provider_installation { dev_overrides { \"github.com/ably/ably\" = \"$PWD/bin\", } direct {} }" > ~/.terraformrc
+          TF_ACC=1 go test -v ./...
+        env:
+          ABLY_ACCOUNT_TOKEN: ${{ secrets.ABLY_ACCOUNT_TOKEN }}
+          ABLY_URL: 'https://staging-control.ably-dev.net/v1'
