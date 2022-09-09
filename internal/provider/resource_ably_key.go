@@ -24,11 +24,17 @@ func (r resourceKeyType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 				Type:        types.StringType,
 				Computed:    true,
 				Description: "The key ID.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					tfsdk_resource.UseStateForUnknown(),
+				},
 			},
 			"app_id": {
 				Type:        types.StringType,
 				Required:    true,
 				Description: "The Ably application ID which this key is associated with.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					tfsdk_resource.RequiresReplace(),
+				},
 			},
 			"name": {
 				Type:        types.StringType,
@@ -56,11 +62,17 @@ func (r resourceKeyType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 				Type:        types.Int64Type,
 				Computed:    true,
 				Description: "Enforce TLS for all connections. This setting overrides any channel setting.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					tfsdk_resource.UseStateForUnknown(),
+				},
 			},
 			"key": {
 				Type:        types.StringType,
 				Computed:    true,
 				Description: "The complete API key including API secret.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					tfsdk_resource.UseStateForUnknown(),
+				},
 			},
 			"modified": {
 				Type:        types.Int64Type,
