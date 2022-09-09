@@ -24,6 +24,9 @@ func (r resourceNamespaceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 				Type:        types.StringType,
 				Required:    true,
 				Description: "The application ID.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					tfsdk_resource.RequiresReplace(),
+				},
 			},
 			"id": {
 				Type:        types.StringType,

@@ -24,6 +24,9 @@ func (r resourceQueueType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 				Type:        types.StringType,
 				Required:    true,
 				Description: "The application ID.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					tfsdk_resource.RequiresReplace(),
+				},
 			},
 			"id": {
 				Type:        types.StringType,
