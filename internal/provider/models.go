@@ -1,8 +1,39 @@
 package ably_control
 
 import (
+	ably_control_go "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
+
+// Ably Rule
+type AblyRuleSource struct {
+	ChannelFilter types.String               `tfsdk:"channel_filter"`
+	Type          ably_control_go.SourceType `tfsdk:"type"`
+}
+
+type AblyRuleTargetKinesis struct {
+	Region       string                 `tfsdk:"region"`
+	StreamName   string                 `tfsdk:"stream_name"`
+	PartitionKey string                 `tfsdk:"partition_key"`
+	Enveloped    bool                   `tfsdk:"enveloped"`
+	Format       ably_control_go.Format `tfsdk:"format"`
+}
+
+type AwsAuth struct {
+	AuthenticationMode types.String `tfsdk:"mode"`
+	RoleArn            types.String `tfsdk:"role_arn"`
+	AccessKeyId        types.String `tfsdk:"access_key_id"`
+	SecretAccessKey    types.String `tfsdk:"secret_access_key"`
+}
+
+type AblyRuleKinesis struct {
+	ID      types.String          `tfsdk:"id"`
+	AppID   types.String          `tfsdk:"app_id"`
+	Status  types.String          `tfsdk:"status"`
+	Source  AblyRuleSource        `tfsdk:"source"`
+	Target  AblyRuleTargetKinesis `tfsdk:"target"`
+	AwsAuth AwsAuth               `tfsdk:"aws_authentication"`
+}
 
 // Ably App
 type AblyApp struct {
