@@ -102,3 +102,20 @@ func emptyStringToNull(v *types.String) {
 		v.Null = true
 	}
 }
+
+type AblyRuleSqs struct {
+	ID      types.String      `tfsdk:"id"`
+	AppID   types.String      `tfsdk:"app_id"`
+	Status  types.String      `tfsdk:"status"`
+	Source  AblyRuleSource    `tfsdk:"source"`
+	Target  AblyRuleTargetSqs `tfsdk:"target"`
+	AwsAuth AwsAuth           `tfsdk:"aws_authentication"`
+}
+
+type AblyRuleTargetSqs struct {
+	Region       string                 `tfsdk:"region"`
+	AwsAccountID string                 `tfsdk:"aws_account_id"`
+	QueueName    string                 `tfsdk:"queue_name"`
+	Enveloped    bool                   `tfsdk:"enveloped"`
+	Format       ably_control_go.Format `tfsdk:"format"`
+}

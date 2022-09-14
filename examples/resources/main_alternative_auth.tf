@@ -8,5 +8,5 @@ terraform {
 }
 
 provider "ably" {
-  token = <Control API token>
+  token = "<Control API token>"
 }
