@@ -18,230 +18,49 @@ type resourceRuleKinesisType struct{}
 
 // Get Rule Resource schema
 func (r resourceRuleKinesisType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:        types.StringType,
-				Computed:    true,
-				Description: "The rule ID.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.UseStateForUnknown(),
-				},
+	return GetRuleSchema(
+		map[string]tfsdk.Attribute{
+			"region": {
+				Type:     types.StringType,
+				Optional: true,
 			},
-			"app_id": {
-				Type:        types.StringType,
-				Required:    true,
-				Description: "The Ably application ID.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.RequiresReplace(),
-				},
+			"stream_name": {
+				Type:     types.StringType,
+				Optional: true,
 			},
-			"status": {
-				Type:        types.StringType,
-				Optional:    true,
-				Description: "The status of the rule. Rules can be enabled or disabled.",
+			"partition_key": {
+				Type:     types.StringType,
+				Optional: true,
 			},
-			"source": {
-				Required:    true,
-				Description: "object (rule_source)",
-				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-					"channel_filter": {
-						Type:     types.StringType,
-						Required: true,
-					},
-					"type": {
-						Type:     types.StringType,
-						Required: true,
-					},
-				}),
+			"enveloped": {
+				Type:     types.BoolType,
+				Optional: true,
 			},
-			"aws_authentication": {
-				Required:    true,
-				Description: "object (rule_source)",
-				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-					"mode": {
-						Type:     types.StringType,
-						Required: true,
-						PlanModifiers: []tfsdk.AttributePlanModifier{
-							tfsdk_resource.RequiresReplace(),
-						},
-					},
-					"role_arn": {
-						Type:     types.StringType,
-						Optional: true,
-					},
-					"access_key_id": {
-						Type:      types.StringType,
-						Optional:  true,
-						Sensitive: true,
-					},
-					"secret_access_key": {
-						Type:      types.StringType,
-						Optional:  true,
-						Sensitive: true,
-					},
-				}),
+			"format": {
+				Type:     types.StringType,
+				Optional: true,
 			},
-			"target": {
-				Required:    true,
-				Description: "object (rule_source)",
-				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-					"region": {
-						Type:     types.StringType,
-						Optional: true,
-					},
-					"stream_name": {
-						Type:     types.StringType,
-						Optional: true,
-					},
-					"partition_key": {
-						Type:     types.StringType,
-						Optional: true,
-					},
-					"enveloped": {
-						Type:     types.BoolType,
-						Optional: true,
-					},
-					"format": {
-						Type:     types.StringType,
-						Optional: true,
-					},
-				}),
-			},
+			"authentication": GetAwsAuthSchema(),
 		},
-	}, nil
+	), nil
 }
 
-func gen_plan_kinesis_target_config(plan AblyRuleKinesis, req_aws_auth ably_control_go.AwsAuthentication) ably_control_go.Target {
+func gen_plan_kinesis_target_config(plan AblyRule, req_aws_auth ably_control_go.AwsAuthentication) ably_control_go.Target {
+	var target_config ably_control_go.Target
 
-	target_config := &ably_control_go.AwsKinesisTarget{
-		Region:         plan.Target.Region,
-		StreamName:     plan.Target.StreamName,
-		PartitionKey:   plan.Target.PartitionKey,
-		Enveloped:      plan.Target.Enveloped,
-		Format:         format(plan.Target.Format),
-		Authentication: req_aws_auth,
+	switch target := plan.Target.(type) {
+	case *AblyRuleTargetKinesis:
+		target_config = &ably_control_go.AwsKinesisTarget{
+			Region:         target.Region,
+			StreamName:     target.StreamName,
+			PartitionKey:   target.PartitionKey,
+			Enveloped:      target.Enveloped,
+			Format:         format(target.Format),
+			Authentication: req_aws_auth,
+		}
 	}
 
 	return target_config
-}
-
-// Get Plan Values
-func get_plan_kinesis_values(plan AblyRuleKinesis) ably_control_go.NewRule {
-	var req_aws_auth ably_control_go.AwsAuthentication
-
-	assume_role_type := types.String{
-		Value: "assumeRole",
-	}
-	credentials_type := types.String{
-		Value: "credentials",
-	}
-
-	if plan.AwsAuth.AuthenticationMode.Value == assume_role_type.Value {
-		req_aws_auth = ably_control_go.AwsAuthentication{
-			Authentication: &ably_control_go.AuthenticationModeAssumeRole{
-				AssumeRoleArn: plan.AwsAuth.RoleArn.Value,
-			},
-		}
-	} else if plan.AwsAuth.AuthenticationMode.Value == credentials_type.Value {
-		req_aws_auth = ably_control_go.AwsAuthentication{
-			Authentication: &ably_control_go.AuthenticationModeCredentials{
-				AccessKeyId:     plan.AwsAuth.AccessKeyId.Value,
-				SecretAccessKey: plan.AwsAuth.SecretAccessKey.Value,
-			},
-		}
-	}
-
-	rule_values := ably_control_go.NewRule{
-		Status:      plan.Status.Value,
-		RequestMode: ably_control_go.Single, // This will always be single for Kinesis rule type.
-		Source: ably_control_go.Source{
-			ChannelFilter: plan.Source.ChannelFilter.Value,
-			Type:          source_type(plan.Source.Type),
-		},
-		Target: gen_plan_kinesis_target_config(plan, req_aws_auth),
-	}
-
-	return rule_values
-}
-
-// Get Response Values
-func get_response_values(ably_rule *ably_control_go.Rule, plan AblyRuleKinesis) AblyRuleKinesis {
-	// Maps response body to resource schema attributes.
-	channel_filter := types.String{
-		Value: ably_rule.Source.ChannelFilter,
-	}
-
-	resp_source := AblyRuleSource{
-		ChannelFilter: channel_filter,
-		Type:          ably_rule.Source.Type,
-	}
-
-	var resp_target AblyRuleTargetKinesis
-	var resp_aws_auth AwsAuth
-	var resp_access_key_id types.String
-	var resp_secret_access_key types.String
-	var resp_role_arn types.String
-
-	if v, ok := ably_rule.Target.(*ably_control_go.AwsKinesisTarget); ok {
-		resp_target = AblyRuleTargetKinesis{
-			Region:       v.Region,
-			StreamName:   v.StreamName,
-			PartitionKey: v.PartitionKey,
-			Enveloped:    v.Enveloped,
-			Format:       v.Format,
-		}
-		if a, ok := v.Authentication.Authentication.(*ably_control_go.AuthenticationModeCredentials); ok {
-
-			resp_access_key_id = types.String{
-				Value: a.AccessKeyId,
-			}
-
-			resp_role_arn = types.String{
-				Null: true,
-			}
-
-			resp_aws_auth = AwsAuth{
-
-				AuthenticationMode: plan.AwsAuth.AuthenticationMode,
-				AccessKeyId:        resp_access_key_id,
-				SecretAccessKey:    plan.AwsAuth.SecretAccessKey,
-				RoleArn:            resp_role_arn,
-			}
-
-		} else if a, ok := v.Authentication.Authentication.(*ably_control_go.AuthenticationModeAssumeRole); ok {
-
-			resp_access_key_id = types.String{
-				Null: true,
-			}
-
-			resp_secret_access_key = types.String{
-				Null: true,
-			}
-
-			resp_role_arn = types.String{
-				Value: a.AssumeRoleArn,
-			}
-
-			resp_aws_auth = AwsAuth{
-				AuthenticationMode: plan.AwsAuth.AuthenticationMode,
-				RoleArn:            resp_role_arn,
-				AccessKeyId:        resp_access_key_id,
-				SecretAccessKey:    resp_secret_access_key,
-			}
-		}
-	}
-
-	resp_rule := AblyRuleKinesis{
-		ID:      types.String{Value: ably_rule.ID},
-		AppID:   types.String{Value: ably_rule.AppID},
-		Status:  types.String{Value: ably_rule.Status},
-		Source:  resp_source,
-		Target:  resp_target,
-		AwsAuth: resp_aws_auth,
-	}
-
-	return resp_rule
 }
 
 func source_type(mode ably_control_go.SourceType) ably_control_go.SourceType {
@@ -293,14 +112,15 @@ func (r resourceRule) Create(ctx context.Context, req tfsdk_resource.CreateReque
 	}
 
 	// Gets plan values
-	var plan AblyRuleKinesis
-	diags := req.Plan.Get(ctx, &plan)
+	var p AblyRuleDecoder[*AblyRuleTargetKinesis]
+	diags := req.Plan.Get(ctx, &p)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	plan_values := get_plan_kinesis_values(plan)
+	plan := p.Rule()
+	plan_values := get_plan_rule(plan)
 
 	// Creates a new Ably Rule by invoking the CreateRule function from the Client Library
 	rule, err := r.p.client.CreateRule(plan.AppID.Value, &plan_values)
@@ -312,7 +132,7 @@ func (r resourceRule) Create(ctx context.Context, req tfsdk_resource.CreateReque
 		return
 	}
 
-	response_values := get_response_values(&rule, plan)
+	response_values := get_rule_response(&rule, &plan)
 
 	// Sets state for the new Ably App.
 	diags = resp.State.Set(ctx, response_values)
@@ -325,13 +145,15 @@ func (r resourceRule) Create(ctx context.Context, req tfsdk_resource.CreateReque
 // Read resource
 func (r resourceRule) Read(ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
-	var state AblyRuleKinesis
-	diags := req.State.Get(ctx, &state)
+	var s AblyRuleDecoder[*AblyRuleTargetKinesis]
+	diags := req.State.Get(ctx, &s)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	state := s.Rule()
 
 	// Gets the Ably App ID and Ably Rule ID value for the resource
 	app_id := state.AppID.Value
@@ -340,7 +162,7 @@ func (r resourceRule) Read(ctx context.Context, req tfsdk_resource.ReadRequest, 
 	// Get Rule data
 	rule, _ := r.p.client.Rule(app_id, rule_id)
 
-	response_values := get_response_values(&rule, state)
+	response_values := get_rule_response(&rule, &state)
 
 	// Sets state to app values.
 	diags = resp.State.Set(ctx, &response_values)
@@ -355,23 +177,26 @@ func (r resourceRule) Read(ctx context.Context, req tfsdk_resource.ReadRequest, 
 // Update resource
 func (r resourceRule) Update(ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
 	// Gets plan values
-	var plan AblyRuleKinesis
-	diags := req.Plan.Get(ctx, &plan)
+	var p AblyRuleDecoder[*AblyRuleTargetKinesis]
+	diags := req.Plan.Get(ctx, &p)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	var state AblyRuleKinesis
-	diags = req.State.Get(ctx, &state)
+	var s AblyRuleDecoder[*AblyRuleTargetKinesis]
+	diags = req.State.Get(ctx, &s)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	rule_values := get_plan_kinesis_values(plan)
+	state := s.Rule()
+	plan := p.Rule()
+
+	rule_values := get_plan_rule(plan)
 
 	// Gets the Ably App ID and Ably Rule ID value for the resource
 	app_id := state.AppID.Value
@@ -380,7 +205,7 @@ func (r resourceRule) Update(ctx context.Context, req tfsdk_resource.UpdateReque
 	// Update Ably Rule
 	rule, _ := r.p.client.UpdateRule(app_id, rule_id, &rule_values)
 
-	response_values := get_response_values(&rule, plan)
+	response_values := get_rule_response(&rule, &plan)
 
 	// Sets state to app values.
 	diags = resp.State.Set(ctx, &response_values)
@@ -394,13 +219,15 @@ func (r resourceRule) Update(ctx context.Context, req tfsdk_resource.UpdateReque
 // Delete resource
 func (r resourceRule) Delete(ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
-	var state AblyRuleKinesis
-	diags := req.State.Get(ctx, &state)
+	var s AblyRuleDecoder[*AblyRuleTargetKinesis]
+	diags := req.State.Get(ctx, &s)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	state := s.Rule()
 
 	// Gets the Ably App ID and Ably Rule ID value for the resource
 	app_id := state.AppID.Value
