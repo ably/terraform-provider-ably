@@ -18,7 +18,6 @@ description: |-
 ### Required
 
 - `app_id` (String) The Ably application ID.
-- `aws_authentication` (Attributes) object (rule_source) (see [below for nested schema](#nestedatt--aws_authentication))
 - `source` (Attributes) object (rule_source) (see [below for nested schema](#nestedatt--source))
 - `target` (Attributes) object (rule_source) (see [below for nested schema](#nestedatt--target))
 
@@ -29,20 +28,6 @@ description: |-
 ### Read-Only
 
 - `id` (String) The rule ID.
-
-<a id="nestedatt--aws_authentication"></a>
-### Nested Schema for `aws_authentication`
-
-Required:
-
-- `mode` (String)
-
-Optional:
-
-- `access_key_id` (String, Sensitive)
-- `role_arn` (String)
-- `secret_access_key` (String, Sensitive)
-
 
 <a id="nestedatt--source"></a>
 ### Nested Schema for `source`
@@ -56,6 +41,10 @@ Required:
 <a id="nestedatt--target"></a>
 ### Nested Schema for `target`
 
+Required:
+
+- `authentication` (Attributes) object (rule_source) (see [below for nested schema](#nestedatt--target--authentication))
+
 Optional:
 
 - `enveloped` (Boolean)
@@ -63,5 +52,18 @@ Optional:
 - `partition_key` (String)
 - `region` (String)
 - `stream_name` (String)
+
+<a id="nestedatt--target--authentication"></a>
+### Nested Schema for `target.authentication`
+
+Required:
+
+- `mode` (String) Authentication method. Use 'credentials' or 'assumeRole'
+
+Optional:
+
+- `access_key_id` (String, Sensitive) The AWS key ID for the AWS IAM user
+- `role_arn` (String) If you are using the 'ARN of an assumable role' authentication method, this is your Assume Role ARN
+- `secret_access_key` (String, Sensitive) The AWS secret key for the AWS IAM user
 
 
