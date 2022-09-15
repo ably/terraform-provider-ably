@@ -11,7 +11,7 @@ resource "ably_rule_sqs" "rule0" {
     queue_name     = "aaaaaa",
     enveloped      = false,
     format         = "json"
-    aws_authentication = {
+    authentication = {
       mode     = "assumeRole",
       role_arn = "cccc"
     }
