@@ -131,3 +131,10 @@ type AblyRuleTargetSqs struct {
 	Enveloped    bool                   `tfsdk:"enveloped"`
 	Format       ably_control_go.Format `tfsdk:"format"`
 }
+
+type AblyRuleTargetLambda struct {
+	Region       string  `tfsdk:"region"`
+	FunctionName string  `tfsdk:"function_name"`
+	AwsAuth      AwsAuth `tfsdk:"authentication"`
+	Enveloped    bool    `tfsdk:"enveloped"`
+}

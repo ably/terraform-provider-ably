@@ -16,6 +16,8 @@ func get_plan_aws_auth(plan AblyRule) ably_control_go.AwsAuthentication {
 		auth = t.AwsAuth
 	case *AblyRuleTargetSqs:
 		auth = t.AwsAuth
+	case *AblyRuleTargetLambda:
+		auth = t.AwsAuth
 	}
 
 	if auth.AuthenticationMode.Value == "assumeRole" {
@@ -59,6 +61,13 @@ func get_plan_rule(plan AblyRule) ably_control_go.NewRule {
 			Enveloped:      t.Enveloped,
 			Format:         t.Format,
 		}
+	case *AblyRuleTargetLambda:
+		target = &ably_control_go.AwsLambdaTarget{
+			Region:         t.Region,
+			FunctionName:   t.FunctionName,
+			Authentication: get_plan_aws_auth(plan),
+			Enveloped:      t.Enveloped,
+		}
 	}
 
 	rule_values := ably_control_go.NewRule{
@@ -84,6 +93,8 @@ func get_aws_auth(auth *ably_control_go.AwsAuthentication, plan *AblyRule) AwsAu
 	case *AblyRuleTargetKinesis:
 		plan_auth = p.AwsAuth
 	case *AblyRuleTargetSqs:
+		plan_auth = p.AwsAuth
+	case *AblyRuleTargetLambda:
 		plan_auth = p.AwsAuth
 	}
 
@@ -130,6 +141,13 @@ func get_rule_response(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule
 			AwsAuth:      get_aws_auth(&v.Authentication, plan),
 			Enveloped:    v.Enveloped,
 			Format:       v.Format,
+		}
+	case *ably_control_go.AwsLambdaTarget:
+		resp_target = &AblyRuleTargetLambda{
+			Region:       v.Region,
+			FunctionName: v.FunctionName,
+			AwsAuth:      get_aws_auth(&v.Authentication, plan),
+			Enveloped:    v.Enveloped,
 		}
 	}
 

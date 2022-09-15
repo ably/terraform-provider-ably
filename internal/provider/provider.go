@@ -125,6 +125,7 @@ func (p *provider) GetResources(_ context.Context) (map[string]tfsdk_provider.Re
 		"ably_queue":        resourceQueueType{},
 		"ably_rule_kinesis": resourceRuleKinesisType{},
 		"ably_rule_sqs":     resourceRuleSqsType{},
+		"ably_rule_lambda":  resourceRuleLambdaType{},
 	}, nil
 }
 
