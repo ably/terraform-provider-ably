@@ -5,36 +5,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// Ably Rule
-type AblyRuleSource struct {
-	ChannelFilter types.String               `tfsdk:"channel_filter"`
-	Type          ably_control_go.SourceType `tfsdk:"type"`
-}
-
-type AblyRuleTargetKinesis struct {
-	Region       string                 `tfsdk:"region"`
-	StreamName   string                 `tfsdk:"stream_name"`
-	PartitionKey string                 `tfsdk:"partition_key"`
-	Enveloped    bool                   `tfsdk:"enveloped"`
-	Format       ably_control_go.Format `tfsdk:"format"`
-}
-
-type AwsAuth struct {
-	AuthenticationMode types.String `tfsdk:"mode"`
-	RoleArn            types.String `tfsdk:"role_arn"`
-	AccessKeyId        types.String `tfsdk:"access_key_id"`
-	SecretAccessKey    types.String `tfsdk:"secret_access_key"`
-}
-
-type AblyRuleKinesis struct {
-	ID      types.String          `tfsdk:"id"`
-	AppID   types.String          `tfsdk:"app_id"`
-	Status  types.String          `tfsdk:"status"`
-	Source  AblyRuleSource        `tfsdk:"source"`
-	Target  AblyRuleTargetKinesis `tfsdk:"target"`
-	AwsAuth AwsAuth               `tfsdk:"aws_authentication"`
-}
-
 // Ably App
 type AblyApp struct {
 	AccountID              types.String `tfsdk:"account_id"`
@@ -103,19 +73,61 @@ func emptyStringToNull(v *types.String) {
 	}
 }
 
+// Ably Rule
+type AblyRuleSource struct {
+	ChannelFilter types.String               `tfsdk:"channel_filter"`
+	Type          ably_control_go.SourceType `tfsdk:"type"`
+}
+
+func (r *AblyRuleDecoder[_]) Rule() AblyRule {
+	return AblyRule{
+		ID:     r.ID,
+		AppID:  r.AppID,
+		Status: r.Status,
+		Source: r.Source,
+		Target: r.Target,
+	}
+}
+
+type AblyRuleDecoder[T any] struct {
+	ID     types.String   `tfsdk:"id"`
+	AppID  types.String   `tfsdk:"app_id"`
+	Status types.String   `tfsdk:"status"`
+	Source AblyRuleSource `tfsdk:"source"`
+	Target T              `tfsdk:"target"`
+}
+
+type AblyRule AblyRuleDecoder[any]
+
 type AblyRuleSqs struct {
-	ID      types.String      `tfsdk:"id"`
-	AppID   types.String      `tfsdk:"app_id"`
-	Status  types.String      `tfsdk:"status"`
-	Source  AblyRuleSource    `tfsdk:"source"`
-	Target  AblyRuleTargetSqs `tfsdk:"target"`
-	AwsAuth AwsAuth           `tfsdk:"aws_authentication"`
+	ID     types.String      `tfsdk:"id"`
+	AppID  types.String      `tfsdk:"app_id"`
+	Status types.String      `tfsdk:"status"`
+	Source AblyRuleSource    `tfsdk:"source"`
+	Target AblyRuleTargetSqs `tfsdk:"target"`
+}
+
+type AblyRuleTargetKinesis struct {
+	Region       string                 `tfsdk:"region"`
+	StreamName   string                 `tfsdk:"stream_name"`
+	PartitionKey string                 `tfsdk:"partition_key"`
+	AwsAuth      AwsAuth                `tfsdk:"authentication"`
+	Enveloped    bool                   `tfsdk:"enveloped"`
+	Format       ably_control_go.Format `tfsdk:"format"`
+}
+
+type AwsAuth struct {
+	AuthenticationMode types.String `tfsdk:"mode"`
+	RoleArn            types.String `tfsdk:"role_arn"`
+	AccessKeyId        types.String `tfsdk:"access_key_id"`
+	SecretAccessKey    types.String `tfsdk:"secret_access_key"`
 }
 
 type AblyRuleTargetSqs struct {
 	Region       string                 `tfsdk:"region"`
 	AwsAccountID string                 `tfsdk:"aws_account_id"`
 	QueueName    string                 `tfsdk:"queue_name"`
+	AwsAuth      AwsAuth                `tfsdk:"authentication"`
 	Enveloped    bool                   `tfsdk:"enveloped"`
 	Format       ably_control_go.Format `tfsdk:"format"`
 }

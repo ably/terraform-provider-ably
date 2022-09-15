@@ -10,13 +10,13 @@ import (
 func TestAccAblyRuleSqs(t *testing.T) {
 	app_name := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
 	update_app_name := "acc-test-" + app_name
-	aws_credentials_auth_block := `aws_authentication = {
+	aws_credentials_auth_block := `authentication = {
 		mode = "credentials",
 		access_key_id = "gggg"
 		secret_access_key = "ffff"
 	}`
 
-	aws_assume_role_auth_block := `aws_authentication = {
+	aws_assume_role_auth_block := `authentication = {
 		mode = "assumeRole",
 		role_arn = "cccc"
 	}`
@@ -44,9 +44,9 @@ func TestAccAblyRuleSqs(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_sqs.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_sqs.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_sqs.rule0", "source.type", "channel.message"),
-					resource.TestCheckResourceAttr("ably_rule_sqs.rule0", "aws_authentication.mode", "credentials"),
-					resource.TestCheckResourceAttr("ably_rule_sqs.rule0", "aws_authentication.access_key_id", "gggg"),
-					resource.TestCheckResourceAttr("ably_rule_sqs.rule0", "aws_authentication.secret_access_key", "ffff"),
+					resource.TestCheckResourceAttr("ably_rule_sqs.rule0", "target.authentication.mode", "credentials"),
+					resource.TestCheckResourceAttr("ably_rule_sqs.rule0", "target.authentication.access_key_id", "gggg"),
+					resource.TestCheckResourceAttr("ably_rule_sqs.rule0", "target.authentication.secret_access_key", "ffff"),
 				),
 			},
 			// Update and Read testing of ably_app.app0
@@ -68,8 +68,8 @@ func TestAccAblyRuleSqs(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_sqs.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_sqs.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_sqs.rule0", "source.type", "channel.message"),
-					resource.TestCheckResourceAttr("ably_rule_sqs.rule0", "aws_authentication.mode", "assumeRole"),
-					resource.TestCheckResourceAttr("ably_rule_sqs.rule0", "aws_authentication.role_arn", "cccc"),
+					resource.TestCheckResourceAttr("ably_rule_sqs.rule0", "target.authentication.mode", "assumeRole"),
+					resource.TestCheckResourceAttr("ably_rule_sqs.rule0", "target.authentication.role_arn", "cccc"),
 				),
 			},
 			// Delete testing automatically occurs in TestCase
@@ -116,14 +116,13 @@ resource "ably_rule_sqs" "rule0" {
 	  type           = %[4]q
 	}
 
-	%[5]s
-
 	target = {
 	  region        = %[6]q,
 	  aws_account_id   = %[7]q,
 	  queue_name = %[8]q,
 	  enveloped = %[9]s,
 	  format    = %[10]q
+	  %[5]s
 	}
   }  
 `, appName, ruleStatus, channelFilter, sourceType, awsAuthBlock, targetRegion, awsAccountID, queueName, enveloped, format)
