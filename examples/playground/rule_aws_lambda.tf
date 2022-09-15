@@ -15,5 +15,9 @@ resource "ably_rule_lambda" "rule0" {
       access_key_id     = "hhhh"
       secret_access_key = "ffff"
     }
+    # authentication = {
+    #     mode = "assumeRole",
+    #     role_arn = "cccc"
+    # }
   }
 }
