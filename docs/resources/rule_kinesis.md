@@ -3,12 +3,12 @@
 page_title: "ably_rule_kinesis Resource - terraform-provider-ably"
 subcategory: ""
 description: |-
-  
+  The ably_rule_kinesis resource allows you to create and manage an Ably integration rule for AWS Kinesis. Read more at https://ably.com/docs/general/firehose/kinesis-rule
 ---
 
 # ably_rule_kinesis (Resource)
 
-
+The `ably_rule_kinesis` resource allows you to create and manage an Ably integration rule for AWS Kinesis. Read more at https://ably.com/docs/general/firehose/kinesis-rule
 
 
 

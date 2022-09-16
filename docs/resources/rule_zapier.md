@@ -3,12 +3,12 @@
 page_title: "ably_rule_zapier Resource - terraform-provider-ably"
 subcategory: ""
 description: |-
-  
+  The ably_rule_zapier resource allows you to create and manage an Ably integration rule for Zapier. Read more at https://ably.com/docs/general/webhooks/zapier
 ---
 
 # ably_rule_zapier (Resource)
 
-
+The `ably_rule_zapier` resource allows you to create and manage an Ably integration rule for Zapier. Read more at https://ably.com/docs/general/webhooks/zapier
 
 
 

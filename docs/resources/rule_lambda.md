@@ -3,12 +3,12 @@
 page_title: "ably_rule_lambda Resource - terraform-provider-ably"
 subcategory: ""
 description: |-
-  
+  The ably_rule_lambda resource allows you to create and manage an Ably integration rule for AWS Lambda. Read more at https://ably.com/docs/general/webhooks/aws-lambda
 ---
 
 # ably_rule_lambda (Resource)
 
-
+The `ably_rule_lambda` resource allows you to create and manage an Ably integration rule for AWS Lambda. Read more at https://ably.com/docs/general/webhooks/aws-lambda
 
 
 

@@ -3,12 +3,12 @@
 page_title: "ably_rule_sqs Resource - terraform-provider-ably"
 subcategory: ""
 description: |-
-  
+  The ably_rule_sqs resource allows you to create and manage an Ably integration rule for AWS SQS. Read more at https://ably.com/docs/general/firehose/sqs-rule
 ---
 
 # ably_rule_sqs (Resource)
 
-
+The `ably_rule_sqs` resource allows you to create and manage an Ably integration rule for AWS SQS. Read more at https://ably.com/docs/general/firehose/sqs-rule
 
 
 
