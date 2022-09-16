@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	ably_control_go "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
@@ -50,18 +49,18 @@ func (r resourceRuleSqsType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 	), nil
 }
 
-func gen_plan_sqs_target_config(plan AblyRuleSqs, req_aws_auth ably_control_go.AwsAuthentication) ably_control_go.Target {
-	target_config := &ably_control_go.AwsSqsTarget{
-		Region:         plan.Target.Region,
-		AwsAccountID:   plan.Target.AwsAccountID,
-		QueueName:      plan.Target.QueueName,
-		Enveloped:      plan.Target.Enveloped,
-		Format:         format(plan.Target.Format),
-		Authentication: req_aws_auth,
-	}
+// func gen_plan_sqs_target_config(plan AblyRuleSqs, req_aws_auth ably_control_go.AwsAuthentication) ably_control_go.Target {
+// 	target_config := &ably_control_go.AwsSqsTarget{
+// 		Region:         plan.Target.Region,
+// 		AwsAccountID:   plan.Target.AwsAccountID,
+// 		QueueName:      plan.Target.QueueName,
+// 		Enveloped:      plan.Target.Enveloped,
+// 		Format:         format(plan.Target.Format),
+// 		Authentication: req_aws_auth,
+// 	}
 
-	return target_config
-}
+// 	return target_config
+// }
 
 // New resource instance
 func (r resourceRuleSqsType) NewResource(_ context.Context, p tfsdk_provider.Provider) (tfsdk_resource.Resource, diag.Diagnostics) {
@@ -192,13 +191,15 @@ func (r resourceRuleSqs) Update(ctx context.Context, req tfsdk_resource.UpdateRe
 // Delete resource
 func (r resourceRuleSqs) Delete(ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
-	var state AblyRuleSqs
-	diags := req.State.Get(ctx, &state)
+	var s AblyRuleDecoder[*AblyRuleTargetSqs]
+	diags := req.State.Get(ctx, &s)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	state := s.Rule()
 
 	// Gets the Ably App ID and Ably Rule ID value for the resource
 	app_id := state.AppID.Value
