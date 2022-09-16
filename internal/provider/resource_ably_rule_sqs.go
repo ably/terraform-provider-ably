@@ -49,19 +49,6 @@ func (r resourceRuleSqsType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 	), nil
 }
 
-// func gen_plan_sqs_target_config(plan AblyRuleSqs, req_aws_auth ably_control_go.AwsAuthentication) ably_control_go.Target {
-// 	target_config := &ably_control_go.AwsSqsTarget{
-// 		Region:         plan.Target.Region,
-// 		AwsAccountID:   plan.Target.AwsAccountID,
-// 		QueueName:      plan.Target.QueueName,
-// 		Enveloped:      plan.Target.Enveloped,
-// 		Format:         format(plan.Target.Format),
-// 		Authentication: req_aws_auth,
-// 	}
-
-// 	return target_config
-// }
-
 // New resource instance
 func (r resourceRuleSqsType) NewResource(_ context.Context, p tfsdk_provider.Provider) (tfsdk_resource.Resource, diag.Diagnostics) {
 	return resourceRuleSqs{
