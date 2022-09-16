@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	ably_control_go "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
@@ -45,63 +44,19 @@ func (r resourceRuleKinesisType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 	), nil
 }
 
-func gen_plan_kinesis_target_config(plan AblyRule, req_aws_auth ably_control_go.AwsAuthentication) ably_control_go.Target {
-	var target_config ably_control_go.Target
-
-	switch target := plan.Target.(type) {
-	case *AblyRuleTargetKinesis:
-		target_config = &ably_control_go.AwsKinesisTarget{
-			Region:         target.Region,
-			StreamName:     target.StreamName,
-			PartitionKey:   target.PartitionKey,
-			Enveloped:      target.Enveloped,
-			Format:         format(target.Format),
-			Authentication: req_aws_auth,
-		}
-	}
-
-	return target_config
-}
-
-func source_type(mode ably_control_go.SourceType) ably_control_go.SourceType {
-	switch mode {
-	case "channel.message":
-		return ably_control_go.ChannelMessage
-	case "channel.presence":
-		return ably_control_go.ChannelPresence
-	case "channel.lifecycle":
-		return ably_control_go.ChannelLifeCycle
-	case "channel.occupancy":
-		return ably_control_go.ChannelOccupancy
-	default:
-		return ably_control_go.ChannelMessage
-	}
-}
-
-func format(format ably_control_go.Format) ably_control_go.Format {
-	switch format {
-	case "json":
-		return ably_control_go.Json
-	case "msgpack":
-		return ably_control_go.MsgPack
-	default:
-		return ably_control_go.Json
-	}
-}
-
 // New resource instance
 func (r resourceRuleKinesisType) NewResource(_ context.Context, p tfsdk_provider.Provider) (tfsdk_resource.Resource, diag.Diagnostics) {
-	return resourceRule{
+	return resourceRuleKinesis{
 		p: *(p.(*provider)),
 	}, nil
 }
 
-type resourceRule struct {
+type resourceRuleKinesis struct {
 	p provider
 }
 
 // Create a new resource
-func (r resourceRule) Create(ctx context.Context, req tfsdk_resource.CreateRequest, resp *tfsdk_resource.CreateResponse) {
+func (r resourceRuleKinesis) Create(ctx context.Context, req tfsdk_resource.CreateRequest, resp *tfsdk_resource.CreateResponse) {
 	// Checks whether the provider and API Client are configured. If they are not, the provider responds with an error.
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
@@ -143,7 +98,7 @@ func (r resourceRule) Create(ctx context.Context, req tfsdk_resource.CreateReque
 }
 
 // Read resource
-func (r resourceRule) Read(ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
+func (r resourceRuleKinesis) Read(ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var s AblyRuleDecoder[*AblyRuleTargetKinesis]
 	diags := req.State.Get(ctx, &s)
@@ -175,7 +130,7 @@ func (r resourceRule) Read(ctx context.Context, req tfsdk_resource.ReadRequest, 
 }
 
 // Update resource
-func (r resourceRule) Update(ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
+func (r resourceRuleKinesis) Update(ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
 	// Gets plan values
 	var p AblyRuleDecoder[*AblyRuleTargetKinesis]
 	diags := req.Plan.Get(ctx, &p)
@@ -217,7 +172,7 @@ func (r resourceRule) Update(ctx context.Context, req tfsdk_resource.UpdateReque
 }
 
 // Delete resource
-func (r resourceRule) Delete(ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
+func (r resourceRuleKinesis) Delete(ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var s AblyRuleDecoder[*AblyRuleTargetKinesis]
 	diags := req.State.Get(ctx, &s)
@@ -252,7 +207,7 @@ func (r resourceRule) Delete(ctx context.Context, req tfsdk_resource.DeleteReque
 // }
 
 // // Import resource
-func (r resourceRule) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
+func (r resourceRuleKinesis) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
 	// Save the import identifier in the id attribute
 	// identifier should be in the format app_id,key_id
 	idParts := strings.Split(req.ID, ",")
