@@ -1,30 +1,23 @@
-resource "ably_rule" "http_zapier" {
-  enabled      = true
-  app_id       = ably_app.app1.app_id
-  rule_type    = "http/zapier"
+resource "ably_rule_zapier" "rule0" {
+  app_id = ably_app.app0.id
+  status = "enabled"
+  source = {
+    channel_filter = "^my-channel.*",
+    type           = "channel.message"
+  }
   request_mode = "single"
-  source       = ably_rule_source.http_zapier
-  target       = ably_rule_target_http_zapier.http_zapier
-}
-
-resource "ably_rule_source" "http_zapier" {
-  channelFilter = "^my-channel.*"
-  type          = "channel.message"
-}
-
-resource "ably_rule_target_http_zapier" "http_zapier" {
-  url = "https://example.com/webhooks"
-  headers = [
-    {
-      name  = "User-Agent"
-      value = "user-agent-string"
-    },
-    {
-      name  = "headerName"
-      value = "headerValue"
-    }
-  ]
-  signingKeyId = "bw66AB"
-  enveloped    = true
-  format       = "json"
+  target = {
+    url = "https://example1.com/webhooks",
+    headers = [
+      {
+        name : "User-Agent",
+        value : "user-agent-string",
+      },
+      {
+        name : "User-Agent-Extra",
+        value : "user-agent-string",
+      },
+    ]
+    signing_key_id = ably_api_key.api_key_1.id
+  }
 }
