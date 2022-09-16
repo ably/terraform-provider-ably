@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func get_plan_aws_auth(plan AblyRule) ably_control_go.AwsAuthentication {
+func GetPlanAwsAuth(plan AblyRule) ably_control_go.AwsAuthentication {
 	var auth AwsAuth
 	var control_auth ably_control_go.AwsAuthentication
 
@@ -39,7 +39,7 @@ func get_plan_aws_auth(plan AblyRule) ably_control_go.AwsAuthentication {
 }
 
 // converts rule from terraform format to control sdk format
-func get_plan_rule(plan AblyRule) ably_control_go.NewRule {
+func GetPlanRule(plan AblyRule) ably_control_go.NewRule {
 	var target ably_control_go.Target
 
 	switch t := plan.Target.(type) {
@@ -48,7 +48,7 @@ func get_plan_rule(plan AblyRule) ably_control_go.NewRule {
 			Region:         t.Region,
 			StreamName:     t.StreamName,
 			PartitionKey:   t.PartitionKey,
-			Authentication: get_plan_aws_auth(plan),
+			Authentication: GetPlanAwsAuth(plan),
 			Enveloped:      t.Enveloped,
 			Format:         t.Format,
 		}
@@ -57,7 +57,7 @@ func get_plan_rule(plan AblyRule) ably_control_go.NewRule {
 			Region:         t.Region,
 			AwsAccountID:   t.AwsAccountID,
 			QueueName:      t.QueueName,
-			Authentication: get_plan_aws_auth(plan),
+			Authentication: GetPlanAwsAuth(plan),
 			Enveloped:      t.Enveloped,
 			Format:         t.Format,
 		}
@@ -65,17 +65,31 @@ func get_plan_rule(plan AblyRule) ably_control_go.NewRule {
 		target = &ably_control_go.AwsLambdaTarget{
 			Region:         t.Region,
 			FunctionName:   t.FunctionName,
-			Authentication: get_plan_aws_auth(plan),
+			Authentication: GetPlanAwsAuth(plan),
 			Enveloped:      t.Enveloped,
+		}
+	case *AblyRuleTargetZapier:
+		var headers []ably_control_go.Header
+		for _, h := range t.Headers {
+			headers = append(headers, ably_control_go.Header{
+				Name:  h.Name.Value,
+				Value: h.Value.Value,
+			})
+		}
+
+		target = &ably_control_go.HttpZapierTarget{
+			Url:          t.Url,
+			Headers:      headers,
+			SigningKeyID: t.SigningKeyId,
 		}
 	}
 
 	rule_values := ably_control_go.NewRule{
 		Status:      plan.Status.Value,
-		RequestMode: ably_control_go.Single, // This will always be single for Kinesis rule type.
+		RequestMode: GetRequestMode(plan),
 		Source: ably_control_go.Source{
 			ChannelFilter: plan.Source.ChannelFilter.Value,
-			Type:          source_type(plan.Source.Type),
+			Type:          GetSourceType(plan.Source.Type),
 		},
 		Target: target,
 	}
@@ -83,9 +97,20 @@ func get_plan_rule(plan AblyRule) ably_control_go.NewRule {
 	return rule_values
 }
 
+func GetRequestMode(plan AblyRule) ably_control_go.RequestMode {
+	switch plan.RequestMode.Value {
+	case "single":
+		return ably_control_go.Single
+	case "batch":
+		return ably_control_go.Batch
+	default:
+		return ably_control_go.Single
+	}
+}
+
 // Maps response body to resource schema attributes.
 // Using plan to fill in values that the api does not return.
-func get_aws_auth(auth *ably_control_go.AwsAuthentication, plan *AblyRule) AwsAuth {
+func GetAwsAuth(auth *ably_control_go.AwsAuthentication, plan *AblyRule) AwsAuth {
 	var resp_aws_auth AwsAuth
 	var plan_auth AwsAuth
 
@@ -120,7 +145,7 @@ func get_aws_auth(auth *ably_control_go.AwsAuthentication, plan *AblyRule) AwsAu
 
 // Maps response body to resource schema attributes.
 // Using plan to fill in values that the api does not return.
-func get_rule_response(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
+func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 	var resp_target interface{}
 
 	switch v := ably_rule.Target.(type) {
@@ -129,7 +154,7 @@ func get_rule_response(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule
 			Region:       v.Region,
 			StreamName:   v.StreamName,
 			PartitionKey: v.PartitionKey,
-			AwsAuth:      get_aws_auth(&v.Authentication, plan),
+			AwsAuth:      GetAwsAuth(&v.Authentication, plan),
 			Enveloped:    v.Enveloped,
 			Format:       v.Format,
 		}
@@ -138,7 +163,7 @@ func get_rule_response(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule
 			Region:       v.Region,
 			AwsAccountID: v.AwsAccountID,
 			QueueName:    v.QueueName,
-			AwsAuth:      get_aws_auth(&v.Authentication, plan),
+			AwsAuth:      GetAwsAuth(&v.Authentication, plan),
 			Enveloped:    v.Enveloped,
 			Format:       v.Format,
 		}
@@ -146,8 +171,16 @@ func get_rule_response(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule
 		resp_target = &AblyRuleTargetLambda{
 			Region:       v.Region,
 			FunctionName: v.FunctionName,
-			AwsAuth:      get_aws_auth(&v.Authentication, plan),
+			AwsAuth:      GetAwsAuth(&v.Authentication, plan),
 			Enveloped:    v.Enveloped,
+		}
+	case *ably_control_go.HttpZapierTarget:
+		headers := GetHeaders(v)
+
+		resp_target = &AblyRuleTargetZapier{
+			Url:          v.Url,
+			SigningKeyId: v.SigningKeyID,
+			Headers:      headers,
 		}
 	}
 
@@ -161,18 +194,20 @@ func get_rule_response(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule
 	}
 
 	resp_rule := AblyRule{
-		ID:     types.String{Value: ably_rule.ID},
-		AppID:  types.String{Value: ably_rule.AppID},
-		Status: types.String{Value: ably_rule.Status},
-		Source: resp_source,
-		Target: resp_target,
+		ID:          types.String{Value: ably_rule.ID},
+		AppID:       types.String{Value: ably_rule.AppID},
+		Status:      types.String{Value: ably_rule.Status},
+		Source:      resp_source,
+		Target:      resp_target,
+		RequestMode: types.String{Value: string(ably_rule.RequestMode)},
 	}
 
 	return resp_rule
 }
 
-func GetRuleSchema(target map[string]tfsdk.Attribute) tfsdk.Schema {
+func GetRuleSchema(target map[string]tfsdk.Attribute, markdown_description string) tfsdk.Schema {
 	return tfsdk.Schema{
+		MarkdownDescription: markdown_description,
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
 				Type:        types.StringType,
@@ -194,6 +229,16 @@ func GetRuleSchema(target map[string]tfsdk.Attribute) tfsdk.Schema {
 				Type:        types.StringType,
 				Optional:    true,
 				Description: "The status of the rule. Rules can be enabled or disabled.",
+			},
+			"request_mode": {
+				Type:        types.StringType,
+				Optional:    true,
+				Computed:    true,
+				Description: "This is Single Request mode or Batch Request mode. Single Request mode sends each event separately to the endpoint specified by the rule",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					DefaultAttribute(types.String{Value: "single"}),
+					tfsdk_resource.UseStateForUnknown(),
+				},
 			},
 			"source": {
 				Required:    true,
@@ -250,4 +295,52 @@ func GetAwsAuthSchema() tfsdk.Attribute {
 			},
 		}),
 	}
+}
+
+func GetHeaderSchema() tfsdk.Attribute {
+	return tfsdk.Attribute{
+		Optional:    true,
+		Description: "If you have additional information to send, you'll need to include the relevant headers",
+		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+			"name": {
+				Type:        types.StringType,
+				Required:    true,
+				Description: "The name of the header",
+			},
+			"value": {
+				Type:        types.StringType,
+				Required:    true,
+				Description: "The value of the header",
+			},
+		}),
+	}
+}
+
+func GetSourceType(mode ably_control_go.SourceType) ably_control_go.SourceType {
+	switch mode {
+	case "channel.message":
+		return ably_control_go.ChannelMessage
+	case "channel.presence":
+		return ably_control_go.ChannelPresence
+	case "channel.lifecycle":
+		return ably_control_go.ChannelLifeCycle
+	case "channel.occupancy":
+		return ably_control_go.ChannelOccupancy
+	default:
+		return ably_control_go.ChannelMessage
+	}
+}
+
+func GetHeaders(plan *ably_control_go.HttpZapierTarget) []AblyRuleHeaders {
+	var resp_headers []AblyRuleHeaders
+
+	for _, b := range plan.Headers {
+		item := AblyRuleHeaders{
+			Name:  types.String{Value: b.Name},
+			Value: types.String{Value: b.Value},
+		}
+		resp_headers = append(resp_headers, item)
+	}
+
+	return resp_headers
 }

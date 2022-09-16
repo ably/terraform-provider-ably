@@ -1,6 +1,6 @@
 resource "ably_rule_lambda" "rule0" {
-  app_id    = ably_app.app0.id
-  status    = "enabled"
+  app_id = ably_app.app0.id
+  status = "enabled"
   source = {
     channel_filter = "^my-channel.*",
     type           = "channel.message"

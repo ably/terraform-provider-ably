@@ -5,9 +5,9 @@ resource "ably_rule_zapier" "rule0" {
     channel_filter = "^my-channel.*",
     type           = "channel.message"
   }
-  request_mode = "single"
+  request_mode = "batch"
   target = {
-    url = "https://example1.com/webhooks",
+    url = "https://example.com/webhooks",
     headers = [
       {
         name : "User-Agent",

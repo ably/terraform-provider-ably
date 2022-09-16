@@ -1,6 +1,6 @@
 resource "ably_rule_kinesis" "aws_kinesis" {
-  app_id    = ably_app.app1.id
-  status    = "enabled"
+  app_id = ably_app.app1.id
+  status = "enabled"
   source = {
     channel_filter = "^my-channel.*",
     type           = "channel.message"

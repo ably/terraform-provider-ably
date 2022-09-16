@@ -81,31 +81,25 @@ type AblyRuleSource struct {
 
 func (r *AblyRuleDecoder[_]) Rule() AblyRule {
 	return AblyRule{
-		ID:     r.ID,
-		AppID:  r.AppID,
-		Status: r.Status,
-		Source: r.Source,
-		Target: r.Target,
+		ID:          r.ID,
+		AppID:       r.AppID,
+		Status:      r.Status,
+		RequestMode: r.RequestMode,
+		Source:      r.Source,
+		Target:      r.Target,
 	}
 }
 
 type AblyRuleDecoder[T any] struct {
-	ID     types.String   `tfsdk:"id"`
-	AppID  types.String   `tfsdk:"app_id"`
-	Status types.String   `tfsdk:"status"`
-	Source AblyRuleSource `tfsdk:"source"`
-	Target T              `tfsdk:"target"`
+	ID          types.String   `tfsdk:"id"`
+	AppID       types.String   `tfsdk:"app_id"`
+	Status      types.String   `tfsdk:"status"`
+	RequestMode types.String   `tfsdk:"request_mode"`
+	Source      AblyRuleSource `tfsdk:"source"`
+	Target      T              `tfsdk:"target"`
 }
 
 type AblyRule AblyRuleDecoder[any]
-
-type AblyRuleSqs struct {
-	ID     types.String      `tfsdk:"id"`
-	AppID  types.String      `tfsdk:"app_id"`
-	Status types.String      `tfsdk:"status"`
-	Source AblyRuleSource    `tfsdk:"source"`
-	Target AblyRuleTargetSqs `tfsdk:"target"`
-}
 
 type AblyRuleTargetKinesis struct {
 	Region       string                 `tfsdk:"region"`
@@ -137,4 +131,15 @@ type AblyRuleTargetLambda struct {
 	FunctionName string  `tfsdk:"function_name"`
 	AwsAuth      AwsAuth `tfsdk:"authentication"`
 	Enveloped    bool    `tfsdk:"enveloped"`
+}
+
+type AblyRuleTargetZapier struct {
+	Url          string            `tfsdk:"url"`
+	Headers      []AblyRuleHeaders `tfsdk:"headers"`
+	SigningKeyId string            `tfsdk:"signing_key_id"`
+}
+
+type AblyRuleHeaders struct {
+	Name  types.String `tfsdk:"name"`
+	Value types.String `tfsdk:"value"`
 }

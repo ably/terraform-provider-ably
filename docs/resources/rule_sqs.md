@@ -3,12 +3,12 @@
 page_title: "ably_rule_sqs Resource - terraform-provider-ably"
 subcategory: ""
 description: |-
-  
+  The ably_rule_sqs resource allows you to create and manage an Ably integration rule for AWS SQS. Read more at https://ably.com/docs/general/firehose/sqs-rule
 ---
 
 # ably_rule_sqs (Resource)
 
-
+The `ably_rule_sqs` resource allows you to create and manage an Ably integration rule for AWS SQS. Read more at https://ably.com/docs/general/firehose/sqs-rule
 
 
 
@@ -23,6 +23,7 @@ description: |-
 
 ### Optional
 
+- `request_mode` (String) This is Single Request mode or Batch Request mode. Single Request mode sends each event separately to the endpoint specified by the rule
 - `status` (String) The status of the rule. Rules can be enabled or disabled.
 
 ### Read-Only
