@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	// ably_control_go "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
@@ -23,7 +21,7 @@ func (r resourceRuleZapierType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 		map[string]tfsdk.Attribute{
 			"url": {
 				Type:        types.StringType,
-				Optional:    true,
+				Required:    true,
 				Description: "The webhook URL that Ably will POST events to",
 			},
 			"headers": {

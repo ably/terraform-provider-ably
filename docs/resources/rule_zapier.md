@@ -42,11 +42,14 @@ Required:
 <a id="nestedatt--target"></a>
 ### Nested Schema for `target`
 
+Required:
+
+- `url` (String) The webhook URL that Ably will POST events to
+
 Optional:
 
 - `headers` (Attributes List) If you have additional information to send, you'll need to include the relevant headers (see [below for nested schema](#nestedatt--target--headers))
 - `signing_key_id` (String) The signing key ID for use in batch mode. Ably will optionally sign the payload using an API key ensuring your servers can validate the payload using the private API key. See the [webhook security docs](https://ably.com/docs/general/webhooks#security) for more information
-- `url` (String) The webhook URL that Ably will POST events to
 
 <a id="nestedatt--target--headers"></a>
 ### Nested Schema for `target.headers`
