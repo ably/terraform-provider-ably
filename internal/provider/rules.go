@@ -68,19 +68,44 @@ func get_plan_rule(plan AblyRule) ably_control_go.NewRule {
 			Authentication: get_plan_aws_auth(plan),
 			Enveloped:      t.Enveloped,
 		}
+	case *AblyRuleTargetZapier:
+		var headers []ably_control_go.Header
+		for _, h := range t.Headers {
+			headers = append(headers, ably_control_go.Header{
+				Name:  h.Name.Value,
+				Value: h.Value.Value,
+			})
+		}
+
+		target = &ably_control_go.HttpZapierTarget{
+			Url:          t.Url,
+			Headers:      headers,
+			SigningKeyID: t.SigningKeyId,
+		}
 	}
 
 	rule_values := ably_control_go.NewRule{
 		Status:      plan.Status.Value,
-		RequestMode: ably_control_go.Single, // This will always be single for Kinesis rule type.
+		RequestMode: get_request_mode(plan),
 		Source: ably_control_go.Source{
 			ChannelFilter: plan.Source.ChannelFilter.Value,
-			Type:          source_type(plan.Source.Type),
+			Type:          GetSourceType(plan.Source.Type),
 		},
 		Target: target,
 	}
 
 	return rule_values
+}
+
+func get_request_mode(plan AblyRule) ably_control_go.RequestMode {
+	switch plan.RequestMode.Value {
+	case "single":
+		return ably_control_go.Single
+	case "batch":
+		return ably_control_go.Batch
+	default:
+		return ably_control_go.Single
+	}
 }
 
 // Maps response body to resource schema attributes.
@@ -149,6 +174,14 @@ func get_rule_response(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule
 			AwsAuth:      get_aws_auth(&v.Authentication, plan),
 			Enveloped:    v.Enveloped,
 		}
+	case *ably_control_go.HttpZapierTarget:
+		headers := GetHeaders(v)
+
+		resp_target = &AblyRuleTargetZapier{
+			Url:          v.Url,
+			SigningKeyId: v.SigningKeyID,
+			Headers:      headers,
+		}
 	}
 
 	channel_filter := types.String{
@@ -161,11 +194,12 @@ func get_rule_response(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule
 	}
 
 	resp_rule := AblyRule{
-		ID:     types.String{Value: ably_rule.ID},
-		AppID:  types.String{Value: ably_rule.AppID},
-		Status: types.String{Value: ably_rule.Status},
-		Source: resp_source,
-		Target: resp_target,
+		ID:          types.String{Value: ably_rule.ID},
+		AppID:       types.String{Value: ably_rule.AppID},
+		Status:      types.String{Value: ably_rule.Status},
+		Source:      resp_source,
+		Target:      resp_target,
+		RequestMode: types.String{Value: string(ably_rule.RequestMode)},
 	}
 
 	return resp_rule
@@ -194,6 +228,16 @@ func GetRuleSchema(target map[string]tfsdk.Attribute) tfsdk.Schema {
 				Type:        types.StringType,
 				Optional:    true,
 				Description: "The status of the rule. Rules can be enabled or disabled.",
+			},
+			"request_mode": {
+				Type:        types.StringType,
+				Optional:    true,
+				Computed:    true,
+				Description: "This is Single Request mode or Batch Request mode. Single Request mode sends each event separately to the endpoint specified by the rule",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					DefaultAttribute(types.String{Value: "single"}),
+					tfsdk_resource.UseStateForUnknown(),
+				},
 			},
 			"source": {
 				Required:    true,
@@ -250,4 +294,33 @@ func GetAwsAuthSchema() tfsdk.Attribute {
 			},
 		}),
 	}
+}
+
+func GetSourceType(mode ably_control_go.SourceType) ably_control_go.SourceType {
+	switch mode {
+	case "channel.message":
+		return ably_control_go.ChannelMessage
+	case "channel.presence":
+		return ably_control_go.ChannelPresence
+	case "channel.lifecycle":
+		return ably_control_go.ChannelLifeCycle
+	case "channel.occupancy":
+		return ably_control_go.ChannelOccupancy
+	default:
+		return ably_control_go.ChannelMessage
+	}
+}
+
+func GetHeaders(plan *ably_control_go.HttpZapierTarget) []AblyRuleHeaders {
+	var resp_headers []AblyRuleHeaders
+
+	for _, b := range plan.Headers {
+		item := AblyRuleHeaders{
+			Name:  types.String{Value: b.Name},
+			Value: types.String{Value: b.Value},
+		}
+		resp_headers = append(resp_headers, item)
+	}
+
+	return resp_headers
 }
