@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	ably_control_go "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
@@ -34,23 +33,8 @@ func (r resourceRuleLambdaType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 			},
 			"authentication": GetAwsAuthSchema(),
 		},
+		"The `ably_rule_lambda` resource allows you to create and manage an Ably integration rule for AWS Lambda. Read more at https://ably.com/docs/general/webhooks/aws-lambda",
 	), nil
-}
-
-func gen_plan_lambda_target_config(plan AblyRule, req_aws_auth ably_control_go.AwsAuthentication) ably_control_go.Target {
-	var target_config ably_control_go.Target
-
-	switch target := plan.Target.(type) {
-	case *AblyRuleTargetLambda:
-		target_config = &ably_control_go.AwsLambdaTarget{
-			Region:         target.Region,
-			FunctionName:   target.FunctionName,
-			Enveloped:      target.Enveloped,
-			Authentication: req_aws_auth,
-		}
-	}
-
-	return target_config
 }
 
 // New resource instance

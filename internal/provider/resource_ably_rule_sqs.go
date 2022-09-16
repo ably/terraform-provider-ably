@@ -46,6 +46,7 @@ func (r resourceRuleSqsType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 			},
 			"authentication": GetAwsAuthSchema(),
 		},
+		"The `ably_rule_sqs` resource allows you to create and manage an Ably integration rule for AWS SQS. Read more at https://ably.com/docs/general/firehose/sqs-rule",
 	), nil
 }
 

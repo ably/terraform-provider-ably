@@ -205,8 +205,9 @@ func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 	return resp_rule
 }
 
-func GetRuleSchema(target map[string]tfsdk.Attribute) tfsdk.Schema {
+func GetRuleSchema(target map[string]tfsdk.Attribute, markdown_description string) tfsdk.Schema {
 	return tfsdk.Schema{
+		MarkdownDescription: markdown_description,
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
 				Type:        types.StringType,
