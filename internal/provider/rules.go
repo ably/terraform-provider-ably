@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func get_plan_aws_auth(plan AblyRule) ably_control_go.AwsAuthentication {
+func GetPlanAwsAuth(plan AblyRule) ably_control_go.AwsAuthentication {
 	var auth AwsAuth
 	var control_auth ably_control_go.AwsAuthentication
 
@@ -39,7 +39,7 @@ func get_plan_aws_auth(plan AblyRule) ably_control_go.AwsAuthentication {
 }
 
 // converts rule from terraform format to control sdk format
-func get_plan_rule(plan AblyRule) ably_control_go.NewRule {
+func GetPlanRule(plan AblyRule) ably_control_go.NewRule {
 	var target ably_control_go.Target
 
 	switch t := plan.Target.(type) {
@@ -48,7 +48,7 @@ func get_plan_rule(plan AblyRule) ably_control_go.NewRule {
 			Region:         t.Region,
 			StreamName:     t.StreamName,
 			PartitionKey:   t.PartitionKey,
-			Authentication: get_plan_aws_auth(plan),
+			Authentication: GetPlanAwsAuth(plan),
 			Enveloped:      t.Enveloped,
 			Format:         t.Format,
 		}
@@ -57,7 +57,7 @@ func get_plan_rule(plan AblyRule) ably_control_go.NewRule {
 			Region:         t.Region,
 			AwsAccountID:   t.AwsAccountID,
 			QueueName:      t.QueueName,
-			Authentication: get_plan_aws_auth(plan),
+			Authentication: GetPlanAwsAuth(plan),
 			Enveloped:      t.Enveloped,
 			Format:         t.Format,
 		}
@@ -65,7 +65,7 @@ func get_plan_rule(plan AblyRule) ably_control_go.NewRule {
 		target = &ably_control_go.AwsLambdaTarget{
 			Region:         t.Region,
 			FunctionName:   t.FunctionName,
-			Authentication: get_plan_aws_auth(plan),
+			Authentication: GetPlanAwsAuth(plan),
 			Enveloped:      t.Enveloped,
 		}
 	case *AblyRuleTargetZapier:
@@ -86,7 +86,7 @@ func get_plan_rule(plan AblyRule) ably_control_go.NewRule {
 
 	rule_values := ably_control_go.NewRule{
 		Status:      plan.Status.Value,
-		RequestMode: get_request_mode(plan),
+		RequestMode: GetRequestMode(plan),
 		Source: ably_control_go.Source{
 			ChannelFilter: plan.Source.ChannelFilter.Value,
 			Type:          GetSourceType(plan.Source.Type),
@@ -97,7 +97,7 @@ func get_plan_rule(plan AblyRule) ably_control_go.NewRule {
 	return rule_values
 }
 
-func get_request_mode(plan AblyRule) ably_control_go.RequestMode {
+func GetRequestMode(plan AblyRule) ably_control_go.RequestMode {
 	switch plan.RequestMode.Value {
 	case "single":
 		return ably_control_go.Single
@@ -110,7 +110,7 @@ func get_request_mode(plan AblyRule) ably_control_go.RequestMode {
 
 // Maps response body to resource schema attributes.
 // Using plan to fill in values that the api does not return.
-func get_aws_auth(auth *ably_control_go.AwsAuthentication, plan *AblyRule) AwsAuth {
+func GetAwsAuth(auth *ably_control_go.AwsAuthentication, plan *AblyRule) AwsAuth {
 	var resp_aws_auth AwsAuth
 	var plan_auth AwsAuth
 
@@ -145,7 +145,7 @@ func get_aws_auth(auth *ably_control_go.AwsAuthentication, plan *AblyRule) AwsAu
 
 // Maps response body to resource schema attributes.
 // Using plan to fill in values that the api does not return.
-func get_rule_response(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
+func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 	var resp_target interface{}
 
 	switch v := ably_rule.Target.(type) {
@@ -154,7 +154,7 @@ func get_rule_response(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule
 			Region:       v.Region,
 			StreamName:   v.StreamName,
 			PartitionKey: v.PartitionKey,
-			AwsAuth:      get_aws_auth(&v.Authentication, plan),
+			AwsAuth:      GetAwsAuth(&v.Authentication, plan),
 			Enveloped:    v.Enveloped,
 			Format:       v.Format,
 		}
@@ -163,7 +163,7 @@ func get_rule_response(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule
 			Region:       v.Region,
 			AwsAccountID: v.AwsAccountID,
 			QueueName:    v.QueueName,
-			AwsAuth:      get_aws_auth(&v.Authentication, plan),
+			AwsAuth:      GetAwsAuth(&v.Authentication, plan),
 			Enveloped:    v.Enveloped,
 			Format:       v.Format,
 		}
@@ -171,7 +171,7 @@ func get_rule_response(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule
 		resp_target = &AblyRuleTargetLambda{
 			Region:       v.Region,
 			FunctionName: v.FunctionName,
-			AwsAuth:      get_aws_auth(&v.Authentication, plan),
+			AwsAuth:      GetAwsAuth(&v.Authentication, plan),
 			Enveloped:    v.Enveloped,
 		}
 	case *ably_control_go.HttpZapierTarget:
@@ -291,6 +291,25 @@ func GetAwsAuthSchema() tfsdk.Attribute {
 				Optional:    true,
 				Sensitive:   true,
 				Description: "The AWS secret key for the AWS IAM user",
+			},
+		}),
+	}
+}
+
+func GetHeaderSchema() tfsdk.Attribute {
+	return tfsdk.Attribute{
+		Optional:    true,
+		Description: "If you have additional information to send, you'll need to include the relevant headers",
+		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+			"name": {
+				Type:        types.StringType,
+				Required:    true,
+				Description: "The name of the header",
+			},
+			"value": {
+				Type:        types.StringType,
+				Required:    true,
+				Description: "The value of the header",
 			},
 		}),
 	}

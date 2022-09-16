@@ -19,26 +19,11 @@ type resourceRuleZapierType struct{}
 func (r resourceRuleZapierType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return GetRuleSchema(
 		map[string]tfsdk.Attribute{
+			"headers": GetHeaderSchema(),
 			"url": {
 				Type:        types.StringType,
 				Required:    true,
 				Description: "The webhook URL that Ably will POST events to",
-			},
-			"headers": {
-				Optional:    true,
-				Description: "If you have additional information to send, you'll need to include the relevant headers",
-				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-					"name": {
-						Type:        types.StringType,
-						Required:    true,
-						Description: "The name of the header",
-					},
-					"value": {
-						Type:        types.StringType,
-						Required:    true,
-						Description: "The value of the header",
-					},
-				}),
 			},
 			"signing_key_id": {
 				Type:        types.StringType,
@@ -80,7 +65,7 @@ func (r resourceRuleZapier) Create(ctx context.Context, req tfsdk_resource.Creat
 	}
 
 	plan := p.Rule()
-	plan_values := get_plan_rule(plan)
+	plan_values := GetPlanRule(plan)
 
 	// Creates a new Ably Rule by invoking the CreateRule function from the Client Library
 	rule, err := r.p.client.CreateRule(plan.AppID.Value, &plan_values)
@@ -92,7 +77,7 @@ func (r resourceRuleZapier) Create(ctx context.Context, req tfsdk_resource.Creat
 		return
 	}
 
-	response_values := get_rule_response(&rule, &plan)
+	response_values := GetRuleResponse(&rule, &plan)
 
 	// Sets state for the new Ably App.
 	diags = resp.State.Set(ctx, response_values)
@@ -122,7 +107,7 @@ func (r resourceRuleZapier) Read(ctx context.Context, req tfsdk_resource.ReadReq
 	// Get Rule data
 	rule, _ := r.p.client.Rule(app_id, rule_id)
 
-	response_values := get_rule_response(&rule, &state)
+	response_values := GetRuleResponse(&rule, &state)
 
 	// Sets state to app values.
 	diags = resp.State.Set(ctx, &response_values)
@@ -156,7 +141,7 @@ func (r resourceRuleZapier) Update(ctx context.Context, req tfsdk_resource.Updat
 	state := s.Rule()
 	plan := p.Rule()
 
-	rule_values := get_plan_rule(plan)
+	rule_values := GetPlanRule(plan)
 
 	// Gets the Ably App ID and Ably Rule ID value for the resource
 	app_id := state.AppID.Value
@@ -165,7 +150,7 @@ func (r resourceRuleZapier) Update(ctx context.Context, req tfsdk_resource.Updat
 	// Update Ably Rule
 	rule, _ := r.p.client.UpdateRule(app_id, rule_id, &rule_values)
 
-	response_values := get_rule_response(&rule, &plan)
+	response_values := GetRuleResponse(&rule, &plan)
 
 	// Sets state to app values.
 	diags = resp.State.Set(ctx, &response_values)

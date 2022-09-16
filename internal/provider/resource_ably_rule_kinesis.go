@@ -75,7 +75,7 @@ func (r resourceRuleKinesis) Create(ctx context.Context, req tfsdk_resource.Crea
 	}
 
 	plan := p.Rule()
-	plan_values := get_plan_rule(plan)
+	plan_values := GetPlanRule(plan)
 
 	// Creates a new Ably Rule by invoking the CreateRule function from the Client Library
 	rule, err := r.p.client.CreateRule(plan.AppID.Value, &plan_values)
@@ -87,7 +87,7 @@ func (r resourceRuleKinesis) Create(ctx context.Context, req tfsdk_resource.Crea
 		return
 	}
 
-	response_values := get_rule_response(&rule, &plan)
+	response_values := GetRuleResponse(&rule, &plan)
 
 	// Sets state for the new Ably App.
 	diags = resp.State.Set(ctx, response_values)
@@ -117,7 +117,7 @@ func (r resourceRuleKinesis) Read(ctx context.Context, req tfsdk_resource.ReadRe
 	// Get Rule data
 	rule, _ := r.p.client.Rule(app_id, rule_id)
 
-	response_values := get_rule_response(&rule, &state)
+	response_values := GetRuleResponse(&rule, &state)
 
 	// Sets state to app values.
 	diags = resp.State.Set(ctx, &response_values)
@@ -151,7 +151,7 @@ func (r resourceRuleKinesis) Update(ctx context.Context, req tfsdk_resource.Upda
 	state := s.Rule()
 	plan := p.Rule()
 
-	rule_values := get_plan_rule(plan)
+	rule_values := GetPlanRule(plan)
 
 	// Gets the Ably App ID and Ably Rule ID value for the resource
 	app_id := state.AppID.Value
@@ -160,7 +160,7 @@ func (r resourceRuleKinesis) Update(ctx context.Context, req tfsdk_resource.Upda
 	// Update Ably Rule
 	rule, _ := r.p.client.UpdateRule(app_id, rule_id, &rule_values)
 
-	response_values := get_rule_response(&rule, &plan)
+	response_values := GetRuleResponse(&rule, &plan)
 
 	// Sets state to app values.
 	diags = resp.State.Set(ctx, &response_values)
