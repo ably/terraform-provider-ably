@@ -119,15 +119,16 @@ func (p *provider) Configure(ctx context.Context, req tfsdk_provider.ConfigureRe
 // GetResources - Defines provider resources
 func (p *provider) GetResources(_ context.Context) (map[string]tfsdk_provider.ResourceType, diag.Diagnostics) {
 	return map[string]tfsdk_provider.ResourceType{
-		"ably_app":          resourceAppType{},
-		"ably_namespace":    resourceNamespaceType{},
-		"ably_api_key":      resourceKeyType{},
-		"ably_queue":        resourceQueueType{},
-		"ably_rule_kinesis": resourceRuleKinesisType{},
-		"ably_rule_sqs":     resourceRuleSqsType{},
-		"ably_rule_lambda":  resourceRuleLambdaType{},
-		"ably_rule_zapier":  resourceRuleZapierType{},
-		"ably_rule_ifttt":   resourceRuleIFTTTType{},
+		"ably_app":                  resourceAppType{},
+		"ably_namespace":            resourceNamespaceType{},
+		"ably_api_key":              resourceKeyType{},
+		"ably_queue":                resourceQueueType{},
+		"ably_rule_kinesis":         resourceRuleKinesisType{},
+		"ably_rule_sqs":             resourceRuleSqsType{},
+		"ably_rule_lambda":          resourceRuleLambdaType{},
+		"ably_rule_zapier":          resourceRuleZapierType{},
+		"ably_rule_google_function": resourceRuleGoogleFunctionType{},
+		"ably_rule_ifttt":           resourceRuleIFTTTType{},
 	}, nil
 }
 
