@@ -139,6 +139,11 @@ type AblyRuleTargetZapier struct {
 	SigningKeyId string            `tfsdk:"signing_key_id"`
 }
 
+type AblyRuleTargetIFTTT struct {
+	WebhookKey string `tfsdk:"webhook_key"`
+	EventName  string `tfsdk:"event_name"`
+}
+
 type AblyRuleHeaders struct {
 	Name  types.String `tfsdk:"name"`
 	Value types.String `tfsdk:"value"`

@@ -26,10 +26,10 @@ No modules.
 | [ably_rule.http_azure_function](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule) | resource |
 | [ably_rule.http_cloudflare_worker](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule) | resource |
 | [ably_rule.http_google_cloud_function](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule) | resource |
-| [ably_rule.http_ifttt](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule) | resource |
 | [ably_rule.http_standard](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule) | resource |
 | [ably_rule.kafka](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule) | resource |
 | [ably_rule.pulsar](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule) | resource |
+| [ably_rule_ifttt.rule0](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule_ifttt) | resource |
 | [ably_rule_kinesis.aws_kinesis](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule_kinesis) | resource |
 | [ably_rule_lambda.rule0](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule_lambda) | resource |
 | [ably_rule_source.amqp](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule_source) | resource |
@@ -37,7 +37,6 @@ No modules.
 | [ably_rule_source.http_azure_function](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule_source) | resource |
 | [ably_rule_source.http_cloudflare_worker](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule_source) | resource |
 | [ably_rule_source.http_google_cloud_function](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule_source) | resource |
-| [ably_rule_source.http_ifttt](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule_source) | resource |
 | [ably_rule_source.http_standard](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule_source) | resource |
 | [ably_rule_source.kafka](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule_source) | resource |
 | [ably_rule_source.pulsar](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule_source) | resource |
@@ -48,7 +47,6 @@ No modules.
 | [ably_rule_target_http_azure_function.http_azure_function](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule_target_http_azure_function) | resource |
 | [ably_rule_target_http_cloudflare_worker.http_cloudflare_worker](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule_target_http_cloudflare_worker) | resource |
 | [ably_rule_target_http_google_cloud_function.http_google_cloud_function](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule_target_http_google_cloud_function) | resource |
-| [ably_rule_target_http_ifttt.http_ifttt](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule_target_http_ifttt) | resource |
 | [ably_rule_target_kafka.kafka](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule_target_kafka) | resource |
 | [ably_rule_target_pulsar.pulsar](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule_target_pulsar) | resource |
 | [ably_rule_zapier.rule0](https://registry.terraform.io/providers/hashicorp/ably/latest/docs/resources/rule_zapier) | resource |

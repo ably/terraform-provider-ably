@@ -22,6 +22,7 @@ No modules.
 | ably_app.app1 | resource |
 | ably_namespace.namespace0 | resource |
 | ably_queue.example_queue | resource |
+| ably_rule_ifttt.rule0 | resource |
 | ably_rule_kinesis.rule0 | resource |
 | ably_rule_lambda.rule0 | resource |
 | ably_rule_sqs.rule0 | resource |
