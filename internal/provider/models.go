@@ -143,6 +143,12 @@ type AblyRuleTargetGoogleFunction struct {
 	Format       ably_control_go.Format `tfsdk:"format"`
 }
 
+type AblyRuleTargetCloudflareWorker struct {
+	Url          string            `tfsdk:"url"`
+	Headers      []AblyRuleHeaders `tfsdk:"headers"`
+	SigningKeyId string            `tfsdk:"signing_key_id"`
+}
+
 type AblyRuleTargetZapier struct {
 	Url          string            `tfsdk:"url"`
 	Headers      []AblyRuleHeaders `tfsdk:"headers"`
