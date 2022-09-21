@@ -154,6 +154,14 @@ type AblyRuleTargetIFTTT struct {
 	EventName  string `tfsdk:"event_name"`
 }
 
+type AblyRuleTargetAzureFunction struct {
+	AzureAppID        string                 `tfsdk:"azure_app_id"`
+	AzureFunctionName string                 `tfsdk:"function_name"`
+	Headers           []AblyRuleHeaders      `tfsdk:"headers"`
+	SigningKeyID      string                 `tfsdk:"signing_key_id"`
+	Format            ably_control_go.Format `tfsdk:"format"`
+}
+
 type AblyRuleHeaders struct {
 	Name  types.String `tfsdk:"name"`
 	Value types.String `tfsdk:"value"`

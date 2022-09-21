@@ -129,6 +129,7 @@ func (p *provider) GetResources(_ context.Context) (map[string]tfsdk_provider.Re
 		"ably_rule_zapier":          resourceRuleZapierType{},
 		"ably_rule_google_function": resourceRuleGoogleFunctionType{},
 		"ably_rule_ifttt":           resourceRuleIFTTTType{},
+		"ably_rule_azure_function":  resourceRuleAzureFunctionType{},
 	}, nil
 }
 
