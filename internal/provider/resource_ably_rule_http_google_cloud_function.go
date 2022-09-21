@@ -59,7 +59,6 @@ func (r resourceRuleGoogleFunctionType) GetSchema(_ context.Context) (tfsdk.Sche
 				},
 			},
 		},
-
 		"The `ably_rule_google_cloud_function` resource allows you to create and manage an Ably integration rule for Google cloud functions. Read more at https://ably.com/docs/general/webhooks/google-functions",
 	), nil
 }
