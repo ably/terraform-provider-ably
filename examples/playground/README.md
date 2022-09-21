@@ -23,6 +23,8 @@ No modules.
 | ably_namespace.namespace0 | resource |
 | ably_queue.example_queue | resource |
 | ably_rule_azure_function.rule0 | resource |
+| ably_rule_google_function.google_function | resource |
+| ably_rule_http.rule0 | resource |
 | ably_rule_ifttt.rule0 | resource |
 | ably_rule_kinesis.rule0 | resource |
 | ably_rule_lambda.rule0 | resource |

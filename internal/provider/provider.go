@@ -131,6 +131,7 @@ func (p *provider) GetResources(_ context.Context) (map[string]tfsdk_provider.Re
 		"ably_rule_ifttt":             resourceRuleIFTTTType{},
 		"ably_rule_cloudflare_worker": resourceRuleCloudflareWorkerType{},
 		"ably_rule_azure_function":    resourceRuleAzureFunctionType{},
+		"ably_rule_http":            resourceRuleHTTPType{},
 	}, nil
 }
 
