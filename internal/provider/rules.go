@@ -88,6 +88,24 @@ func GetPlanRule(plan AblyRule) ably_control_go.NewRule {
 			WebhookKey: t.WebhookKey,
 			EventName:  t.EventName,
 		}
+	case *AblyRuleTargetGoogleFunction:
+		var headers []ably_control_go.Header
+		for _, h := range t.Headers {
+			headers = append(headers, ably_control_go.Header{
+				Name:  h.Name.Value,
+				Value: h.Value.Value,
+			})
+		}
+
+		target = &ably_control_go.HttpGoogleCloudFunctionTarget{
+			Region:       t.Region,
+			ProjectID:    t.ProjectID,
+			FunctionName: t.FunctionName,
+			Headers:      headers,
+			SigningKeyID: t.SigningKeyId,
+			Enveloped:    t.Enveloped,
+			Format:       t.Format,
+		}
 	}
 
 	rule_values := ably_control_go.NewRule{
@@ -192,6 +210,18 @@ func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 		resp_target = &AblyRuleTargetIFTTT{
 			EventName:  v.EventName,
 			WebhookKey: v.WebhookKey,
+		}
+	case *ably_control_go.HttpGoogleCloudFunctionTarget:
+		headers := GetHeaders(v)
+
+		resp_target = &AblyRuleTargetGoogleFunction{
+			Region:       v.Region,
+			ProjectID:    v.ProjectID,
+			FunctionName: v.FunctionName,
+			Headers:      headers,
+			SigningKeyId: v.SigningKeyID,
+			Enveloped:    v.Enveloped,
+			Format:       v.Format,
 		}
 	}
 
@@ -342,10 +372,18 @@ func GetSourceType(mode ably_control_go.SourceType) ably_control_go.SourceType {
 	}
 }
 
-func GetHeaders(plan *ably_control_go.HttpZapierTarget) []AblyRuleHeaders {
+func GetHeaders(plan ably_control_go.Target) []AblyRuleHeaders {
 	var resp_headers []AblyRuleHeaders
+	var headers []ably_control_go.Header
 
-	for _, b := range plan.Headers {
+	switch t := plan.(type) {
+	case *ably_control_go.HttpZapierTarget:
+		headers = t.Headers
+	case *ably_control_go.HttpGoogleCloudFunctionTarget:
+		headers = t.Headers
+	}
+
+	for _, b := range headers {
 		item := AblyRuleHeaders{
 			Name:  types.String{Value: b.Name},
 			Value: types.String{Value: b.Value},

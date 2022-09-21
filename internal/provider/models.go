@@ -133,6 +133,16 @@ type AblyRuleTargetLambda struct {
 	Enveloped    bool    `tfsdk:"enveloped"`
 }
 
+type AblyRuleTargetGoogleFunction struct {
+	Region       string                 `tfsdk:"region"`
+	ProjectID    string                 `tfsdk:"project_id"`
+	FunctionName string                 `tfsdk:"function_name"`
+	Headers      []AblyRuleHeaders      `tfsdk:"headers"`
+	SigningKeyId string                 `tfsdk:"signing_key_id"`
+	Enveloped    bool                   `tfsdk:"enveloped"`
+	Format       ably_control_go.Format `tfsdk:"format"`
+}
+
 type AblyRuleTargetZapier struct {
 	Url          string            `tfsdk:"url"`
 	Headers      []AblyRuleHeaders `tfsdk:"headers"`
