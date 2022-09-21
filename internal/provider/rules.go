@@ -69,17 +69,15 @@ func GetPlanRule(plan AblyRule) ably_control_go.NewRule {
 			Enveloped:      t.Enveloped,
 		}
 	case *AblyRuleTargetZapier:
-		var headers []ably_control_go.Header
-		for _, h := range t.Headers {
-			headers = append(headers, ably_control_go.Header{
-				Name:  h.Name.Value,
-				Value: h.Value.Value,
-			})
-		}
-
 		target = &ably_control_go.HttpZapierTarget{
 			Url:          t.Url,
-			Headers:      headers,
+			Headers:      GetHeaders(t.Headers),
+			SigningKeyID: t.SigningKeyId,
+		}
+	case *AblyRuleTargetCloudflareWorker:
+		target = &ably_control_go.HttpCloudfareWorkerTarget{
+			Url:          t.Url,
+			Headers:      GetHeaders(t.Headers),
 			SigningKeyID: t.SigningKeyId,
 		}
 
@@ -90,35 +88,20 @@ func GetPlanRule(plan AblyRule) ably_control_go.NewRule {
 		}
 
 	case *AblyRuleTargetAzureFunction:
-		var headers []ably_control_go.Header
-		for _, h := range t.Headers {
-			headers = append(headers, ably_control_go.Header{
-				Name:  h.Name.Value,
-				Value: h.Value.Value,
-			})
-		}
 		target = &ably_control_go.HttpAzureFunctionTarget{
 			AzureAppID:        t.AzureAppID,
 			AzureFunctionName: t.AzureFunctionName,
-			Headers:           headers,
+			Headers:           GetHeaders(t.Headers),
 			SigningKeyID:      t.SigningKeyID,
 			Format:            t.Format,
 		}
 
 	case *AblyRuleTargetGoogleFunction:
-		var headers []ably_control_go.Header
-		for _, h := range t.Headers {
-			headers = append(headers, ably_control_go.Header{
-				Name:  h.Name.Value,
-				Value: h.Value.Value,
-			})
-		}
-
 		target = &ably_control_go.HttpGoogleCloudFunctionTarget{
 			Region:       t.Region,
 			ProjectID:    t.ProjectID,
 			FunctionName: t.FunctionName,
-			Headers:      headers,
+			Headers:      GetHeaders(t.Headers),
 			SigningKeyID: t.SigningKeyId,
 			Enveloped:    t.Enveloped,
 			Format:       t.Format,
@@ -136,6 +119,18 @@ func GetPlanRule(plan AblyRule) ably_control_go.NewRule {
 	}
 
 	return rule_values
+}
+
+func GetHeaders(headers []AblyRuleHeaders) []ably_control_go.Header {
+	var ret_headers []ably_control_go.Header
+	for _, h := range headers {
+		ret_headers = append(ret_headers, ably_control_go.Header{
+			Name:  h.Name.Value,
+			Value: h.Value.Value,
+		})
+	}
+
+	return ret_headers
 }
 
 func GetRequestMode(plan AblyRule) ably_control_go.RequestMode {
@@ -216,9 +211,17 @@ func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 			Enveloped:    v.Enveloped,
 		}
 	case *ably_control_go.HttpZapierTarget:
-		headers := GetHeaders(v)
+		headers := ToHeaders(v)
 
 		resp_target = &AblyRuleTargetZapier{
+			Url:          v.Url,
+			SigningKeyId: v.SigningKeyID,
+			Headers:      headers,
+		}
+	case *ably_control_go.HttpCloudfareWorkerTarget:
+		headers := ToHeaders(v)
+
+		resp_target = &AblyRuleTargetCloudflareWorker{
 			Url:          v.Url,
 			SigningKeyId: v.SigningKeyID,
 			Headers:      headers,
@@ -229,7 +232,7 @@ func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 			WebhookKey: v.WebhookKey,
 		}
 	case *ably_control_go.HttpGoogleCloudFunctionTarget:
-		headers := GetHeaders(v)
+		headers := ToHeaders(v)
 
 		resp_target = &AblyRuleTargetGoogleFunction{
 			Region:       v.Region,
@@ -241,7 +244,7 @@ func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 			Format:       v.Format,
 		}
 	case *ably_control_go.HttpAzureFunctionTarget:
-		headers := GetHeaders(v)
+		headers := ToHeaders(v)
 
 		resp_target = &AblyRuleTargetAzureFunction{
 			AzureAppID:        v.AzureAppID,
@@ -399,12 +402,14 @@ func GetSourceType(mode ably_control_go.SourceType) ably_control_go.SourceType {
 	}
 }
 
-func GetHeaders(plan ably_control_go.Target) []AblyRuleHeaders {
+func ToHeaders(plan ably_control_go.Target) []AblyRuleHeaders {
 	var resp_headers []AblyRuleHeaders
 	var headers []ably_control_go.Header
 
 	switch t := plan.(type) {
 	case *ably_control_go.HttpZapierTarget:
+		headers = t.Headers
+	case *ably_control_go.HttpCloudfareWorkerTarget:
 		headers = t.Headers
 	case *ably_control_go.HttpGoogleCloudFunctionTarget:
 		headers = t.Headers
