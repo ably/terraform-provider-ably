@@ -82,6 +82,12 @@ func GetPlanRule(plan AblyRule) ably_control_go.NewRule {
 			Headers:      headers,
 			SigningKeyID: t.SigningKeyId,
 		}
+
+	case *AblyRuleTargetIFTTT:
+		target = &ably_control_go.HttpIftttTarget{
+			WebhookKey: t.WebhookKey,
+			EventName:  t.EventName,
+		}
 	}
 
 	rule_values := ably_control_go.NewRule{
@@ -181,6 +187,11 @@ func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 			Url:          v.Url,
 			SigningKeyId: v.SigningKeyID,
 			Headers:      headers,
+		}
+	case *ably_control_go.HttpIftttTarget:
+		resp_target = &AblyRuleTargetIFTTT{
+			EventName:  v.EventName,
+			WebhookKey: v.WebhookKey,
 		}
 	}
 
