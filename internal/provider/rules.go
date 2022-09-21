@@ -88,17 +88,10 @@ func GetPlanRule(plan AblyRule) ably_control_go.NewRule {
 		}
 
 	case *AblyRuleTargetAzureFunction:
-		var headers []ably_control_go.Header
-		for _, h := range t.Headers {
-			headers = append(headers, ably_control_go.Header{
-				Name:  h.Name.Value,
-				Value: h.Value.Value,
-			})
-		}
 		target = &ably_control_go.HttpAzureFunctionTarget{
 			AzureAppID:        t.AzureAppID,
 			AzureFunctionName: t.AzureFunctionName,
-			Headers:           headers,
+			Headers:           GetHeaders(t.Headers),
 			SigningKeyID:      t.SigningKeyID,
 			Format:            t.Format,
 		}
@@ -251,7 +244,7 @@ func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 			Format:       v.Format,
 		}
 	case *ably_control_go.HttpAzureFunctionTarget:
-		headers := GetHeaders(v)
+		headers := ToHeaders(v)
 
 		resp_target = &AblyRuleTargetAzureFunction{
 			AzureAppID:        v.AzureAppID,
