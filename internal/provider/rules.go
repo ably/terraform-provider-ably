@@ -88,6 +88,23 @@ func GetPlanRule(plan AblyRule) ably_control_go.NewRule {
 			WebhookKey: t.WebhookKey,
 			EventName:  t.EventName,
 		}
+
+	case *AblyRuleTargetAzureFunction:
+		var headers []ably_control_go.Header
+		for _, h := range t.Headers {
+			headers = append(headers, ably_control_go.Header{
+				Name:  h.Name.Value,
+				Value: h.Value.Value,
+			})
+		}
+		target = &ably_control_go.HttpAzureFunctionTarget{
+			AzureAppID:        t.AzureAppID,
+			AzureFunctionName: t.AzureFunctionName,
+			Headers:           headers,
+			SigningKeyID:      t.SigningKeyID,
+			Format:            t.Format,
+		}
+
 	case *AblyRuleTargetGoogleFunction:
 		var headers []ably_control_go.Header
 		for _, h := range t.Headers {
@@ -222,6 +239,16 @@ func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 			SigningKeyId: v.SigningKeyID,
 			Enveloped:    v.Enveloped,
 			Format:       v.Format,
+		}
+	case *ably_control_go.HttpAzureFunctionTarget:
+		headers := GetHeaders(v)
+
+		resp_target = &AblyRuleTargetAzureFunction{
+			AzureAppID:        v.AzureAppID,
+			AzureFunctionName: v.AzureFunctionName,
+			Headers:           headers,
+			SigningKeyID:      v.SigningKeyID,
+			Format:            v.Format,
 		}
 	}
 
@@ -380,6 +407,8 @@ func GetHeaders(plan ably_control_go.Target) []AblyRuleHeaders {
 	case *ably_control_go.HttpZapierTarget:
 		headers = t.Headers
 	case *ably_control_go.HttpGoogleCloudFunctionTarget:
+		headers = t.Headers
+	case *ably_control_go.HttpAzureFunctionTarget:
 		headers = t.Headers
 	}
 
