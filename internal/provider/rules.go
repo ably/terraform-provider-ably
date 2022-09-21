@@ -270,7 +270,7 @@ func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 			Format:            v.Format,
 		}
 	case *ably_control_go.HttpTarget:
-		headers := GetHeaders(v)
+		headers := ToHeaders(v)
 
 		resp_target = &AblyRuleTargetHTTP{
 			Url:          v.Url,
