@@ -94,7 +94,6 @@ func GetPlanRule(plan AblyRule) ably_control_go.NewRule {
 			Url:          t.Url,
 			Headers:      headers,
 			SigningKeyID: t.SigningKeyId,
-			Enveloped:    t.Enveloped,
 			Format:       t.Format,
 		}
 
@@ -277,7 +276,6 @@ func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 			Url:          v.Url,
 			Headers:      headers,
 			SigningKeyId: v.SigningKeyID,
-			Enveloped:    v.Enveloped,
 			Format:       v.Format,
 		}
 	}

@@ -30,11 +30,6 @@ func (r resourceRuleHTTPType) GetSchema(_ context.Context) (tfsdk.Schema, diag.D
 				Optional:    true,
 				Description: "The signing key ID for use in batch mode. Ably will optionally sign the payload using an API key ensuring your servers can validate the payload using the private API key. See the [webhook security docs](https://ably.com/docs/general/webhooks#security) for more information",
 			},
-			"enveloped": {
-				Type:        types.BoolType,
-				Optional:    true,
-				Description: "Delivered messages are wrapped in an Ably envelope by default that contains metadata about the message and its payload. The form of the envelope depends on whether it is part of a Webhook/Function or a Queue/Firehose rule. For everything besides Webhooks, you can ensure you only get the raw payload by unchecking `Enveloped` when setting up the rule.",
-			},
 			"format": {
 				Type:        types.StringType,
 				Optional:    true,

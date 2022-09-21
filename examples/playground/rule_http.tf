@@ -5,6 +5,7 @@ resource "ably_rule_http" "rule0" {
     channel_filter = "^my-channel.*",
     type           = "channel.message"
   }
+  request_mode = "batch"
   target = {
     url = "https://example.com/webhooks"
     headers = [
@@ -18,7 +19,6 @@ resource "ably_rule_http" "rule0" {
       }
     ]
     signing_key_id = ably_api_key.api_key_0.id
-    enveloped      = true
     format         = "json"
   }
 }

@@ -135,7 +135,7 @@ resource "ably_rule_http" "rule0" {
 	target = {
 	  headers = %[6]s
 	  signing_key_id = %[7]s
-	  url = %[5]q
+	  url = %[8]q
 	}
   }
 `, appName, ruleStatus, channelFilter, sourceType, requestMode, targetHeaders, targetSigningKeyId, targetUrl)

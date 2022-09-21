@@ -153,7 +153,6 @@ type AblyRuleTargetHTTP struct {
 	Url          string                 `tfsdk:"url"`
 	Headers      []AblyRuleHeaders      `tfsdk:"headers"`
 	SigningKeyId string                 `tfsdk:"signing_key_id"`
-	Enveloped    bool                   `tfsdk:"enveloped"`
 	Format       ably_control_go.Format `tfsdk:"format"`
 }
 
