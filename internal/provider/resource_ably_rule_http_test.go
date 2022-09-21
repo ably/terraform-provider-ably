@@ -43,6 +43,7 @@ func TestAccAblyRuleHTTP(t *testing.T) {
 					original_headers_block,
 					"ably_api_key.api_key_0.id",
 					"https://example.com/webhooks",
+					"json",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
@@ -63,6 +64,7 @@ func TestAccAblyRuleHTTP(t *testing.T) {
 					update_headers_block,
 					"ably_api_key.api_key_1.id",
 					"https://example1.com/webhooks",
+					"msgpack",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", update_app_name),
@@ -87,6 +89,7 @@ func testAccAblyRuleHTTPConfig(
 	targetHeaders string,
 	targetSigningKeyId string,
 	targetUrl string,
+	targetFormat string,
 ) string {
 	return fmt.Sprintf(`
 terraform {
@@ -136,7 +139,8 @@ resource "ably_rule_http" "rule0" {
 	  headers = %[6]s
 	  signing_key_id = %[7]s
 	  url = %[8]q
+	  format = %[9]q
 	}
   }
-`, appName, ruleStatus, channelFilter, sourceType, requestMode, targetHeaders, targetSigningKeyId, targetUrl)
+`, appName, ruleStatus, channelFilter, sourceType, requestMode, targetHeaders, targetSigningKeyId, targetUrl, targetFormat)
 }
