@@ -81,6 +81,22 @@ func GetPlanRule(plan AblyRule) ably_control_go.NewRule {
 			SigningKeyID: t.SigningKeyId,
 		}
 
+	case *AblyRuleTargetHTTP:
+		var headers []ably_control_go.Header
+		for _, h := range t.Headers {
+			headers = append(headers, ably_control_go.Header{
+				Name:  h.Name.Value,
+				Value: h.Value.Value,
+			})
+		}
+
+		target = &ably_control_go.HttpTarget{
+			Url:          t.Url,
+			Headers:      headers,
+			SigningKeyID: t.SigningKeyId,
+			Format:       t.Format,
+		}
+
 	case *AblyRuleTargetIFTTT:
 		target = &ably_control_go.HttpIftttTarget{
 			WebhookKey: t.WebhookKey,
@@ -253,6 +269,15 @@ func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 			SigningKeyID:      v.SigningKeyID,
 			Format:            v.Format,
 		}
+	case *ably_control_go.HttpTarget:
+		headers := ToHeaders(v)
+
+		resp_target = &AblyRuleTargetHTTP{
+			Url:          v.Url,
+			Headers:      headers,
+			SigningKeyId: v.SigningKeyID,
+			Format:       v.Format,
+		}
 	}
 
 	channel_filter := types.String{
@@ -407,6 +432,8 @@ func ToHeaders(plan ably_control_go.Target) []AblyRuleHeaders {
 	var headers []ably_control_go.Header
 
 	switch t := plan.(type) {
+	case *ably_control_go.HttpTarget:
+		headers = t.Headers
 	case *ably_control_go.HttpZapierTarget:
 		headers = t.Headers
 	case *ably_control_go.HttpCloudfareWorkerTarget:
