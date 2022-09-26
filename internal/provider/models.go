@@ -179,3 +179,21 @@ type AblyRuleHeaders struct {
 	Name  types.String `tfsdk:"name"`
 	Value types.String `tfsdk:"value"`
 }
+
+type AblyRuleTargetKafka struct {
+	RoutingKey          string                 `tfsdk:"routing_key"`
+	Brokers             []string               `tfsdk:"brokers"`
+	KafkaAuthentication KafkaAuthentication    `tfsdk:"auth"`
+	Enveloped           bool                   `tfsdk:"enveloped"`
+	Format              ably_control_go.Format `tfsdk:"format"`
+}
+
+type KafkaAuthentication struct {
+	Sasl Sasl `tfsdk:"sasl"`
+}
+
+type Sasl struct {
+	Mechanism string `tfsdk:"mechanism"`
+	Username  string `tfsdk:"username"`
+	Password  string `tfsdk:"password"`
+}

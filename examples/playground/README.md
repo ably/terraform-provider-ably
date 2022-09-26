@@ -27,6 +27,7 @@ No modules.
 | ably_rule_google_function.google_function | resource |
 | ably_rule_http.rule0 | resource |
 | ably_rule_ifttt.rule0 | resource |
+| ably_rule_kafka.rule0 | resource |
 | ably_rule_kinesis.rule0 | resource |
 | ably_rule_lambda.rule0 | resource |
 | ably_rule_sqs.rule0 | resource |
