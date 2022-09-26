@@ -122,6 +122,21 @@ func GetPlanRule(plan AblyRule) ably_control_go.NewRule {
 			Enveloped:    t.Enveloped,
 			Format:       t.Format,
 		}
+
+	case *AblyRuleTargetKafka:
+		target = &ably_control_go.KafkaTarget{
+			RoutingKey: t.RoutingKey,
+			Brokers:    t.Brokers,
+			Authentication: ably_control_go.KafkaAuthentication{
+				Sasl: ably_control_go.Sasl{
+					Mechanism: ably_control_go.SaslMechanism(t.KafkaAuthentication.Sasl.Mechanism),
+					Username:  t.KafkaAuthentication.Sasl.Username,
+					Password:  t.KafkaAuthentication.Sasl.Password,
+				},
+			},
+			Enveloped: t.Enveloped,
+			Format:    t.Format,
+		}
 	}
 
 	rule_values := ably_control_go.NewRule{
@@ -277,6 +292,20 @@ func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 			Headers:      headers,
 			SigningKeyId: v.SigningKeyID,
 			Format:       v.Format,
+		}
+	case *ably_control_go.KafkaTarget:
+		resp_target = &AblyRuleTargetKafka{
+			RoutingKey: v.RoutingKey,
+			Brokers:    v.Brokers,
+			KafkaAuthentication: KafkaAuthentication{
+				Sasl{
+					Mechanism: string(v.Authentication.Sasl.Mechanism),
+					Username:  v.Authentication.Sasl.Username,
+					Password:  v.Authentication.Sasl.Password,
+				},
+			},
+			Enveloped: v.Enveloped,
+			Format:    v.Format,
 		}
 	}
 
@@ -453,4 +482,16 @@ func ToHeaders(plan ably_control_go.Target) []AblyRuleHeaders {
 	}
 
 	return resp_headers
+}
+
+func GetKafkaAuthSchema(headers []AblyRuleHeaders) []ably_control_go.Header {
+	var ret_headers []ably_control_go.Header
+	for _, h := range headers {
+		ret_headers = append(ret_headers, ably_control_go.Header{
+			Name:  h.Name.Value,
+			Value: h.Value.Value,
+		})
+	}
+
+	return ret_headers
 }
