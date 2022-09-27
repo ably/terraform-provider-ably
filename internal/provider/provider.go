@@ -135,6 +135,7 @@ func (p *provider) GetResources(_ context.Context) (map[string]tfsdk_provider.Re
 		"ably_rule_http":              resourceRuleHTTPType{},
 		"ably_rule_kafka":             resourceRuleKafkaType{},
 		"ably_rule_amqp":              resourceRuleAmqpType{},
+		"ably_rule_amqp_external":     resourceRuleAmqpExternalType{},
 	}, nil
 }
 

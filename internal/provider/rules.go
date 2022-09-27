@@ -153,6 +153,17 @@ func GetPlanRule(plan AblyRule) ably_control_go.NewRule {
 			Enveloped: t.Enveloped,
 			Format:    t.Format,
 		}
+	case *AblyRuleTargetAmqpExternal:
+		target = &ably_control_go.AmqpExternalTarget{
+			Url:                t.Url,
+			RoutingKey:         t.RoutingKey,
+			MandatoryRoute:     t.MandatoryRoute,
+			PersistentMessages: t.PersistentMessages,
+			MessageTTL:         int(t.MessageTtl),
+			Headers:            GetHeaders(t.Headers),
+			Enveloped:          t.Enveloped,
+			Format:             t.Format,
+		}
 	}
 
 	rule_values := ably_control_go.NewRule{
@@ -345,6 +356,19 @@ func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 			Enveloped: v.Enveloped,
 			Format:    v.Format,
 		}
+	case *ably_control_go.AmqpExternalTarget:
+		headers := ToHeaders(v)
+
+		resp_target = &AblyRuleTargetAmqpExternal{
+			Url:                v.Url,
+			RoutingKey:         v.RoutingKey,
+			MandatoryRoute:     v.MandatoryRoute,
+			PersistentMessages: v.PersistentMessages,
+			MessageTtl:         int64(v.MessageTTL),
+			Headers:            headers,
+			Enveloped:          v.Enveloped,
+			Format:             v.Format,
+		}
 	}
 
 	channel_filter := types.String{
@@ -510,6 +534,8 @@ func ToHeaders(plan ably_control_go.Target) []AblyRuleHeaders {
 	case *ably_control_go.HttpAzureFunctionTarget:
 		headers = t.Headers
 	case *ably_control_go.AmqpTarget:
+		headers = t.Headers
+	case *ably_control_go.AmqpExternalTarget:
 		headers = t.Headers
 	}
 

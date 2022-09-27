@@ -23,5 +23,7 @@ resource "ably_rule_amqp_external" "rule0" {
       },
     ]
     signing_key_id = ably_api_key.api_key_1.id
+    enveloped = false
+    format = "json"
   }
 }

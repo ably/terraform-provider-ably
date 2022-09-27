@@ -210,6 +210,17 @@ type AblyRuleTargetAmqp struct {
 	Format    ably_control_go.Format `tfsdk:"format"`
 }
 
+type AblyRuleTargetAmqpExternal struct {
+	Url                string                 `tfsdk:"url"`
+	RoutingKey         string                 `tfsdk:"routing_key"`
+	MandatoryRoute     bool                   `tfsdk:"mandatory_route"`
+	PersistentMessages bool                   `tfsdk:"persistent_messages"`
+	MessageTtl         int64                  `tfsdk:"message_ttl"`
+	Headers            []AblyRuleHeaders      `tfsdk:"headers"`
+	Enveloped          bool                   `tfsdk:"enveloped"`
+	Format             ably_control_go.Format `tfsdk:"format"`
+}
+
 type KafkaAuthentication struct {
 	Sasl Sasl `tfsdk:"sasl"`
 }
