@@ -9,7 +9,7 @@
 | Name | Version |
 |------|---------|
 | <a name="provider_ably"></a> [ably](#provider\_ably) | 0.2.0 |
-| <a name="provider_tls"></a> [tls](#provider\_tls) | 4.0.3 |
+| <a name="provider_tls"></a> [tls](#provider\_tls) | n/a |
 
 ## Modules
 
@@ -36,6 +36,7 @@ No modules.
 | [ably_rule_pulsar.rule0](https://registry.terraform.io/providers/ably/ably/latest/docs/resources/rule_pulsar) | resource |
 | [ably_rule_sqs.rule0](https://registry.terraform.io/providers/ably/ably/latest/docs/resources/rule_sqs) | resource |
 | [ably_rule_zapier.rule0](https://registry.terraform.io/providers/ably/ably/latest/docs/resources/rule_zapier) | resource |
+| [ably_app.app0](https://registry.terraform.io/providers/ably/ably/latest/docs/data-sources/app) | data source |
 | [tls_certificate.example](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/data-sources/certificate) | data source |
 
 ## Inputs
@@ -44,4 +45,10 @@ No inputs.
 
 ## Outputs
 
-No outputs.
+| Name | Description |
+|------|-------------|
+| <a name="output_ably_app0_app_name"></a> [ably\_app0\_app\_name](#output\_ably\_app0\_app\_name) | n/a |
+| <a name="output_ably_app0_tls_only"></a> [ably\_app0\_tls\_only](#output\_ably\_app0\_tls\_only) | n/a |
+| <a name="output_ably_app_account_id"></a> [ably\_app\_account\_id](#output\_ably\_app\_account\_id) | n/a |
+| <a name="output_ably_app_app0_id"></a> [ably\_app\_app0\_id](#output\_ably\_app\_app0\_id) | n/a |
+| <a name="output_ably_app_app0_status"></a> [ably\_app\_app0\_status](#output\_ably\_app\_app0\_status) | n/a |

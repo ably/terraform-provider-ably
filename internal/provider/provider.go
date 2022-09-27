@@ -139,5 +139,7 @@ func (p *provider) GetResources(_ context.Context) (map[string]tfsdk_provider.Re
 
 // GetDataSources - Defines provider data sources
 func (p *provider) GetDataSources(_ context.Context) (map[string]tfsdk_provider.DataSourceType, diag.Diagnostics) {
-	return map[string]tfsdk_provider.DataSourceType{}, nil
+	return map[string]tfsdk_provider.DataSourceType{
+		"ably_app": datasourceAppType{},
+	}, nil
 }
