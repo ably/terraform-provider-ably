@@ -203,6 +203,13 @@ type AblyRuleTargetKafka struct {
 	Format              ably_control_go.Format `tfsdk:"format"`
 }
 
+type AblyRuleTargetAmqp struct {
+	QueueID   string                 `tfsdk:"queue_id"`
+	Headers   []AblyRuleHeaders      `tfsdk:"headers"`
+	Enveloped bool                   `tfsdk:"enveloped"`
+	Format    ably_control_go.Format `tfsdk:"format"`
+}
+
 type KafkaAuthentication struct {
 	Sasl Sasl `tfsdk:"sasl"`
 }
