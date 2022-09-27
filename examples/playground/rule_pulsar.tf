@@ -44,10 +44,10 @@ resource "ably_rule_pulsar" "rule0" {
     channel_filter = "^my-channel.*",
     type           = "channel.message"
   }
-  request_mode = "batch"
+  request_mode = "single"
   target = {
     routing_key     = "test-key"
-    topic           = "persistent://my-tenant/my-namespace/my-topic"
+    topic           = "my-tenant/my-namespace/my-topic"
     service_url     = "pulsar://pulsar.us-west.example.com:6650/"
     tls_trust_certs = [data.tls_certificate.example.certificates[0].cert_pem]
     enveloped       = true
