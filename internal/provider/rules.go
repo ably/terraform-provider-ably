@@ -80,7 +80,19 @@ func GetPlanRule(plan AblyRule) ably_control_go.NewRule {
 			Headers:      GetHeaders(t.Headers),
 			SigningKeyID: t.SigningKeyId,
 		}
-
+	case *AblyRuleTargetPulsar:
+		target = &ably_control_go.PulsarTarget{
+			RoutingKey:    t.RoutingKey,
+			Topic:         t.Topic,
+			ServiceURL:    t.ServiceURL,
+			TlsTrustCerts: t.TlsTrustCerts,
+			Authentication: ably_control_go.PulsarAuthentication{
+				AuthenticationMode: ably_control_go.PularAuthenticationMode(t.Authentication.Mode),
+				Token:              t.Authentication.Token,
+			},
+			Enveloped: t.Enveloped,
+			Format:    t.Format,
+		}
 	case *AblyRuleTargetHTTP:
 		var headers []ably_control_go.Header
 		for _, h := range t.Headers {
@@ -96,13 +108,11 @@ func GetPlanRule(plan AblyRule) ably_control_go.NewRule {
 			SigningKeyID: t.SigningKeyId,
 			Format:       t.Format,
 		}
-
 	case *AblyRuleTargetIFTTT:
 		target = &ably_control_go.HttpIftttTarget{
 			WebhookKey: t.WebhookKey,
 			EventName:  t.EventName,
 		}
-
 	case *AblyRuleTargetAzureFunction:
 		target = &ably_control_go.HttpAzureFunctionTarget{
 			AzureAppID:        t.AzureAppID,
@@ -111,7 +121,6 @@ func GetPlanRule(plan AblyRule) ably_control_go.NewRule {
 			SigningKeyID:      t.SigningKeyID,
 			Format:            t.Format,
 		}
-
 	case *AblyRuleTargetGoogleFunction:
 		target = &ably_control_go.HttpGoogleCloudFunctionTarget{
 			Region:       t.Region,
@@ -256,6 +265,19 @@ func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 			Url:          v.Url,
 			SigningKeyId: v.SigningKeyID,
 			Headers:      headers,
+		}
+	case *ably_control_go.PulsarTarget:
+		resp_target = &AblyRuleTargetPulsar{
+			RoutingKey:    v.RoutingKey,
+			Topic:         v.Topic,
+			ServiceURL:    v.ServiceURL,
+			TlsTrustCerts: v.TlsTrustCerts,
+			Authentication: PulsarAuthentication{
+				Mode:  string(v.Authentication.AuthenticationMode),
+				Token: v.Authentication.Token,
+			},
+			Enveloped: v.Enveloped,
+			Format:    v.Format,
 		}
 	case *ably_control_go.HttpIftttTarget:
 		resp_target = &AblyRuleTargetIFTTT{

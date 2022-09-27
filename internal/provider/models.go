@@ -156,6 +156,21 @@ type AblyRuleTargetHTTP struct {
 	Format       ably_control_go.Format `tfsdk:"format"`
 }
 
+type AblyRuleTargetPulsar struct {
+	RoutingKey     string                 `tfsdk:"routing_key"`
+	Topic          string                 `tfsdk:"topic"`
+	ServiceURL     string                 `tfsdk:"service_url"`
+	TlsTrustCerts  []string               `tfsdk:"tls_trust_certs"`
+	Authentication PulsarAuthentication   `tfsdk:"authentication"`
+	Enveloped      bool                   `tfsdk:"enveloped"`
+	Format         ably_control_go.Format `tfsdk:"format"`
+}
+
+type PulsarAuthentication struct {
+	Mode  string `tfsdk:"mode"`
+	Token string `tfsdk:"token"`
+}
+
 type AblyRuleTargetZapier struct {
 	Url          string            `tfsdk:"url"`
 	Headers      []AblyRuleHeaders `tfsdk:"headers"`
