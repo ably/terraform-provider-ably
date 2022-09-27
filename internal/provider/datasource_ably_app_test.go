@@ -22,9 +22,13 @@ func TestAccAblyAppDS(t *testing.T) {
 			// Create and Read testing of ably_app.app0
 			{
 				Config: testAccAblyAppConfig(&ably_control_go.App{
-					Name:    app_name,
-					Status:  "disabled",
-					TLSOnly: false,
+					Name:                   app_name,
+					Status:                 "enabled",
+					TLSOnly:                true,
+					FcmKey:                 "a",
+					ApnsCertificate:        cert,
+					ApnsPrivateKey:         key,
+					ApnsUseSandboxEndpoint: true,
 				}),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
