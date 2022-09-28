@@ -2,8 +2,11 @@ package ably_control
 
 import (
 	"fmt"
+	ably_control_go "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"os"
 	"testing"
 )
 
@@ -19,9 +22,48 @@ func TestAccAblyKey(t *testing.T) {
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
+			// Create the app to test the import strategy
+			{
+				Config: testAccAblyKeyConfig(app_name, []ablyKeyConfig{}),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
+				),
+			},
+			{
+				ResourceName: "ably_api_key.importing_key",
+				ImportState:  true,
+				ImportStateIdFunc: func(state *terraform.State) (string, error) {
+					client, _, err := ably_control_go.NewClientWithURL(os.Getenv("ABLY_ACCOUNT_TOKEN"), os.Getenv("ABLY_URL"))
+					if err != nil {
+						return "", err
+					}
+
+					appID, ok := state.RootModule().Resources["ably_app.app0"].Primary.Attributes["id"]
+
+					if !ok {
+						return "", fmt.Errorf("ably_app.app0 id not found")
+					}
+
+					key, err := client.CreateKey(appID, &ably_control_go.NewKey{Name: "importingKey", Capability: map[string][]string{"channel100": {"publish", "subscribe"}}})
+					if err != nil {
+						return "", err
+					}
+
+					return appID + "," + key.ID, nil
+
+				},
+				Config: testAccAblyKeyConfig(app_name, []ablyKeyConfig{{resourceName: "importing_key", keyName: "importingKey", keyCapabilityName0: "channel100", keyCapabilityCap0: `["publish", "subscribe"]`}}),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
+					resource.TestCheckResourceAttr("ably_api_key.importing_key", "name", "importingKey"),
+					resource.TestCheckResourceAttr("ably_api_key.importing_key", "capabilities.channel100.0", "publish"),
+					resource.TestCheckResourceAttr("ably_api_key.importing_key", "capabilities.channel100.1", "subscribe"),
+					resource.TestCheckResourceAttrSet("ably_api_key.importing_key", "key"),
+				),
+			},
 			// Create and Read testing of ably_app.app0
 			{
-				Config: testAccAblyKeyConfig(app_name, key_name, "channel100", `["publish", "subscribe"]`),
+				Config: testAccAblyKeyConfig(app_name, []ablyKeyConfig{{resourceName: "key0", keyName: key_name, keyCapabilityName0: "channel100", keyCapabilityCap0: `["publish", "subscribe"]`}}),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
 					resource.TestCheckResourceAttr("ably_api_key.key0", "name", key_name),
@@ -37,7 +79,7 @@ func TestAccAblyKey(t *testing.T) {
 			},
 			// Update and Read testing of ably_app.app0
 			{
-				Config: testAccAblyKeyConfig(update_app_name, update_key_name, "channel100", `["history"]`),
+				Config: testAccAblyKeyConfig(update_app_name, []ablyKeyConfig{{resourceName: "key0", keyName: update_key_name, keyCapabilityName0: "channel100", keyCapabilityCap0: `["history"]`}}),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", update_app_name),
 					resource.TestCheckResourceAttr("ably_api_key.key0", "name", update_key_name),
@@ -55,9 +97,16 @@ func TestAccAblyKey(t *testing.T) {
 	})
 }
 
+type ablyKeyConfig struct {
+	resourceName       string
+	keyName            string
+	keyCapabilityName0 string
+	keyCapabilityCap0  string
+}
+
 // Function with inline HCL to provision an ably_app resource
 // Takes App name, Key Name, Capability Name and Capability List as function params.
-func testAccAblyKeyConfig(appName string, keyName string, keyCapabilityName0 string, keyCapabilityCap0 string) string {
+func testAccAblyKeyConfig(appName string, ablyKeys []ablyKeyConfig) string {
 	return fmt.Sprintf(`
 terraform {
 	required_providers {
@@ -75,13 +124,21 @@ resource "ably_app" "app0" {
 	status   = "enabled"
 	tls_only = true
 }
+`, appName) + testAccAblyApiKeyConfig(ablyKeys)
+}
 
-resource "ably_api_key" "key0" {
+func testAccAblyApiKeyConfig(ablyKeys []ablyKeyConfig) string {
+	var resultConfig = ""
+	for _, apiKey := range ablyKeys {
+		resultConfig += fmt.Sprintf(`
+resource "ably_api_key" "%[1]q" {
 	app_id = ably_app.app0.id
 	name   = %[2]q
 	capabilities = {
 	  %[3]q = %[4]s
 	}
   }
-`, appName, keyName, keyCapabilityName0, keyCapabilityCap0)
+`, apiKey.resourceName, apiKey.keyName, apiKey.keyCapabilityName0, apiKey.keyCapabilityCap0)
+	}
+	return resultConfig
 }
