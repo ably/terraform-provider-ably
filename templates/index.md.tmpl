@@ -44,15 +44,15 @@ In order to import a resource, you need to add the resource to your Terraform co
 
 For example, in order to import an app named `ably-tf-provider-app-0000`, add something similar to the following:
   
-  {{ tffile "examples/resources/app.tf" }}
+{{ tffile "examples/resources/app.tf" }}
   
-  Then run the following command:
+Then run the following command:
   
-  ```bash
-  terraform import ably_app.app0 ably-tf-provider-app-0000
-  ```
+```bash
+terraform import ably_app.app0 ably-tf-provider-app-0000
+```
 
-  This will add the app to your Terraform state file. You can then run `terraform plan` to see what changes will be made to the app.
+This will add the app to your Terraform state file. You can then run `terraform plan` to see what changes will be made to the app.
 
 
 {{ .SchemaMarkdown | trimspace }}
