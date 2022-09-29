@@ -1,5 +1,23 @@
 # Change log
 
+## [0.3.0](https://github.com/ably/terraform-provider-ably/tree/v0.3.0)
+
+This release adds: 
+- Ably Zapier integration rule via `ably_rule_zapier` resource
+- Ably AWS Lambda integration rule via `ably_rule_lambda` resource
+- Ably Google Cloud Function integration rule via `ably_rule_google_function` resource
+- Ably IFTTT integration rule via `ably_rule_ifttt` resource
+- Ably Azure Functions integration rule via `ably_rule_azure_function` resource
+- Ably HTTP integration rule via `ably_rule_http` resource
+- Ably Kafka integration rule via `ably_rule_kafka` resource
+- Ably Pulsar integration rule via `ably_rule_pulsar` resource
+- Ably AMQP and external AMQP integration rules via `ably_rule_amqp` and `ably_rule_amqp_external` resources
+- Updated documentation
+
+Bugfixes:
+- Fixes issues with certain fields (including API Key) being available only on the first apply
+- Fixes issue with some optional fields not really being optional
+
 ## [0.2.0](https://github.com/ably/terraform-provider-ably/tree/v0.2.0)
 
 This release adds: 
