@@ -27,10 +27,7 @@ func (r resourceRuleLambdaType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 				Type:     types.StringType,
 				Optional: true,
 			},
-			"enveloped": {
-				Type:     types.BoolType,
-				Optional: true,
-			},
+			"enveloped":      GetEnvelopedchema(),
 			"authentication": GetAwsAuthSchema(),
 		},
 		"The `ably_rule_lambda` resource allows you to create and manage an Ably integration rule for AWS Lambda. Read more at https://ably.com/docs/general/webhooks/aws-lambda",

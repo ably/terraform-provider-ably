@@ -24,25 +24,9 @@ func (r resourceRuleAmqpType) GetSchema(_ context.Context) (tfsdk.Schema, diag.D
 				Required:    true,
 				Description: "The ID of your Ably queue",
 			},
-			"headers": GetHeaderSchema(),
-			"enveloped": {
-				Type:        types.BoolType,
-				Optional:    true,
-				Computed:    true,
-				Description: "Delivered messages are wrapped in an Ably envelope by default that contains metadata about the message and its payload. The form of the envelope depends on whether it is part of a Webhook/Function or a Queue/Firehose rule. For everything besides Webhooks, you can ensure you only get the raw payload by unchecking \"Enveloped\" when setting up the rule.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.Bool{Value: false}),
-				},
-			},
-			"format": {
-				Type:        types.StringType,
-				Optional:    true,
-				Computed:    true,
-				Description: "JSON provides a text-based encoding",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.String{Value: "json"}),
-				},
-			},
+			"headers":   GetHeaderSchema(),
+			"enveloped": GetEnvelopedchema(),
+			"format":    GetFormatSchema(),
 		},
 		"The `ably_rule_amqp` resource allows you to create and manage an Ably integration rule for AMQP. Read more at https://ably.com/docs/general/firehose/amqp-rule"), nil
 }

@@ -24,16 +24,8 @@ func (r resourceRuleKafkaType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 				Required:    true,
 				Description: "The Kafka partition key. This is used to determine which partition a message should be routed to, where a topic has been partitioned. routingKey should be in the format topic:key where topic is the topic to publish to, and key is the value to use as the message key",
 			},
-			"enveloped": {
-				Type:        types.BoolType,
-				Optional:    true,
-				Description: "Delivered messages are wrapped in an Ably envelope by default that contains metadata about the message and its payload. The form of the envelope depends on whether it is part of a Webhook/Function or a Queue/Firehose rule. For everything besides Webhooks, you can ensure you only get the raw payload by unchecking `Enveloped` when setting up the rule",
-			},
-			"format": {
-				Type:        types.StringType,
-				Optional:    true,
-				Description: "JSON provides a simpler text-based encoding, whereas MsgPack provides a more efficient binary encoding",
-			},
+			"enveloped": GetEnvelopedchema(),
+			"format":    GetFormatSchema(),
 			"brokers": {
 				Type: types.ListType{
 					ElemType: types.StringType,
