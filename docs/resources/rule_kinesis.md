@@ -48,8 +48,8 @@ Required:
 
 Optional:
 
-- `enveloped` (Boolean)
-- `format` (String)
+- `enveloped` (Boolean) Delivered messages are wrapped in an Ably envelope by default that contains metadata about the message and its payload. The form of the envelope depends on whether it is part of a Webhook/Function or a Queue/Firehose rule. For everything besides Webhooks, you can ensure you only get the raw payload by unchecking "Enveloped" when setting up the rule.
+- `format` (String) JSON provides a text-based encoding, whereas MsgPack provides a more efficient binary encoding
 - `partition_key` (String)
 - `region` (String)
 - `stream_name` (String)
