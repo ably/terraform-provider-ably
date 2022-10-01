@@ -45,17 +45,9 @@ func (r resourceRuleAmqpExternalType) GetSchema(_ context.Context) (tfsdk.Schema
 				Computed:    true,
 				Description: "You can optionally override the default TTL on a queue and specify a TTL in minutes for messages to be persisted. It is unusual to change the default TTL, so if this field is left empty, the default TTL for the queue will be used.",
 			},
-			"headers": GetHeaderSchema(),
-			"enveloped": {
-				Type:        types.BoolType,
-				Optional:    true,
-				Description: "Delivered messages are wrapped in an Ably envelope by default that contains metadata about the message and its payload. The form of the envelope depends on whether it is part of a Webhook/Function or a Queue/Firehose rule. For everything besides Webhooks, you can ensure you only get the raw payload by unchecking `Enveloped` when setting up the rule",
-			},
-			"format": {
-				Type:        types.StringType,
-				Optional:    true,
-				Description: "JSON provides a simpler text-based encoding, whereas MsgPack provides a more efficient binary encoding",
-			},
+			"headers":   GetHeaderSchema(),
+			"enveloped": GetEnvelopedchema(),
+			"format":    GetFormatSchema(),
 		},
 		"The `ably_rule_amqp_external` resource allows you to create and manage an Ably integration rule for Firehose. Read more at https://ably.com/docs/general/firehose",
 	), nil

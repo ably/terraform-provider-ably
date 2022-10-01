@@ -31,14 +31,8 @@ func (r resourceRuleKinesisType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 				Type:     types.StringType,
 				Optional: true,
 			},
-			"enveloped": {
-				Type:     types.BoolType,
-				Optional: true,
-			},
-			"format": {
-				Type:     types.StringType,
-				Optional: true,
-			},
+			"enveloped":      GetEnvelopedchema(),
+			"format":         GetFormatSchema(),
 			"authentication": GetAwsAuthSchema(),
 		},
 		"The `ably_rule_kinesis` resource allows you to create and manage an Ably integration rule for AWS Kinesis. Read more at https://ably.com/docs/general/firehose/kinesis-rule",

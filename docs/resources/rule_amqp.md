@@ -77,7 +77,7 @@ Required:
 Optional:
 
 - `enveloped` (Boolean) Delivered messages are wrapped in an Ably envelope by default that contains metadata about the message and its payload. The form of the envelope depends on whether it is part of a Webhook/Function or a Queue/Firehose rule. For everything besides Webhooks, you can ensure you only get the raw payload by unchecking "Enveloped" when setting up the rule.
-- `format` (String) JSON provides a text-based encoding
+- `format` (String) JSON provides a text-based encoding, whereas MsgPack provides a more efficient binary encoding
 - `headers` (Attributes List) If you have additional information to send, you'll need to include the relevant headers (see [below for nested schema](#nestedatt--target--headers))
 
 <a id="nestedatt--target--headers"></a>

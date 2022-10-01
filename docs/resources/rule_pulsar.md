@@ -114,8 +114,8 @@ Required:
 
 Optional:
 
-- `enveloped` (Boolean) Delivered messages are wrapped in an Ably envelope by default that contains metadata about the message and its payload. The form of the envelope depends on whether it is part of a Webhook/Function or a Queue/Firehose rule. For everything besides Webhooks, you can ensure you only get the raw payload by unchecking `enveloped` when setting up the rule
-- `format` (String) JSON provides a simpler text-based encoding, whereas MsgPack provides a more efficient binary encoding
+- `enveloped` (Boolean) Delivered messages are wrapped in an Ably envelope by default that contains metadata about the message and its payload. The form of the envelope depends on whether it is part of a Webhook/Function or a Queue/Firehose rule. For everything besides Webhooks, you can ensure you only get the raw payload by unchecking "Enveloped" when setting up the rule.
+- `format` (String) JSON provides a text-based encoding, whereas MsgPack provides a more efficient binary encoding
 - `tls_trust_certs` (List of String, Sensitive) All connections to a Pulsar endpoint require TLS. The tls_trust_certs option allows you to configure different or additional trust anchors for those TLS connections. This enables server verification. You can specify an optional list of trusted CA certificates to use to verify the TLS certificate presented by the Pulsar cluster. Each certificate should be encoded in PEM format
 
 <a id="nestedatt--target--authentication"></a>

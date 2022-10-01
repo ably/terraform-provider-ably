@@ -34,16 +34,8 @@ func (r resourceRuleSqsType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 				Optional:    true,
 				Description: "The AWS SQS queue name",
 			},
-			"enveloped": {
-				Type:        types.BoolType,
-				Optional:    true,
-				Description: "Delivered messages are wrapped in an Ably envelope by default that contains metadata about the message and its payload. The form of the envelope depends on whether it is part of a Webhook/Function or a Queue/Firehose rule. For everything besides Webhooks, you can ensure you only get the raw payload by unchecking 'Enveloped' when setting up the rule.",
-			},
-			"format": {
-				Type:        types.StringType,
-				Optional:    true,
-				Description: "JSON provides a text-based encoding",
-			},
+			"enveloped":      GetEnvelopedchema(),
+			"format":         GetFormatSchema(),
 			"authentication": GetAwsAuthSchema(),
 		},
 		"The `ably_rule_sqs` resource allows you to create and manage an Ably integration rule for AWS SQS. Read more at https://ably.com/docs/general/firehose/sqs-rule",

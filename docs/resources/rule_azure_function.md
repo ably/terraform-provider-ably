@@ -77,7 +77,7 @@ Required:
 
 Optional:
 
-- `format` (String)
+- `format` (String) JSON provides a text-based encoding, whereas MsgPack provides a more efficient binary encoding
 - `headers` (Attributes List) If you have additional information to send, you'll need to include the relevant headers (see [below for nested schema](#nestedatt--target--headers))
 - `signing_key_id` (String) The signing key ID for use in batch mode. Ably will optionally sign the payload using an API key ensuring your servers can validate the payload using the private API key. See the [webhook security docs](https://ably.com/docs/general/webhooks#security) for more information
 

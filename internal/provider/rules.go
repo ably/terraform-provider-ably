@@ -503,6 +503,30 @@ func GetHeaderSchema() tfsdk.Attribute {
 	}
 }
 
+func GetEnvelopedchema() tfsdk.Attribute {
+	return tfsdk.Attribute{
+		Type:        types.BoolType,
+		Optional:    true,
+		Computed:    true,
+		Description: "Delivered messages are wrapped in an Ably envelope by default that contains metadata about the message and its payload. The form of the envelope depends on whether it is part of a Webhook/Function or a Queue/Firehose rule. For everything besides Webhooks, you can ensure you only get the raw payload by unchecking \"Enveloped\" when setting up the rule.",
+		PlanModifiers: []tfsdk.AttributePlanModifier{
+			DefaultAttribute(types.Bool{Value: false}),
+		},
+	}
+}
+
+func GetFormatSchema() tfsdk.Attribute {
+	return tfsdk.Attribute{
+		Type:        types.StringType,
+		Optional:    true,
+		Computed:    true,
+		Description: "JSON provides a text-based encoding, whereas MsgPack provides a more efficient binary encoding",
+		PlanModifiers: []tfsdk.AttributePlanModifier{
+			DefaultAttribute(types.String{Value: "json"}),
+		},
+	}
+}
+
 func GetSourceType(mode ably_control_go.SourceType) ably_control_go.SourceType {
 	switch mode {
 	case "channel.message":
