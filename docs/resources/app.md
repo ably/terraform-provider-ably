@@ -18,7 +18,8 @@ resource "ably_app" "app0" {
   status   = "enabled"
   tls_only = true
 }
-
+```
+```terraform
 resource "ably_app" "app1" {
   name                      = "ably-tf-provider-app-0001"
   status                    = "enabled"

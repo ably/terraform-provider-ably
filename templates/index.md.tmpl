@@ -38,4 +38,21 @@ To start using the Ably Terraform Provider you need to authenticate with Ably. Y
 
 {{ tffile "examples/resources/main_alternative_auth.tf" }}
 
+## Importing existing resources
+
+In order to import a resource, you need to add the resource to your Terraform configuration file, and then follow https://www.terraform.io/cli/import. 
+
+For example, in order to import an app named `ably-tf-provider-app-0000`, add something similar to the following:
+  
+{{ tffile "examples/resources/app.tf" }}
+  
+Then run the following command:
+  
+```bash
+terraform import ably_app.app0 ably-tf-provider-app-0000
+```
+
+This will add the app to your Terraform state file. You can then run `terraform plan` to see what changes will be made to the app.
+
+
 {{ .SchemaMarkdown | trimspace }}
