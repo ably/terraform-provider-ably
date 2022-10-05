@@ -3,11 +3,11 @@ package ably_control
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	ably_control_go "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+
 	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -32,6 +32,9 @@ func (r resourceQueueType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 				Type:        types.StringType,
 				Computed:    true,
 				Description: "The ID of the queue",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					tfsdk_resource.UseStateForUnknown(),
+				},
 			},
 			"name": {
 				Type:        types.StringType,
@@ -326,18 +329,7 @@ func (r resourceQueue) Delete(ctx context.Context, req tfsdk_resource.DeleteRequ
 
 // Import resource
 func (r resourceQueue) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
-	idParts := strings.Split(req.ID, ",")
-
-	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
-		resp.Diagnostics.AddError(
-			"Unexpected Import Identifier",
-			fmt.Sprintf("Expected import identifier with format: app_id,queue_id. Got: %q", req.ID),
-		)
-		return
-	}
-
-	tfsdk_resource.ImportStatePassthroughID(ctx, path.Root("app_id"), tfsdk_resource.ImportStateRequest{ID: idParts[0]}, resp)
-	tfsdk_resource.ImportStatePassthroughID(ctx, path.Root("id"), tfsdk_resource.ImportStateRequest{ID: idParts[1]}, resp)
+	ImportResource(ctx, req, resp, "id")
 }
 
 var _ tfsdk_resource.ResourceWithModifyPlan = resourceQueue{}

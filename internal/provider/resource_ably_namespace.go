@@ -2,12 +2,9 @@ package ably_control
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	ably_control_go "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -226,17 +223,9 @@ func (r resourceNamespace) Update(ctx context.Context, req tfsdk_resource.Update
 		return
 	}
 
-	// Get current state
-	var state AblyNamespace
-	diags = req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	// Gets the app ID and ID
-	app_id := state.AppID.Value
-	namespace_id := state.ID.Value
+	app_id := plan.AppID.Value
+	namespace_id := plan.ID.Value
 
 	// Instantiates struct of type ably_control_go.Namespace and sets values to output of plan
 	namespace_values := ably_control_go.Namespace{
@@ -307,16 +296,6 @@ func (r resourceNamespace) Delete(ctx context.Context, req tfsdk_resource.Delete
 
 // Import resource
 func (r resourceNamespace) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
-	idParts := strings.Split(req.ID, ",")
+	ImportResource(ctx, req, resp, "app_id", "id")
 
-	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
-		resp.Diagnostics.AddError(
-			"Unexpected Import Identifier",
-			fmt.Sprintf("Expected import identifier with format: app_id,namespace_id. Got: %q", req.ID),
-		)
-		return
-	}
-
-	tfsdk_resource.ImportStatePassthroughID(ctx, path.Root("app_id"), tfsdk_resource.ImportStateRequest{ID: idParts[0]}, resp)
-	tfsdk_resource.ImportStatePassthroughID(ctx, path.Root("id"), tfsdk_resource.ImportStateRequest{ID: idParts[1]}, resp)
 }

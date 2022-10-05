@@ -682,22 +682,13 @@ func UpdateRule[T any](r Rule, ctx context.Context, req tfsdk_resource.UpdateReq
 		return
 	}
 
-	var s AblyRuleDecoder[*AblyRuleTargetAmqpExternal]
-	diags = req.State.Get(ctx, &s)
-	resp.Diagnostics.Append(diags...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	state := s.Rule()
 	plan := p.Rule()
 
 	rule_values := GetPlanRule(plan)
 
 	// Gets the Ably App ID and Ably Rule ID value for the resource
-	app_id := state.AppID.Value
-	rule_id := state.ID.Value
+	app_id := plan.AppID.Value
+	rule_id := plan.ID.Value
 
 	// Update Ably Rule
 	rule, _ := r.Provider().client.UpdateRule(app_id, rule_id, &rule_values)
@@ -745,19 +736,27 @@ func DeleteRule[T any](r Rule, ctx context.Context, req tfsdk_resource.DeleteReq
 }
 
 // // Import resource
-func ImportRule(r Rule, ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
+func ImportResource(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse, fields ...string) {
 	// Save the import identifier in the id attribute
 	// identifier should be in the format app_id,key_id
 	idParts := strings.Split(req.ID, ",")
+	anyEmpty := false
 
-	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
+	for _, v := range idParts {
+		if v == "" {
+			anyEmpty = true
+		}
+	}
+
+	if len(idParts) != len(fields) || anyEmpty {
 		resp.Diagnostics.AddError(
 			"Unexpected Import Identifier",
-			fmt.Sprintf("Expected import identifier with format: 'app_id,rule_id'. Got: %q", req.ID),
+			fmt.Sprintf("Expected import identifier with format: '%s'. Got: %q", strings.Join(fields, ","), req.ID),
 		)
 		return
 	}
 	// Recent PR in TF Plugin Framework for paths but Hashicorp examples not updated - https://github.com/hashicorp/terraform-plugin-framework/pull/390
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("app_id"), idParts[0])...)
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), idParts[1])...)
+	for i, v := range fields {
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root(v), idParts[i])...)
+	}
 }

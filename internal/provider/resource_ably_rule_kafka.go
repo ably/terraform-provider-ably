@@ -105,5 +105,5 @@ func (r resourceRuleKafka) Delete(ctx context.Context, req tfsdk_resource.Delete
 
 // Import resource
 func (r resourceRuleKafka) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
-	ImportRule(&r, ctx, req, resp)
+	ImportResource(ctx, req, resp, "app_id", "id")
 }

@@ -2,12 +2,9 @@ package ably_control
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	ably_control_go "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -201,7 +198,6 @@ func (r resourceKey) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 		return
 	}
 
-	// Get current state
 	var state AblyKey
 	diags = req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -210,7 +206,7 @@ func (r resourceKey) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 	}
 
 	// Gets the app ID and Key ID
-	app_id := state.AppID.Value
+	app_id := plan.AppID.Value
 	key_id := state.ID.Value
 
 	// Instantiates struct of type ably_control_go.NewKey and sets values to output of plan
@@ -277,18 +273,5 @@ func (r resourceKey) Delete(ctx context.Context, req tfsdk_resource.DeleteReques
 
 // // Import resource
 func (r resourceKey) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
-	// Save the import identifier in the id attribute
-	// identifier should be in the format app_id,key_id
-	idParts := strings.Split(req.ID, ",")
-
-	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
-		resp.Diagnostics.AddError(
-			"Unexpected Import Identifier",
-			fmt.Sprintf("Expected import identifier with format: 'app_id,key_id'. Got: %q", req.ID),
-		)
-		return
-	}
-	// Recent PR in TF Plugin Framework for paths but Hashicorp examples not updated - https://github.com/hashicorp/terraform-plugin-framework/pull/390
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("app_id"), idParts[0])...)
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), idParts[1])...)
+	ImportResource(ctx, req, resp, "app_is", "id", "key")
 }
