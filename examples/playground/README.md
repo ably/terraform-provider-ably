@@ -2,13 +2,13 @@
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_ably"></a> [ably](#requirement\_ably) | >=0.2.0 |
+| <a name="requirement_ably"></a> [ably](#requirement\_ably) | >=0.3.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_ably"></a> [ably](#provider\_ably) | 0.2.0 |
+| <a name="provider_ably"></a> [ably](#provider\_ably) | 0.3.0 |
 | <a name="provider_tls"></a> [tls](#provider\_tls) | 4.0.3 |
 
 ## Modules
