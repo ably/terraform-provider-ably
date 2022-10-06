@@ -15,6 +15,8 @@ This provider supports the following systems/architectures:
 - Linux / ARMv6
 - Windows / AMD64
 
+This provider is built on top of Terraform Protocol 6.0, which is compatible with Terraform CLI version 1.0 and later.
+
 ## Installation
 
 To install Ably Terraform provider:
