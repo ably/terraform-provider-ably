@@ -18,6 +18,8 @@ Bugfixes:
 - Fixes issues with certain fields (including API Key) being available only on the first apply
 - Fixes issue with some optional fields not really being optional
 
+The release also includes additional code quality improvements.
+
 ## [0.2.0](https://github.com/ably/terraform-provider-ably/tree/v0.2.0)
 
 This release adds: 
