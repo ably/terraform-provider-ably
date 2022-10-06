@@ -1,4 +1,4 @@
-module terraform-provider-ably
+module github.com/ably/terraform-provider-ably
 
 go 1.19
 

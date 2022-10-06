@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
-	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"log"
-	ably_control "terraform-provider-ably/internal/provider"
+
+	ably_control "github.com/ably/terraform-provider-ably/internal/provider"
+
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
 
 func main() {
