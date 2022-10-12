@@ -69,5 +69,5 @@ func (r resourceRuleAmqp) Delete(ctx context.Context, req tfsdk_resource.DeleteR
 
 // Import resource
 func (r resourceRuleAmqp) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
-	ImportRule(&r, ctx, req, resp)
+	ImportResource(ctx, req, resp, "app_id", "id")
 }

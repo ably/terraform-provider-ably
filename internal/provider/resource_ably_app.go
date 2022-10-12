@@ -222,7 +222,6 @@ func (r resourceApp) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 		return
 	}
 
-	// Get current state
 	var state AblyApp
 	diags = req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -231,11 +230,13 @@ func (r resourceApp) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 	}
 
 	// Gets the app ID
-	app_id := state.ID.Value
+	app_id := plan.ID.Value
+	if plan.ID.Unknown {
+		app_id = state.ID.Value
+	}
 
 	// Instantiates struct of type ably_control_go.App and sets values to output of plan
 	app_values := ably_control_go.App{
-		ID:                     plan.ID.Value,
 		AccountID:              plan.AccountID.Value,
 		Name:                   plan.Name.Value,
 		Status:                 plan.Status.Value,

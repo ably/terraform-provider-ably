@@ -80,5 +80,5 @@ func (r resourceRuleSqs) Delete(ctx context.Context, req tfsdk_resource.DeleteRe
 
 // Import resource
 func (r resourceRuleSqs) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
-	ImportRule(&r, ctx, req, resp)
+	ImportResource(ctx, req, resp, "app_id", "id")
 }
