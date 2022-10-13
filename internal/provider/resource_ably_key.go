@@ -173,7 +173,7 @@ func (r resourceKey) Read(ctx context.Context, req tfsdk_resource.ReadRequest, r
 				Name:       types.String{Value: v.Name},
 				Capability: v.Capability,
 				Status:     types.Int64{Value: int64(v.Status)},
-				Key:        state.Key,
+				Key:        types.String{Value: v.Key},
 				Created:    types.Int64{Value: int64(v.Created)},
 				Modified:   types.Int64{Value: int64(v.Modified)},
 			}
@@ -231,7 +231,7 @@ func (r resourceKey) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 		Name:       types.String{Value: ably_key.Name},
 		Capability: ably_key.Capability,
 		Status:     types.Int64{Value: int64(ably_key.Status)},
-		Key:        state.Key,
+		Key:        types.String{Value: ably_key.Key},
 		Created:    types.Int64{Value: int64(ably_key.Created)},
 		Modified:   types.Int64{Value: int64(ably_key.Modified)},
 	}
@@ -273,5 +273,5 @@ func (r resourceKey) Delete(ctx context.Context, req tfsdk_resource.DeleteReques
 
 // // Import resource
 func (r resourceKey) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
-	ImportResource(ctx, req, resp, "app_is", "id", "key")
+	ImportResource(ctx, req, resp, "app_id", "id")
 }
