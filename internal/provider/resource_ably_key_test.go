@@ -27,6 +27,12 @@ func TestAccAblyKey(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_api_key.key0", "name", key_name),
 					resource.TestCheckResourceAttr("ably_api_key.key0", "capabilities.channel100.0", "publish"),
 					resource.TestCheckResourceAttr("ably_api_key.key0", "capabilities.channel100.1", "subscribe"),
+					resource.TestCheckResourceAttrWith("ably_api_key.key0", "key", func(value string) error {
+						if value == "" {
+							return fmt.Errorf("key can't be empty")
+						}
+						return nil
+					}),
 				),
 			},
 			// Update and Read testing of ably_app.app0
@@ -36,6 +42,12 @@ func TestAccAblyKey(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_app.app0", "name", update_app_name),
 					resource.TestCheckResourceAttr("ably_api_key.key0", "name", update_key_name),
 					resource.TestCheckResourceAttr("ably_api_key.key0", "capabilities.channel100.0", "history"),
+					resource.TestCheckResourceAttrWith("ably_api_key.key0", "key", func(value string) error {
+						if value == "" {
+							return fmt.Errorf("key can't be empty")
+						}
+						return nil
+					}),
 				),
 			},
 			// Delete testing automatically occurs in TestCase
