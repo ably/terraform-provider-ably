@@ -162,6 +162,7 @@ func (r resourceApp) Create(ctx context.Context, req tfsdk_resource.CreateReques
 func (r resourceApp) Read(ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var state AblyApp
+	found := false
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 
@@ -200,6 +201,7 @@ func (r resourceApp) Read(ctx context.Context, req tfsdk_resource.ReadRequest, r
 			emptyStringToNull(&resp_apps.FcmKey)
 			emptyStringToNull(&resp_apps.ApnsCertificate)
 			emptyStringToNull(&resp_apps.ApnsPrivateKey)
+			found = true
 
 			// Sets state to app values.
 			diags = resp.State.Set(ctx, &resp_apps)
@@ -208,7 +210,12 @@ func (r resourceApp) Read(ctx context.Context, req tfsdk_resource.ReadRequest, r
 			if resp.Diagnostics.HasError() {
 				return
 			}
+			break
 		}
+	}
+
+	if !found {
+		resp.State.RemoveResource(ctx)
 	}
 }
 
@@ -295,11 +302,18 @@ func (r resourceApp) Delete(ctx context.Context, req tfsdk_resource.DeleteReques
 
 	err := r.p.client.DeleteApp(app_id)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error deleting Resource",
-			"Could not delete resource, unexpected error: "+err.Error(),
-		)
-		return
+		if is_404(err) {
+			resp.Diagnostics.AddWarning(
+				"Resource does not exist",
+				"Resource does not exist, it may have already been deleted: "+err.Error(),
+			)
+		} else {
+			resp.Diagnostics.AddError(
+				"Error deleting Resource",
+				"Could not delete resource, unexpected error: "+err.Error(),
+			)
+			return
+		}
 	}
 
 	// Remove resource from state

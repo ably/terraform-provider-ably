@@ -150,6 +150,7 @@ func (r resourceKey) Create(ctx context.Context, req tfsdk_resource.CreateReques
 func (r resourceKey) Read(ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var state AblyKey
+	found := false
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 
@@ -162,7 +163,19 @@ func (r resourceKey) Read(ctx context.Context, req tfsdk_resource.ReadRequest, r
 	key_id := state.ID.Value
 
 	// Fetches all Ably Keys for the Ably App. The function invokes the Client Library Keys() method.
-	keys, _ := r.p.client.Keys(app_id)
+	keys, err := r.p.client.Keys(app_id)
+	if err != nil {
+		if is_404(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+
+		resp.Diagnostics.AddError(
+			"Error reading Resource",
+			"Could not create resource, unexpected error: "+err.Error(),
+		)
+		return
+	}
 
 	// Loops through apps and if account id and key id match, sets state.
 	for _, v := range keys {
@@ -179,13 +192,20 @@ func (r resourceKey) Read(ctx context.Context, req tfsdk_resource.ReadRequest, r
 			}
 			// Sets state to app values.
 			diags = resp.State.Set(ctx, &resp_key)
+			found = true
 
 			resp.Diagnostics.Append(diags...)
 			if resp.Diagnostics.HasError() {
 				return
 			}
+			break
 		}
 	}
+
+	if !found {
+		resp.State.RemoveResource(ctx)
+	}
+
 }
 
 // Update resource
@@ -260,11 +280,18 @@ func (r resourceKey) Delete(ctx context.Context, req tfsdk_resource.DeleteReques
 
 	err := r.p.client.RevokeKey(app_id, key_id)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error deleting Resource",
-			"Could not delete resource, unexpected error: "+err.Error(),
-		)
-		return
+		if is_404(err) {
+			resp.Diagnostics.AddWarning(
+				"Resource does not exist",
+				"Resource does not exist, it may have already been deleted: "+err.Error(),
+			)
+		} else {
+			resp.Diagnostics.AddError(
+				"Error deleting Resource",
+				"Could not delete resource, unexpected error: "+err.Error(),
+			)
+			return
+		}
 	}
 
 	// Remove resource from state
