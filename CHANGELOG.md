@@ -1,8 +1,15 @@
 # Change log
 
+## [0.4.0](https://github.com/ably/terraform-provider-ably/tree/v0.4.0)
+
+Bugfixes:
+- Fixes key not being read from the control API
+- Fixes reads not regestering when a resource had been deleted outside of terraform
+- Fixes deletes failing when a resource had been deleted outside of terraform
+
 ## [0.3.0](https://github.com/ably/terraform-provider-ably/tree/v0.3.0)
 
-This release adds: 
+This release adds:
 - Ably Zapier integration rule via `ably_rule_zapier` resource
 - Ably AWS Lambda integration rule via `ably_rule_lambda` resource
 - Ably Google Cloud Function integration rule via `ably_rule_google_function` resource
