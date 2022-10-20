@@ -657,7 +657,19 @@ func ReadRule[T any](r Rule, ctx context.Context, req tfsdk_resource.ReadRequest
 	rule_id := s.ID.Value
 
 	// Get Rule data
-	rule, _ := r.Provider().client.Rule(app_id, rule_id)
+	rule, err := r.Provider().client.Rule(app_id, rule_id)
+
+	if err != nil {
+		if is_404(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Error deleting Resource %s", r.Name()),
+			fmt.Sprintf("Could not delete resource %s, unexpected error: %s", r.Name(), err.Error()),
+		)
+		return
+	}
 
 	response_values := GetRuleResponse(&rule, &state)
 
@@ -724,11 +736,18 @@ func DeleteRule[T any](r Rule, ctx context.Context, req tfsdk_resource.DeleteReq
 
 	err := r.Provider().client.DeleteRule(app_id, rule_id)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("Error deleting Resource %s'", r.Name()),
-			fmt.Sprintf("Could not delete resource '%s', unexpected error: %s", r.Name(), err.Error()),
-		)
-		return
+		if is_404(err) {
+			resp.Diagnostics.AddWarning(
+				fmt.Sprintf("Resource does %s not exist", r.Name()),
+				fmt.Sprintf("Resource does %s not exist, it may have already been deleted: %s", r.Name(), err.Error()),
+			)
+		} else {
+			resp.Diagnostics.AddError(
+				fmt.Sprintf("Error deleting Resource %s'", r.Name()),
+				fmt.Sprintf("Could not delete resource '%s', unexpected error: %s", r.Name(), err.Error()),
+			)
+			return
+		}
 	}
 
 	// Remove resource from state

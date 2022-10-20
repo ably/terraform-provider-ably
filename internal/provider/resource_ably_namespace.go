@@ -167,6 +167,7 @@ func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.Create
 func (r resourceNamespace) Read(ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var state AblyNamespace
+	found := false
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 
@@ -182,6 +183,10 @@ func (r resourceNamespace) Read(ctx context.Context, req tfsdk_resource.ReadRequ
 	// NOTE: Control API & Client Lib do not currently support fetching single namespace given namespace id
 	namespaces, err := r.p.client.Namespaces(app_id)
 	if err != nil {
+		if is_404(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError(
 			"Error updating Resource",
 			"Could not update resource, unexpected error: "+err.Error(),
@@ -204,12 +209,18 @@ func (r resourceNamespace) Read(ctx context.Context, req tfsdk_resource.ReadRequ
 			}
 			// Sets state to namespace values.
 			diags = resp.State.Set(ctx, &resp_namespaces)
+			found = true
 
 			resp.Diagnostics.Append(diags...)
 			if resp.Diagnostics.HasError() {
 				return
 			}
+			break
 		}
+	}
+
+	if !found {
+		resp.State.RemoveResource(ctx)
 	}
 }
 
@@ -283,11 +294,18 @@ func (r resourceNamespace) Delete(ctx context.Context, req tfsdk_resource.Delete
 
 	err := r.p.client.DeleteNamespace(app_id, namespace_id)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error deleting Resource",
-			"Could not delete resource, unexpected error: "+err.Error(),
-		)
-		return
+		if is_404(err) {
+			resp.Diagnostics.AddWarning(
+				"Resource does not exist",
+				"Resource does not exist, it may have already been deleted: "+err.Error(),
+			)
+		} else {
+			resp.Diagnostics.AddError(
+				"Error deleting Resource",
+				"Could not delete resource, unexpected error: "+err.Error(),
+			)
+			return
+		}
 	}
 
 	// Remove resource from state
