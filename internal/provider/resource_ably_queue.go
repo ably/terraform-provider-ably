@@ -306,7 +306,7 @@ func (r resourceQueue) Update(ctx context.Context, req tfsdk_resource.UpdateRequ
 	// This function should never end up being run but needs to exist to satisfy the interface
 	// this error is just in case terraform decides to call it.
 	resp.Diagnostics.AddError(
-		"Error Modifing Resource",
+		"Error modifying Resource",
 		"Queue can not be modified",
 	)
 }
