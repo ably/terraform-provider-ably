@@ -40,7 +40,7 @@ func (r resourceKeyType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 			},
 			"capabilities": {
 				Type: types.MapType{
-					ElemType: types.ListType{
+					ElemType: types.SetType{
 						ElemType: types.StringType,
 					},
 				},
