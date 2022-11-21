@@ -164,7 +164,7 @@ func GetPlanRule(plan AblyRule) ably_control_go.NewRule {
 			RoutingKey:         t.RoutingKey,
 			MandatoryRoute:     t.MandatoryRoute,
 			PersistentMessages: t.PersistentMessages,
-			MessageTTL:         int(t.MessageTtl),
+			MessageTTL:         int(t.MessageTtl.ValueInt64()),
 			Headers:            GetHeaders(t.Headers),
 			Enveloped:          t.Enveloped,
 			Format:             t.Format,
@@ -363,13 +363,17 @@ func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 		}
 	case *ably_control_go.AmqpExternalTarget:
 		headers := ToHeaders(v)
+		ttl := types.Int64Null()
+		if v.MessageTTL != 0 {
+			ttl = types.Int64Value(int64(v.MessageTTL))
+		}
 
 		resp_target = &AblyRuleTargetAmqpExternal{
 			Url:                v.Url,
 			RoutingKey:         v.RoutingKey,
 			MandatoryRoute:     v.MandatoryRoute,
 			PersistentMessages: v.PersistentMessages,
-			MessageTtl:         int64(v.MessageTTL),
+			MessageTtl:         ttl,
 			Headers:            headers,
 			Enveloped:          v.Enveloped,
 			Format:             v.Format,
