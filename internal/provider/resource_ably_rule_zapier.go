@@ -4,16 +4,17 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceRuleZapierType struct{}
+type resourceRuleZapier struct {
+	p *provider
+}
 
 // Get Rule Resource schema
-func (r resourceRuleZapierType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r resourceRuleZapier) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return GetRuleSchema(
 		map[string]tfsdk.Attribute{
 			"headers": GetHeaderSchema(),
@@ -32,19 +33,12 @@ func (r resourceRuleZapierType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 	), nil
 }
 
-// New resource instance
-func (r resourceRuleZapierType) NewResource(_ context.Context, p tfsdk_provider.Provider) (tfsdk_resource.Resource, diag.Diagnostics) {
-	return resourceRuleZapier{
-		p: *(p.(*provider)),
-	}, nil
-}
-
-type resourceRuleZapier struct {
-	p provider
+func (r resourceRuleZapier) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+	resp.TypeName = "ably_rule_zapier"
 }
 
 func (r *resourceRuleZapier) Provider() *provider {
-	return &r.p
+	return r.p
 }
 
 func (r *resourceRuleZapier) Name() string {

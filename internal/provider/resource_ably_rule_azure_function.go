@@ -4,16 +4,17 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceRuleAzureFunctionType struct{}
+type resourceRuleAzureFunction struct {
+	p *provider
+}
 
 // Get Rule Resource schema
-func (r resourceRuleAzureFunctionType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r resourceRuleAzureFunction) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return GetRuleSchema(
 		map[string]tfsdk.Attribute{
 			"headers": GetHeaderSchema(),
@@ -38,19 +39,12 @@ func (r resourceRuleAzureFunctionType) GetSchema(_ context.Context) (tfsdk.Schem
 	), nil
 }
 
-// New resource instance
-func (r resourceRuleAzureFunctionType) NewResource(_ context.Context, p tfsdk_provider.Provider) (tfsdk_resource.Resource, diag.Diagnostics) {
-	return resourceRuleAzureFunction{
-		p: *(p.(*provider)),
-	}, nil
-}
-
-type resourceRuleAzureFunction struct {
-	p provider
+func (r resourceRuleAzureFunction) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+	resp.TypeName = "ably_rule_azure_function"
 }
 
 func (r *resourceRuleAzureFunction) Provider() *provider {
-	return &r.p
+	return r.p
 }
 
 func (r *resourceRuleAzureFunction) Name() string {

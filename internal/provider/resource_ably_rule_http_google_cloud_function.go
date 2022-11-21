@@ -4,16 +4,17 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceRuleGoogleFunctionType struct{}
+type resourceRuleGoogleFunction struct {
+	p *provider
+}
 
 // Get Rule Resource schema
-func (r resourceRuleGoogleFunctionType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r resourceRuleGoogleFunction) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return GetRuleSchema(
 		map[string]tfsdk.Attribute{
 			"region": {
@@ -44,19 +45,12 @@ func (r resourceRuleGoogleFunctionType) GetSchema(_ context.Context) (tfsdk.Sche
 	), nil
 }
 
-// New resource instance
-func (r resourceRuleGoogleFunctionType) NewResource(_ context.Context, p tfsdk_provider.Provider) (tfsdk_resource.Resource, diag.Diagnostics) {
-	return resourceRuleGoogleFunction{
-		p: *(p.(*provider)),
-	}, nil
-}
-
-type resourceRuleGoogleFunction struct {
-	p provider
+func (r resourceRuleGoogleFunction) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+	resp.TypeName = "ably_rule_google_function"
 }
 
 func (r *resourceRuleGoogleFunction) Provider() *provider {
-	return &r.p
+	return r.p
 }
 
 func (r *resourceRuleGoogleFunction) Name() string {

@@ -4,16 +4,17 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceRuleAmqpExternalType struct{}
+type resourceRuleAmqpExternal struct {
+	p *provider
+}
 
 // Get Rule Resource schema
-func (r resourceRuleAmqpExternalType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r resourceRuleAmqpExternal) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return GetRuleSchema(
 		map[string]tfsdk.Attribute{
 			"url": {
@@ -50,19 +51,12 @@ func (r resourceRuleAmqpExternalType) GetSchema(_ context.Context) (tfsdk.Schema
 	), nil
 }
 
-// New resource instance
-func (r resourceRuleAmqpExternalType) NewResource(_ context.Context, p tfsdk_provider.Provider) (tfsdk_resource.Resource, diag.Diagnostics) {
-	return resourceRuleAmqpExternal{
-		p: *(p.(*provider)),
-	}, nil
-}
-
-type resourceRuleAmqpExternal struct {
-	p provider
+func (r resourceRuleAmqpExternal) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+	resp.TypeName = "ably_rule_amqp_external"
 }
 
 func (r *resourceRuleAmqpExternal) Provider() *provider {
-	return &r.p
+	return r.p
 }
 
 func (r *resourceRuleAmqpExternal) Name() string {
