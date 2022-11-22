@@ -707,7 +707,14 @@ func UpdateRule[T any](r Rule, ctx context.Context, req tfsdk_resource.UpdateReq
 	rule_id := plan.ID.ValueString()
 
 	// Update Ably Rule
-	rule, _ := r.Provider().client.UpdateRule(app_id, rule_id, &rule_values)
+	rule, err := r.Provider().client.UpdateRule(app_id, rule_id, &rule_values)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Error updading Resource %s", r.Name()),
+			fmt.Sprintf("Could not update resource %s, unexpected error: %s", r.Name(), err.Error()),
+		)
+		return
+	}
 
 	response_values := GetRuleResponse(&rule, &plan)
 
