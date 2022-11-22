@@ -4,16 +4,17 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceRuleCloudflareWorkerType struct{}
+type resourceRuleCloudflareWorker struct {
+	p *provider
+}
 
 // Get Rule Resource schema
-func (r resourceRuleCloudflareWorkerType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r resourceRuleCloudflareWorker) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return GetRuleSchema(
 		map[string]tfsdk.Attribute{
 			"url": {
@@ -31,19 +32,12 @@ func (r resourceRuleCloudflareWorkerType) GetSchema(_ context.Context) (tfsdk.Sc
 		"The `ably_rule_cloudflare_worker` resource allows you to create and manage an Ably integration rule for Cloudflare workers. Read more at https://ably.com/docs/general/webhooks/cloudflare"), nil
 }
 
-// New resource instance
-func (r resourceRuleCloudflareWorkerType) NewResource(_ context.Context, p tfsdk_provider.Provider) (tfsdk_resource.Resource, diag.Diagnostics) {
-	return resourceRuleCloudflareWorker{
-		p: *(p.(*provider)),
-	}, nil
-}
-
-type resourceRuleCloudflareWorker struct {
-	p provider
+func (r resourceRuleCloudflareWorker) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+	resp.TypeName = "ably_rule_cloudflare_worker"
 }
 
 func (r *resourceRuleCloudflareWorker) Provider() *provider {
-	return &r.p
+	return r.p
 }
 
 func (r *resourceRuleCloudflareWorker) Name() string {

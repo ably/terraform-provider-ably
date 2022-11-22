@@ -4,16 +4,17 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceRulePulsarType struct{}
+type resourceRulePulsar struct {
+	p *provider
+}
 
 // Get Rule Resource schema
-func (r resourceRulePulsarType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r resourceRulePulsar) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return GetRuleSchema(
 		map[string]tfsdk.Attribute{
 			"routing_key": {
@@ -62,19 +63,12 @@ func (r resourceRulePulsarType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 	), nil
 }
 
-// New resource instance
-func (r resourceRulePulsarType) NewResource(_ context.Context, p tfsdk_provider.Provider) (tfsdk_resource.Resource, diag.Diagnostics) {
-	return resourceRulePulsar{
-		p: *(p.(*provider)),
-	}, nil
-}
-
-type resourceRulePulsar struct {
-	p provider
+func (r resourceRulePulsar) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+	resp.TypeName = "ably_rule_pulsar"
 }
 
 func (r *resourceRulePulsar) Provider() *provider {
-	return &r.p
+	return r.p
 }
 
 func (r *resourceRulePulsar) Name() string {

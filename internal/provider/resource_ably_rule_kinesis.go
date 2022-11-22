@@ -4,16 +4,17 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceRuleKinesisType struct{}
+type resourceRuleKinesis struct {
+	p *provider
+}
 
 // Get Rule Resource schema
-func (r resourceRuleKinesisType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r resourceRuleKinesis) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return GetRuleSchema(
 		map[string]tfsdk.Attribute{
 			"region": {
@@ -36,19 +37,12 @@ func (r resourceRuleKinesisType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 	), nil
 }
 
-// New resource instance
-func (r resourceRuleKinesisType) NewResource(_ context.Context, p tfsdk_provider.Provider) (tfsdk_resource.Resource, diag.Diagnostics) {
-	return resourceRuleKinesis{
-		p: *(p.(*provider)),
-	}, nil
-}
-
-type resourceRuleKinesis struct {
-	p provider
+func (r resourceRuleKinesis) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+	resp.TypeName = "ably_rule_kinesis"
 }
 
 func (r *resourceRuleKinesis) Provider() *provider {
-	return &r.p
+	return r.p
 }
 
 func (r *resourceRuleKinesis) Name() string {

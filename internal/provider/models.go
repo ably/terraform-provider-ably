@@ -68,8 +68,8 @@ type AblyQueue struct {
 }
 
 func emptyStringToNull(v *types.String) {
-	if v.Value == "" {
-		v.Null = true
+	if v.ValueString() == "" {
+		*v = types.StringNull()
 	}
 }
 

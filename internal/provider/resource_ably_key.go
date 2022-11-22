@@ -5,16 +5,17 @@ import (
 
 	ably_control_go "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceKeyType struct{}
+type resourceKey struct {
+	p *provider
+}
 
 // Get Resource schema
-func (r resourceKeyType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r resourceKey) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
@@ -52,7 +53,7 @@ func (r resourceKeyType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 				Computed:    true,
 				Description: "The status of the key. 0 is enabled, 1 is revoked.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.Int64{Value: 0}),
+					DefaultAttribute(types.Int64Value(0)),
 				},
 			},
 			"created": {
@@ -81,15 +82,8 @@ func (r resourceKeyType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 	}, nil
 }
 
-// New resource instance
-func (r resourceKeyType) NewResource(_ context.Context, p tfsdk_provider.Provider) (tfsdk_resource.Resource, diag.Diagnostics) {
-	return resourceKey{
-		p: *(p.(*provider)),
-	}, nil
-}
-
-type resourceKey struct {
-	p provider
+func (r resourceKey) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+	resp.TypeName = "ably_api_key"
 }
 
 // Create a new resource
@@ -112,12 +106,12 @@ func (r resourceKey) Create(ctx context.Context, req tfsdk_resource.CreateReques
 	}
 
 	new_key := ably_control_go.NewKey{
-		Name:       plan.Name.Value,
+		Name:       plan.Name.ValueString(),
 		Capability: plan.Capability,
 	}
 
 	// Creates a new Ably Key by invoking the CreateKey function from the Client Library
-	ably_key, err := r.p.client.CreateKey(plan.AppID.Value, &new_key)
+	ably_key, err := r.p.client.CreateKey(plan.AppID.ValueString(), &new_key)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating Resource",
@@ -128,14 +122,14 @@ func (r resourceKey) Create(ctx context.Context, req tfsdk_resource.CreateReques
 
 	// Maps response body to resource schema attributes.
 	resp_key := AblyKey{
-		ID:         types.String{Value: ably_key.ID},
-		AppID:      types.String{Value: ably_key.AppID},
-		Name:       types.String{Value: ably_key.Name},
-		Key:        types.String{Value: ably_key.Key},
+		ID:         types.StringValue(ably_key.ID),
+		AppID:      types.StringValue(ably_key.AppID),
+		Name:       types.StringValue(ably_key.Name),
+		Key:        types.StringValue(ably_key.Key),
 		Capability: ably_key.Capability,
-		Status:     types.Int64{Value: int64(ably_key.Status)},
-		Created:    types.Int64{Value: int64(ably_key.Created)},
-		Modified:   types.Int64{Value: int64(ably_key.Modified)},
+		Status:     types.Int64Value(int64(ably_key.Status)),
+		Created:    types.Int64Value(int64(ably_key.Created)),
+		Modified:   types.Int64Value(int64(ably_key.Modified)),
 	}
 
 	// Sets state for the new Ably App.
@@ -159,8 +153,8 @@ func (r resourceKey) Read(ctx context.Context, req tfsdk_resource.ReadRequest, r
 	}
 
 	// Gets the Ably App ID and Ably API Key ID value for the resource
-	app_id := state.AppID.Value
-	key_id := state.ID.Value
+	app_id := state.AppID.ValueString()
+	key_id := state.ID.ValueString()
 
 	// Fetches all Ably Keys for the Ably App. The function invokes the Client Library Keys() method.
 	keys, err := r.p.client.Keys(app_id)
@@ -181,14 +175,14 @@ func (r resourceKey) Read(ctx context.Context, req tfsdk_resource.ReadRequest, r
 	for _, v := range keys {
 		if v.AppID == app_id && v.ID == key_id && v.Status == 0 {
 			resp_key := AblyKey{
-				ID:         types.String{Value: v.ID},
-				AppID:      types.String{Value: v.AppID},
-				Name:       types.String{Value: v.Name},
+				ID:         types.StringValue(v.ID),
+				AppID:      types.StringValue(v.AppID),
+				Name:       types.StringValue(v.Name),
 				Capability: v.Capability,
-				Status:     types.Int64{Value: int64(v.Status)},
-				Key:        types.String{Value: v.Key},
-				Created:    types.Int64{Value: int64(v.Created)},
-				Modified:   types.Int64{Value: int64(v.Modified)},
+				Status:     types.Int64Value(int64(v.Status)),
+				Key:        types.StringValue(v.Key),
+				Created:    types.Int64Value(int64(v.Created)),
+				Modified:   types.Int64Value(int64(v.Modified)),
 			}
 			// Sets state to app values.
 			diags = resp.State.Set(ctx, &resp_key)
@@ -226,12 +220,12 @@ func (r resourceKey) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 	}
 
 	// Gets the app ID and Key ID
-	app_id := plan.AppID.Value
-	key_id := state.ID.Value
+	app_id := plan.AppID.ValueString()
+	key_id := state.ID.ValueString()
 
 	// Instantiates struct of type ably_control_go.NewKey and sets values to output of plan
 	key_values := ably_control_go.NewKey{
-		Name:       plan.Name.Value,
+		Name:       plan.Name.ValueString(),
 		Capability: plan.Capability,
 	}
 
@@ -246,14 +240,14 @@ func (r resourceKey) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 	}
 
 	resp_key := AblyKey{
-		ID:         types.String{Value: ably_key.ID},
-		AppID:      types.String{Value: ably_key.AppID},
-		Name:       types.String{Value: ably_key.Name},
+		ID:         types.StringValue(ably_key.ID),
+		AppID:      types.StringValue(ably_key.AppID),
+		Name:       types.StringValue(ably_key.Name),
 		Capability: ably_key.Capability,
-		Status:     types.Int64{Value: int64(ably_key.Status)},
-		Key:        types.String{Value: ably_key.Key},
-		Created:    types.Int64{Value: int64(ably_key.Created)},
-		Modified:   types.Int64{Value: int64(ably_key.Modified)},
+		Status:     types.Int64Value(int64(ably_key.Status)),
+		Key:        types.StringValue(ably_key.Key),
+		Created:    types.Int64Value(int64(ably_key.Created)),
+		Modified:   types.Int64Value(int64(ably_key.Modified)),
 	}
 
 	// Sets state.
@@ -275,8 +269,8 @@ func (r resourceKey) Delete(ctx context.Context, req tfsdk_resource.DeleteReques
 	}
 
 	// Gets the current state. If it is unable to, the provider responds with an error.
-	app_id := state.AppID.Value
-	key_id := state.ID.Value
+	app_id := state.AppID.ValueString()
+	key_id := state.ID.ValueString()
 
 	err := r.p.client.RevokeKey(app_id, key_id)
 	if err != nil {

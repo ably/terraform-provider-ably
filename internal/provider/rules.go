@@ -25,17 +25,17 @@ func GetPlanAwsAuth(plan AblyRule) ably_control_go.AwsAuthentication {
 		auth = t.AwsAuth
 	}
 
-	if auth.AuthenticationMode.Value == "assumeRole" {
+	if auth.AuthenticationMode.ValueString() == "assumeRole" {
 		control_auth = ably_control_go.AwsAuthentication{
 			Authentication: &ably_control_go.AuthenticationModeAssumeRole{
-				AssumeRoleArn: auth.RoleArn.Value,
+				AssumeRoleArn: auth.RoleArn.ValueString(),
 			},
 		}
-	} else if auth.AuthenticationMode.Value == "credentials" {
+	} else if auth.AuthenticationMode.ValueString() == "credentials" {
 		control_auth = ably_control_go.AwsAuthentication{
 			Authentication: &ably_control_go.AuthenticationModeCredentials{
-				AccessKeyId:     auth.AccessKeyId.Value,
-				SecretAccessKey: auth.SecretAccessKey.Value,
+				AccessKeyId:     auth.AccessKeyId.ValueString(),
+				SecretAccessKey: auth.SecretAccessKey.ValueString(),
 			},
 		}
 	}
@@ -102,8 +102,8 @@ func GetPlanRule(plan AblyRule) ably_control_go.NewRule {
 		var headers []ably_control_go.Header
 		for _, h := range t.Headers {
 			headers = append(headers, ably_control_go.Header{
-				Name:  h.Name.Value,
-				Value: h.Value.Value,
+				Name:  h.Name.ValueString(),
+				Value: h.Value.ValueString(),
 			})
 		}
 
@@ -172,10 +172,10 @@ func GetPlanRule(plan AblyRule) ably_control_go.NewRule {
 	}
 
 	rule_values := ably_control_go.NewRule{
-		Status:      plan.Status.Value,
+		Status:      plan.Status.ValueString(),
 		RequestMode: GetRequestMode(plan),
 		Source: ably_control_go.Source{
-			ChannelFilter: plan.Source.ChannelFilter.Value,
+			ChannelFilter: plan.Source.ChannelFilter.ValueString(),
 			Type:          GetSourceType(plan.Source.Type),
 		},
 		Target: target,
@@ -188,8 +188,8 @@ func GetHeaders(headers []AblyRuleHeaders) []ably_control_go.Header {
 	var ret_headers []ably_control_go.Header
 	for _, h := range headers {
 		ret_headers = append(ret_headers, ably_control_go.Header{
-			Name:  h.Name.Value,
-			Value: h.Value.Value,
+			Name:  h.Name.ValueString(),
+			Value: h.Value.ValueString(),
 		})
 	}
 
@@ -197,7 +197,7 @@ func GetHeaders(headers []AblyRuleHeaders) []ably_control_go.Header {
 }
 
 func GetRequestMode(plan AblyRule) ably_control_go.RequestMode {
-	switch plan.RequestMode.Value {
+	switch plan.RequestMode.ValueString() {
 	case "single":
 		return ably_control_go.Single
 	case "batch":
@@ -226,16 +226,16 @@ func GetAwsAuth(auth *ably_control_go.AwsAuthentication, plan *AblyRule) AwsAuth
 	case *ably_control_go.AuthenticationModeCredentials:
 		resp_aws_auth = AwsAuth{
 			AuthenticationMode: plan_auth.AuthenticationMode,
-			AccessKeyId:        types.String{Value: a.AccessKeyId},
+			AccessKeyId:        types.StringValue(a.AccessKeyId),
 			SecretAccessKey:    plan_auth.SecretAccessKey,
-			RoleArn:            types.String{Null: true},
+			RoleArn:            types.StringNull(),
 		}
 	case *ably_control_go.AuthenticationModeAssumeRole:
 		resp_aws_auth = AwsAuth{
 			AuthenticationMode: plan_auth.AuthenticationMode,
-			RoleArn:            types.String{Value: a.AssumeRoleArn},
-			AccessKeyId:        types.String{Null: true},
-			SecretAccessKey:    types.String{Null: true},
+			RoleArn:            types.StringValue(a.AssumeRoleArn),
+			AccessKeyId:        types.StringNull(),
+			SecretAccessKey:    types.StringNull(),
 		}
 	}
 
@@ -376,9 +376,9 @@ func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 		}
 	}
 
-	channel_filter := types.String{
-		Value: ably_rule.Source.ChannelFilter,
-	}
+	channel_filter := types.StringValue(
+		ably_rule.Source.ChannelFilter,
+	)
 
 	resp_source := AblyRuleSource{
 		ChannelFilter: channel_filter,
@@ -386,12 +386,12 @@ func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 	}
 
 	resp_rule := AblyRule{
-		ID:          types.String{Value: ably_rule.ID},
-		AppID:       types.String{Value: ably_rule.AppID},
-		Status:      types.String{Value: ably_rule.Status},
+		ID:          types.StringValue(ably_rule.ID),
+		AppID:       types.StringValue(ably_rule.AppID),
+		Status:      types.StringValue(ably_rule.Status),
 		Source:      resp_source,
 		Target:      resp_target,
-		RequestMode: types.String{Value: string(ably_rule.RequestMode)},
+		RequestMode: types.StringValue(string(ably_rule.RequestMode)),
 	}
 
 	return resp_rule
@@ -428,7 +428,7 @@ func GetRuleSchema(target map[string]tfsdk.Attribute, markdown_description strin
 				Computed:    true,
 				Description: "This is Single Request mode or Batch Request mode. Single Request mode sends each event separately to the endpoint specified by the rule",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.String{Value: "single"}),
+					DefaultAttribute(types.StringValue("single")),
 					tfsdk_resource.UseStateForUnknown(),
 				},
 			},
@@ -515,7 +515,7 @@ func GetEnvelopedchema() tfsdk.Attribute {
 		Computed:    true,
 		Description: "Delivered messages are wrapped in an Ably envelope by default that contains metadata about the message and its payload. The form of the envelope depends on whether it is part of a Webhook/Function or a Queue/Firehose rule. For everything besides Webhooks, you can ensure you only get the raw payload by unchecking \"Enveloped\" when setting up the rule.",
 		PlanModifiers: []tfsdk.AttributePlanModifier{
-			DefaultAttribute(types.Bool{Value: false}),
+			DefaultAttribute(types.BoolValue(false)),
 		},
 	}
 }
@@ -527,7 +527,7 @@ func GetFormatSchema() tfsdk.Attribute {
 		Computed:    true,
 		Description: "JSON provides a text-based encoding, whereas MsgPack provides a more efficient binary encoding",
 		PlanModifiers: []tfsdk.AttributePlanModifier{
-			DefaultAttribute(types.String{Value: "json"}),
+			DefaultAttribute(types.StringValue("json")),
 		},
 	}
 }
@@ -570,8 +570,8 @@ func ToHeaders(plan ably_control_go.Target) []AblyRuleHeaders {
 
 	for _, b := range headers {
 		item := AblyRuleHeaders{
-			Name:  types.String{Value: b.Name},
-			Value: types.String{Value: b.Value},
+			Name:  types.StringValue(b.Name),
+			Value: types.StringValue(b.Value),
 		}
 		resp_headers = append(resp_headers, item)
 	}
@@ -583,8 +583,8 @@ func GetKafkaAuthSchema(headers []AblyRuleHeaders) []ably_control_go.Header {
 	var ret_headers []ably_control_go.Header
 	for _, h := range headers {
 		ret_headers = append(ret_headers, ably_control_go.Header{
-			Name:  h.Name.Value,
-			Value: h.Value.Value,
+			Name:  h.Name.ValueString(),
+			Value: h.Value.ValueString(),
 		})
 	}
 
@@ -619,7 +619,7 @@ func CreateRule[T any](r Rule, ctx context.Context, req tfsdk_resource.CreateReq
 	plan_values := GetPlanRule(plan)
 
 	// Creates a new Ably Rule by invoking the CreateRule function from the Client Library
-	rule, err := r.Provider().client.CreateRule(plan.AppID.Value, &plan_values)
+	rule, err := r.Provider().client.CreateRule(plan.AppID.ValueString(), &plan_values)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Error creating Resource '%s'", r.Name()),
@@ -653,8 +653,8 @@ func ReadRule[T any](r Rule, ctx context.Context, req tfsdk_resource.ReadRequest
 	state := s.Rule()
 
 	// Gets the Ably App ID and Ably Rule ID value for the resource
-	app_id := s.AppID.Value
-	rule_id := s.ID.Value
+	app_id := s.AppID.ValueString()
+	rule_id := s.ID.ValueString()
 
 	// Get Rule data
 	rule, err := r.Provider().client.Rule(app_id, rule_id)
@@ -699,8 +699,8 @@ func UpdateRule[T any](r Rule, ctx context.Context, req tfsdk_resource.UpdateReq
 	rule_values := GetPlanRule(plan)
 
 	// Gets the Ably App ID and Ably Rule ID value for the resource
-	app_id := plan.AppID.Value
-	rule_id := plan.ID.Value
+	app_id := plan.AppID.ValueString()
+	rule_id := plan.ID.ValueString()
 
 	// Update Ably Rule
 	rule, _ := r.Provider().client.UpdateRule(app_id, rule_id, &rule_values)
@@ -731,8 +731,8 @@ func DeleteRule[T any](r Rule, ctx context.Context, req tfsdk_resource.DeleteReq
 	state := s.Rule()
 
 	// Gets the Ably App ID and Ably Rule ID value for the resource
-	app_id := state.AppID.Value
-	rule_id := state.ID.Value
+	app_id := state.AppID.ValueString()
+	rule_id := state.ID.ValueString()
 
 	err := r.Provider().client.DeleteRule(app_id, rule_id)
 	if err != nil {

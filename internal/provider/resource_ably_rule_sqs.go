@@ -4,16 +4,17 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceRuleSqsType struct{}
+type resourceRuleSqs struct {
+	p *provider
+}
 
 // Get Rule Resource schema
-func (r resourceRuleSqsType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r resourceRuleSqs) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return GetRuleSchema(
 		map[string]tfsdk.Attribute{
 			"region": {
@@ -39,19 +40,12 @@ func (r resourceRuleSqsType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 	), nil
 }
 
-// New resource instance
-func (r resourceRuleSqsType) NewResource(_ context.Context, p tfsdk_provider.Provider) (tfsdk_resource.Resource, diag.Diagnostics) {
-	return resourceRuleSqs{
-		p: *(p.(*provider)),
-	}, nil
-}
-
-type resourceRuleSqs struct {
-	p provider
+func (r resourceRuleSqs) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+	resp.TypeName = "ably_rule_sqs"
 }
 
 func (r *resourceRuleSqs) Provider() *provider {
-	return &r.p
+	return r.p
 }
 
 func (r *resourceRuleSqs) Name() string {

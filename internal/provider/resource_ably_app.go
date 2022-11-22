@@ -6,16 +6,17 @@ import (
 	ably_control_go "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceAppType struct{}
+type resourceApp struct {
+	p *provider
+}
 
 // Get App Resource schema
-func (r resourceAppType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r resourceApp) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
@@ -40,7 +41,7 @@ func (r resourceAppType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 				Computed:    true,
 				Description: "The application status. Disabled applications will not accept new connections and will return an error to all clients. When creating a new application, ensure that its status is set to enabled.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.String{Value: "enabled"}),
+					DefaultAttribute(types.StringValue("enabled")),
 				},
 			},
 			"tls_only": {
@@ -72,7 +73,7 @@ func (r resourceAppType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 				Computed:    true,
 				Description: "The Apple Push Notification service sandbox endpoint.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.Bool{Value: false}),
+					DefaultAttribute(types.BoolValue(false)),
 				},
 			},
 		},
@@ -81,15 +82,8 @@ func (r resourceAppType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 	}, nil
 }
 
-// New resource instance
-func (r resourceAppType) NewResource(_ context.Context, p tfsdk_provider.Provider) (tfsdk_resource.Resource, diag.Diagnostics) {
-	return resourceApp{
-		p: *(p.(*provider)),
-	}, nil
-}
-
-type resourceApp struct {
-	p provider
+func (r resourceApp) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+	resp.TypeName = "ably_app"
 }
 
 // Create a new resource
@@ -113,15 +107,15 @@ func (r resourceApp) Create(ctx context.Context, req tfsdk_resource.CreateReques
 
 	// Generates an API request body from the plan values
 	app_values := ably_control_go.App{
-		ID:                     plan.ID.Value,
-		AccountID:              plan.AccountID.Value,
-		Name:                   plan.Name.Value,
-		Status:                 plan.Status.Value,
-		TLSOnly:                plan.TLSOnly.Value,
-		FcmKey:                 plan.FcmKey.Value,
-		ApnsCertificate:        plan.ApnsCertificate.Value,
-		ApnsPrivateKey:         plan.ApnsPrivateKey.Value,
-		ApnsUseSandboxEndpoint: plan.ApnsUseSandboxEndpoint.Value,
+		ID:                     plan.ID.ValueString(),
+		AccountID:              plan.AccountID.ValueString(),
+		Name:                   plan.Name.ValueString(),
+		Status:                 plan.Status.ValueString(),
+		TLSOnly:                plan.TLSOnly.ValueBool(),
+		FcmKey:                 plan.FcmKey.ValueString(),
+		ApnsCertificate:        plan.ApnsCertificate.ValueString(),
+		ApnsPrivateKey:         plan.ApnsPrivateKey.ValueString(),
+		ApnsUseSandboxEndpoint: plan.ApnsUseSandboxEndpoint.ValueBool(),
 	}
 
 	// Creates a new Ably App by invoking the CreateApp function from the Client Library
@@ -136,15 +130,15 @@ func (r resourceApp) Create(ctx context.Context, req tfsdk_resource.CreateReques
 
 	// Maps response body to resource schema attributes.
 	resp_apps := AblyApp{
-		AccountID:              types.String{Value: ably_app.AccountID},
-		ID:                     types.String{Value: ably_app.ID},
-		Name:                   types.String{Value: ably_app.Name},
-		Status:                 types.String{Value: ably_app.Status},
-		TLSOnly:                types.Bool{Value: ably_app.TLSOnly},
+		AccountID:              types.StringValue(ably_app.AccountID),
+		ID:                     types.StringValue(ably_app.ID),
+		Name:                   types.StringValue(ably_app.Name),
+		Status:                 types.StringValue(ably_app.Status),
+		TLSOnly:                types.BoolValue(ably_app.TLSOnly),
 		FcmKey:                 plan.FcmKey,
 		ApnsCertificate:        plan.ApnsCertificate,
 		ApnsPrivateKey:         plan.ApnsPrivateKey,
-		ApnsUseSandboxEndpoint: types.Bool{Value: ably_app.ApnsUseSandboxEndpoint},
+		ApnsUseSandboxEndpoint: types.BoolValue(ably_app.ApnsUseSandboxEndpoint),
 	}
 	emptyStringToNull(&resp_apps.FcmKey)
 	emptyStringToNull(&resp_apps.ApnsCertificate)
@@ -171,7 +165,7 @@ func (r resourceApp) Read(ctx context.Context, req tfsdk_resource.ReadRequest, r
 	}
 
 	// Gets the Ably App ID value for the resource
-	app_id := state.ID.Value
+	app_id := state.ID.ValueString()
 
 	// Fetches all Ably Apps in the account. The function invokes the Client Library Apps() method.
 	// NOTE: Control API & Client Lib do not currently support fetching single app given app id
@@ -188,15 +182,15 @@ func (r resourceApp) Read(ctx context.Context, req tfsdk_resource.ReadRequest, r
 	for _, v := range apps {
 		if v.ID == app_id {
 			resp_apps := AblyApp{
-				AccountID:              types.String{Value: v.AccountID},
-				ID:                     types.String{Value: v.ID},
-				Name:                   types.String{Value: v.Name},
-				Status:                 types.String{Value: v.Status},
-				TLSOnly:                types.Bool{Value: v.TLSOnly},
+				AccountID:              types.StringValue(v.AccountID),
+				ID:                     types.StringValue(v.ID),
+				Name:                   types.StringValue(v.Name),
+				Status:                 types.StringValue(v.Status),
+				TLSOnly:                types.BoolValue(v.TLSOnly),
 				FcmKey:                 state.FcmKey,
 				ApnsCertificate:        state.ApnsCertificate,
 				ApnsPrivateKey:         state.ApnsPrivateKey,
-				ApnsUseSandboxEndpoint: types.Bool{Value: v.ApnsUseSandboxEndpoint},
+				ApnsUseSandboxEndpoint: types.BoolValue(v.ApnsUseSandboxEndpoint),
 			}
 			emptyStringToNull(&resp_apps.FcmKey)
 			emptyStringToNull(&resp_apps.ApnsCertificate)
@@ -237,21 +231,21 @@ func (r resourceApp) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 	}
 
 	// Gets the app ID
-	app_id := plan.ID.Value
-	if plan.ID.Unknown {
-		app_id = state.ID.Value
+	app_id := plan.ID.ValueString()
+	if plan.ID.IsUnknown() {
+		app_id = state.ID.ValueString()
 	}
 
 	// Instantiates struct of type ably_control_go.App and sets values to output of plan
 	app_values := ably_control_go.App{
-		AccountID:              plan.AccountID.Value,
-		Name:                   plan.Name.Value,
-		Status:                 plan.Status.Value,
-		TLSOnly:                plan.TLSOnly.Value,
-		FcmKey:                 plan.FcmKey.Value,
-		ApnsCertificate:        plan.ApnsCertificate.Value,
-		ApnsPrivateKey:         plan.ApnsPrivateKey.Value,
-		ApnsUseSandboxEndpoint: plan.ApnsUseSandboxEndpoint.Value,
+		AccountID:              plan.AccountID.ValueString(),
+		Name:                   plan.Name.ValueString(),
+		Status:                 plan.Status.ValueString(),
+		TLSOnly:                plan.TLSOnly.ValueBool(),
+		FcmKey:                 plan.FcmKey.ValueString(),
+		ApnsCertificate:        plan.ApnsCertificate.ValueString(),
+		ApnsPrivateKey:         plan.ApnsPrivateKey.ValueString(),
+		ApnsUseSandboxEndpoint: plan.ApnsUseSandboxEndpoint.ValueBool(),
 	}
 
 	// Updates an Ably App. The function invokes the Client Library UpdateApp method.
@@ -265,15 +259,15 @@ func (r resourceApp) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 	}
 
 	resp_apps := AblyApp{
-		ID:                     types.String{Value: ably_app.ID},
-		AccountID:              types.String{Value: ably_app.AccountID},
-		Name:                   types.String{Value: ably_app.Name},
-		Status:                 types.String{Value: ably_app.Status},
-		TLSOnly:                types.Bool{Value: ably_app.TLSOnly},
+		ID:                     types.StringValue(ably_app.ID),
+		AccountID:              types.StringValue(ably_app.AccountID),
+		Name:                   types.StringValue(ably_app.Name),
+		Status:                 types.StringValue(ably_app.Status),
+		TLSOnly:                types.BoolValue(ably_app.TLSOnly),
 		FcmKey:                 plan.FcmKey,
 		ApnsCertificate:        plan.ApnsCertificate,
 		ApnsPrivateKey:         plan.ApnsPrivateKey,
-		ApnsUseSandboxEndpoint: types.Bool{Value: ably_app.ApnsUseSandboxEndpoint},
+		ApnsUseSandboxEndpoint: types.BoolValue(ably_app.ApnsUseSandboxEndpoint),
 	}
 	emptyStringToNull(&resp_apps.FcmKey)
 	emptyStringToNull(&resp_apps.ApnsCertificate)
@@ -298,7 +292,7 @@ func (r resourceApp) Delete(ctx context.Context, req tfsdk_resource.DeleteReques
 	}
 
 	// Gets the current state. If it is unable to, the provider responds with an error.
-	app_id := state.ID.Value
+	app_id := state.ID.ValueString()
 
 	err := r.p.client.DeleteApp(app_id)
 	if err != nil {

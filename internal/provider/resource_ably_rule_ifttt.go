@@ -4,16 +4,17 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceRuleIFTTTType struct{}
+type resourceRuleIFTTT struct {
+	p *provider
+}
 
 // Get Rule Resource schema
-func (r resourceRuleIFTTTType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r resourceRuleIFTTT) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return GetRuleSchema(
 		map[string]tfsdk.Attribute{
 			"webhook_key": {
@@ -31,19 +32,12 @@ func (r resourceRuleIFTTTType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 	), nil
 }
 
-// New resource instance
-func (r resourceRuleIFTTTType) NewResource(_ context.Context, p tfsdk_provider.Provider) (tfsdk_resource.Resource, diag.Diagnostics) {
-	return resourceRuleIFTTT{
-		p: *(p.(*provider)),
-	}, nil
-}
-
-type resourceRuleIFTTT struct {
-	p provider
+func (r resourceRuleIFTTT) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+	resp.TypeName = "ably_rule_ifttt"
 }
 
 func (r *resourceRuleIFTTT) Provider() *provider {
-	return &r.p
+	return r.p
 }
 
 func (r *resourceRuleIFTTT) Name() string {

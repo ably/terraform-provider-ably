@@ -4,16 +4,17 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceRuleAmqpType struct{}
+type resourceRuleAmqp struct {
+	p *provider
+}
 
 // Get Rule Resource schema
-func (r resourceRuleAmqpType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r resourceRuleAmqp) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return GetRuleSchema(
 		map[string]tfsdk.Attribute{
 			"queue_id": {
@@ -28,19 +29,12 @@ func (r resourceRuleAmqpType) GetSchema(_ context.Context) (tfsdk.Schema, diag.D
 		"The `ably_rule_amqp` resource allows you to create and manage an Ably integration rule for AMQP. Read more at https://ably.com/docs/general/firehose/amqp-rule"), nil
 }
 
-// New resource instance
-func (r resourceRuleAmqpType) NewResource(_ context.Context, p tfsdk_provider.Provider) (tfsdk_resource.Resource, diag.Diagnostics) {
-	return resourceRuleAmqp{
-		p: *(p.(*provider)),
-	}, nil
-}
-
-type resourceRuleAmqp struct {
-	p provider
+func (r resourceRuleAmqp) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+	resp.TypeName = "ably_rule_amqp"
 }
 
 func (r *resourceRuleAmqp) Provider() *provider {
-	return &r.p
+	return r.p
 }
 
 func (r *resourceRuleAmqp) Name() string {

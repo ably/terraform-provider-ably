@@ -5,16 +5,17 @@ import (
 
 	ably_control_go "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceNamespaceType struct{}
+type resourceNamespace struct {
+	p *provider
+}
 
 // Get Namespace Resource schema
-func (r resourceNamespaceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r resourceNamespace) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"app_id": {
@@ -39,7 +40,7 @@ func (r resourceNamespaceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 				Computed:    true,
 				Description: "Require clients to be authenticated to use channels in this namespace.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.Bool{Value: false}),
+					DefaultAttribute(types.BoolValue(false)),
 				},
 			},
 			"persisted": {
@@ -48,7 +49,7 @@ func (r resourceNamespaceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 				Computed:    true,
 				Description: "If true, messages will be stored for 24 hours.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.Bool{Value: false}),
+					DefaultAttribute(types.BoolValue(false)),
 				},
 			},
 			"persist_last": {
@@ -57,7 +58,7 @@ func (r resourceNamespaceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 				Computed:    true,
 				Description: "If true, the last message on each channel will persist for 365 days.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.Bool{Value: false}),
+					DefaultAttribute(types.BoolValue(false)),
 				},
 			},
 			"push_enabled": {
@@ -66,7 +67,7 @@ func (r resourceNamespaceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 				Computed:    true,
 				Description: "If true, publishing messages with a push payload in the extras field is permitted.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.Bool{Value: false}),
+					DefaultAttribute(types.BoolValue(false)),
 				},
 			},
 			"tls_only": {
@@ -75,7 +76,7 @@ func (r resourceNamespaceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 				Computed:    true,
 				Description: "If true, only clients that are connected using TLS will be permitted to subscribe.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.Bool{Value: false}),
+					DefaultAttribute(types.BoolValue(false)),
 				},
 			},
 			"expose_timeserial": {
@@ -84,23 +85,12 @@ func (r resourceNamespaceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 				Computed:    true,
 				Description: "If true, messages received on a channel will contain a unique timeserial that can be referenced by later messages for use with message interactions.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.Bool{Value: false}),
+					DefaultAttribute(types.BoolValue(false)),
 				},
 			},
 		},
 		MarkdownDescription: "The ably_namespace resource allows you to manage namespaces for channel rules in Ably. Read more in the Ably documentation: https://ably.com/docs/general/channel-rules-namespaces.",
 	}, nil
-}
-
-// New resource instance
-func (r resourceNamespaceType) NewResource(_ context.Context, p tfsdk_provider.Provider) (tfsdk_resource.Resource, diag.Diagnostics) {
-	return resourceNamespace{
-		p: *(p.(*provider)),
-	}, nil
-}
-
-type resourceNamespace struct {
-	p provider
 }
 
 // Create a new resource
@@ -124,17 +114,17 @@ func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.Create
 
 	// Generates an API request body from the plan values
 	namespace_values := ably_control_go.Namespace{
-		ID:               plan.ID.Value,
-		Authenticated:    plan.Authenticated.Value,
-		Persisted:        plan.Persisted.Value,
-		PersistLast:      plan.PersistLast.Value,
-		PushEnabled:      plan.PushEnabled.Value,
-		TlsOnly:          plan.TlsOnly.Value,
-		ExposeTimeserial: plan.ExposeTimeserial.Value,
+		ID:               plan.ID.ValueString(),
+		Authenticated:    plan.Authenticated.ValueBool(),
+		Persisted:        plan.Persisted.ValueBool(),
+		PersistLast:      plan.PersistLast.ValueBool(),
+		PushEnabled:      plan.PushEnabled.ValueBool(),
+		TlsOnly:          plan.TlsOnly.ValueBool(),
+		ExposeTimeserial: plan.ExposeTimeserial.ValueBool(),
 	}
 
 	// Creates a new Ably namespace by invoking the CreateNamespace function from the Client Library
-	ably_namespace, err := r.p.client.CreateNamespace(plan.AppID.Value, &namespace_values)
+	ably_namespace, err := r.p.client.CreateNamespace(plan.AppID.ValueString(), &namespace_values)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating Resource",
@@ -145,14 +135,14 @@ func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.Create
 
 	// Maps response body to resource schema attributes.
 	resp_apps := AblyNamespace{
-		AppID:            types.String{Value: plan.AppID.Value},
-		ID:               types.String{Value: ably_namespace.ID},
-		Authenticated:    types.Bool{Value: ably_namespace.Authenticated},
-		Persisted:        types.Bool{Value: ably_namespace.Persisted},
-		PersistLast:      types.Bool{Value: ably_namespace.PersistLast},
-		PushEnabled:      types.Bool{Value: ably_namespace.PushEnabled},
-		TlsOnly:          types.Bool{Value: ably_namespace.TlsOnly},
-		ExposeTimeserial: types.Bool{Value: namespace_values.ExposeTimeserial},
+		AppID:            types.StringValue(plan.AppID.ValueString()),
+		ID:               types.StringValue(ably_namespace.ID),
+		Authenticated:    types.BoolValue(ably_namespace.Authenticated),
+		Persisted:        types.BoolValue(ably_namespace.Persisted),
+		PersistLast:      types.BoolValue(ably_namespace.PersistLast),
+		PushEnabled:      types.BoolValue(ably_namespace.PushEnabled),
+		TlsOnly:          types.BoolValue(ably_namespace.TlsOnly),
+		ExposeTimeserial: types.BoolValue(namespace_values.ExposeTimeserial),
 	}
 
 	// Sets state for the new Ably App.
@@ -161,6 +151,10 @@ func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.Create
 	if resp.Diagnostics.HasError() {
 		return
 	}
+}
+
+func (r resourceNamespace) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+	resp.TypeName = "ably_namespace"
 }
 
 // Read resource
@@ -176,8 +170,8 @@ func (r resourceNamespace) Read(ctx context.Context, req tfsdk_resource.ReadRequ
 	}
 
 	// Gets the Ably App ID and namespace ID value for the resource
-	app_id := state.AppID.Value
-	namespace_id := state.ID.Value
+	app_id := state.AppID.ValueString()
+	namespace_id := state.ID.ValueString()
 
 	// Fetches all Ably Namespaces in the app. The function invokes the Client Library Namespaces() method.
 	// NOTE: Control API & Client Lib do not currently support fetching single namespace given namespace id
@@ -198,14 +192,14 @@ func (r resourceNamespace) Read(ctx context.Context, req tfsdk_resource.ReadRequ
 	for _, v := range namespaces {
 		if v.ID == namespace_id {
 			resp_namespaces := AblyNamespace{
-				AppID:            types.String{Value: app_id},
-				ID:               types.String{Value: namespace_id},
-				Authenticated:    types.Bool{Value: v.Authenticated},
-				Persisted:        types.Bool{Value: v.Persisted},
-				PersistLast:      types.Bool{Value: v.PersistLast},
-				PushEnabled:      types.Bool{Value: v.PushEnabled},
-				TlsOnly:          types.Bool{Value: v.TlsOnly},
-				ExposeTimeserial: types.Bool{Value: v.ExposeTimeserial},
+				AppID:            types.StringValue(app_id),
+				ID:               types.StringValue(namespace_id),
+				Authenticated:    types.BoolValue(v.Authenticated),
+				Persisted:        types.BoolValue(v.Persisted),
+				PersistLast:      types.BoolValue(v.PersistLast),
+				PushEnabled:      types.BoolValue(v.PushEnabled),
+				TlsOnly:          types.BoolValue(v.TlsOnly),
+				ExposeTimeserial: types.BoolValue(v.ExposeTimeserial),
 			}
 			// Sets state to namespace values.
 			diags = resp.State.Set(ctx, &resp_namespaces)
@@ -235,18 +229,18 @@ func (r resourceNamespace) Update(ctx context.Context, req tfsdk_resource.Update
 	}
 
 	// Gets the app ID and ID
-	app_id := plan.AppID.Value
-	namespace_id := plan.ID.Value
+	app_id := plan.AppID.ValueString()
+	namespace_id := plan.ID.ValueString()
 
 	// Instantiates struct of type ably_control_go.Namespace and sets values to output of plan
 	namespace_values := ably_control_go.Namespace{
 		ID:               namespace_id,
-		Authenticated:    plan.Authenticated.Value,
-		Persisted:        plan.Persisted.Value,
-		PersistLast:      plan.PersistLast.Value,
-		PushEnabled:      plan.PushEnabled.Value,
-		TlsOnly:          plan.TlsOnly.Value,
-		ExposeTimeserial: plan.ExposeTimeserial.Value,
+		Authenticated:    plan.Authenticated.ValueBool(),
+		Persisted:        plan.Persisted.ValueBool(),
+		PersistLast:      plan.PersistLast.ValueBool(),
+		PushEnabled:      plan.PushEnabled.ValueBool(),
+		TlsOnly:          plan.TlsOnly.ValueBool(),
+		ExposeTimeserial: plan.ExposeTimeserial.ValueBool(),
 	}
 
 	// Updates an Ably Namespace. The function invokes the Client Library UpdateNamespace method.
@@ -260,14 +254,14 @@ func (r resourceNamespace) Update(ctx context.Context, req tfsdk_resource.Update
 	}
 
 	resp_namespaces := AblyNamespace{
-		AppID:            types.String{Value: app_id},
-		ID:               types.String{Value: ably_namespace.ID},
-		Authenticated:    types.Bool{Value: ably_namespace.Authenticated},
-		Persisted:        types.Bool{Value: ably_namespace.Persisted},
-		PersistLast:      types.Bool{Value: ably_namespace.PersistLast},
-		PushEnabled:      types.Bool{Value: ably_namespace.PushEnabled},
-		TlsOnly:          types.Bool{Value: ably_namespace.TlsOnly},
-		ExposeTimeserial: types.Bool{Value: ably_namespace.ExposeTimeserial},
+		AppID:            types.StringValue(app_id),
+		ID:               types.StringValue(ably_namespace.ID),
+		Authenticated:    types.BoolValue(ably_namespace.Authenticated),
+		Persisted:        types.BoolValue(ably_namespace.Persisted),
+		PersistLast:      types.BoolValue(ably_namespace.PersistLast),
+		PushEnabled:      types.BoolValue(ably_namespace.PushEnabled),
+		TlsOnly:          types.BoolValue(ably_namespace.TlsOnly),
+		ExposeTimeserial: types.BoolValue(ably_namespace.ExposeTimeserial),
 	}
 
 	// Sets state to new namespace.
@@ -289,8 +283,8 @@ func (r resourceNamespace) Delete(ctx context.Context, req tfsdk_resource.Delete
 	}
 
 	// Gets the current state. If it is unable to, the provider responds with an error.
-	app_id := state.AppID.Value
-	namespace_id := state.ID.Value
+	app_id := state.AppID.ValueString()
+	namespace_id := state.ID.ValueString()
 
 	err := r.p.client.DeleteNamespace(app_id, namespace_id)
 	if err != nil {
