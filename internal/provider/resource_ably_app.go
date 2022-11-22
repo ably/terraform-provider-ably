@@ -71,7 +71,7 @@ func (r resourceApp) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostic
 				Type:        types.BoolType,
 				Optional:    true,
 				Computed:    true,
-				Description: "The Apple Push Notification service sandbox endpoint.",
+				Description: "Use the Apple Push Notification service sandbox endpoint.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					DefaultAttribute(types.BoolValue(false)),
 				},
