@@ -23,11 +23,17 @@ func (r resourceApp) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostic
 				Type:        types.StringType,
 				Computed:    true,
 				Description: "The application ID.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					tfsdk_resource.UseStateForUnknown(),
+				},
 			},
 			"account_id": {
 				Type:        types.StringType,
 				Computed:    true,
 				Description: "The ID of your Ably account.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					tfsdk_resource.UseStateForUnknown(),
+				},
 			},
 			"name": {
 				Type:        types.StringType,
@@ -106,9 +112,8 @@ func (r resourceApp) Create(ctx context.Context, req tfsdk_resource.CreateReques
 	}
 
 	// Generates an API request body from the plan values
-	app_values := ably_control_go.App{
+	app_values := ably_control_go.NewApp{
 		ID:                     plan.ID.ValueString(),
-		AccountID:              plan.AccountID.ValueString(),
 		Name:                   plan.Name.ValueString(),
 		Status:                 plan.Status.ValueString(),
 		TLSOnly:                plan.TLSOnly.ValueBool(),
@@ -237,8 +242,7 @@ func (r resourceApp) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 	}
 
 	// Instantiates struct of type ably_control_go.App and sets values to output of plan
-	app_values := ably_control_go.App{
-		AccountID:              plan.AccountID.ValueString(),
+	app_values := ably_control_go.NewApp{
 		Name:                   plan.Name.ValueString(),
 		Status:                 plan.Status.ValueString(),
 		TLSOnly:                plan.TLSOnly.ValueBool(),

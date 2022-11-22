@@ -164,7 +164,7 @@ func GetPlanRule(plan AblyRule) ably_control_go.NewRule {
 			RoutingKey:         t.RoutingKey,
 			MandatoryRoute:     t.MandatoryRoute,
 			PersistentMessages: t.PersistentMessages,
-			MessageTTL:         int(t.MessageTtl),
+			MessageTTL:         int(t.MessageTtl.ValueInt64()),
 			Headers:            GetHeaders(t.Headers),
 			Enveloped:          t.Enveloped,
 			Format:             t.Format,
@@ -363,13 +363,17 @@ func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 		}
 	case *ably_control_go.AmqpExternalTarget:
 		headers := ToHeaders(v)
+		ttl := types.Int64Null()
+		if v.MessageTTL != 0 {
+			ttl = types.Int64Value(int64(v.MessageTTL))
+		}
 
 		resp_target = &AblyRuleTargetAmqpExternal{
 			Url:                v.Url,
 			RoutingKey:         v.RoutingKey,
 			MandatoryRoute:     v.MandatoryRoute,
 			PersistentMessages: v.PersistentMessages,
-			MessageTtl:         int64(v.MessageTTL),
+			MessageTtl:         ttl,
 			Headers:            headers,
 			Enveloped:          v.Enveloped,
 			Format:             v.Format,
@@ -686,7 +690,7 @@ func ReadRule[T any](r Rule, ctx context.Context, req tfsdk_resource.ReadRequest
 // // Update resource
 func UpdateRule[T any](r Rule, ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
 	// Gets plan values
-	var p AblyRuleDecoder[*AblyRuleTargetAmqpExternal]
+	var p AblyRuleDecoder[*T]
 	diags := req.Plan.Get(ctx, &p)
 	resp.Diagnostics.Append(diags...)
 
@@ -703,7 +707,14 @@ func UpdateRule[T any](r Rule, ctx context.Context, req tfsdk_resource.UpdateReq
 	rule_id := plan.ID.ValueString()
 
 	// Update Ably Rule
-	rule, _ := r.Provider().client.UpdateRule(app_id, rule_id, &rule_values)
+	rule, err := r.Provider().client.UpdateRule(app_id, rule_id, &rule_values)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Error updading Resource %s", r.Name()),
+			fmt.Sprintf("Could not update resource %s, unexpected error: %s", r.Name(), err.Error()),
+		)
+		return
+	}
 
 	response_values := GetRuleResponse(&rule, &plan)
 
@@ -720,7 +731,7 @@ func UpdateRule[T any](r Rule, ctx context.Context, req tfsdk_resource.UpdateReq
 // Delete resource
 func DeleteRule[T any](r Rule, ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
-	var s AblyRuleDecoder[T]
+	var s AblyRuleDecoder[*T]
 	diags := req.State.Get(ctx, &s)
 	resp.Diagnostics.Append(diags...)
 

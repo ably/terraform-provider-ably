@@ -40,7 +40,6 @@ func (r resourceRuleAmqpExternal) GetSchema(_ context.Context) (tfsdk.Schema, di
 			"message_ttl": {
 				Type:        types.Int64Type,
 				Optional:    true,
-				Computed:    true,
 				Description: "You can optionally override the default TTL on a queue and specify a TTL in minutes for messages to be persisted. It is unusual to change the default TTL, so if this field is left empty, the default TTL for the queue will be used.",
 			},
 			"headers":   GetHeaderSchema(),
