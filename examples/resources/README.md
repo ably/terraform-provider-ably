@@ -6,7 +6,7 @@ No requirements.
 
 | Name | Version |
 |------|---------|
-| <a name="provider_ably"></a> [ably](#provider\_ably) | 0.2.0 |
+| <a name="provider_ably"></a> [ably](#provider\_ably) | 0.4.1 |
 | <a name="provider_tls"></a> [tls](#provider\_tls) | 4.0.3 |
 
 ## Modules
