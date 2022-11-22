@@ -23,6 +23,9 @@ func (r resourceApp) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostic
 				Type:        types.StringType,
 				Computed:    true,
 				Description: "The application ID.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					tfsdk_resource.UseStateForUnknown(),
+				},
 			},
 			"account_id": {
 				Type:        types.StringType,
