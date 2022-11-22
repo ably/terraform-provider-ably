@@ -28,6 +28,9 @@ func (r resourceApp) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostic
 				Type:        types.StringType,
 				Computed:    true,
 				Description: "The ID of your Ably account.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					tfsdk_resource.UseStateForUnknown(),
+				},
 			},
 			"name": {
 				Type:        types.StringType,
