@@ -690,7 +690,7 @@ func ReadRule[T any](r Rule, ctx context.Context, req tfsdk_resource.ReadRequest
 // // Update resource
 func UpdateRule[T any](r Rule, ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
 	// Gets plan values
-	var p AblyRuleDecoder[*AblyRuleTargetAmqpExternal]
+	var p AblyRuleDecoder[*T]
 	diags := req.Plan.Get(ctx, &p)
 	resp.Diagnostics.Append(diags...)
 
@@ -724,7 +724,7 @@ func UpdateRule[T any](r Rule, ctx context.Context, req tfsdk_resource.UpdateReq
 // Delete resource
 func DeleteRule[T any](r Rule, ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
-	var s AblyRuleDecoder[T]
+	var s AblyRuleDecoder[*T]
 	diags := req.State.Get(ctx, &s)
 	resp.Diagnostics.Append(diags...)
 
