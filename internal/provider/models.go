@@ -51,20 +51,20 @@ type AblyQueue struct {
 	MaxLength types.Int64  `tfsdk:"max_length"`
 	Region    types.String `tfsdk:"region"`
 
-	AmqpUri                  types.String `tfsdk:"amqp_uri"`
-	AmqpQueueName            types.String `tfsdk:"amqp_queue_name"`
-	StompURI                 types.String `tfsdk:"stomp_uri"`
-	StompHost                types.String `tfsdk:"stomp_host"`
-	StompDestination         types.String `tfsdk:"stomp_destination"`
-	State                    types.String `tfsdk:"state"`
-	MessagesReady            types.Int64  `tfsdk:"messages_ready"`
-	MessagesUnacknowledged   types.Int64  `tfsdk:"messages_unacknowledged"`
-	MessagesTotal            types.Int64  `tfsdk:"messages_total"`
-	StatsPublishRate         types.Int64  `tfsdk:"stats_publish_rate"`
-	StatsDeliveryRate        types.Int64  `tfsdk:"stats_delivery_rate"`
-	StatsAcknowledgementRate types.Int64  `tfsdk:"stats_acknowledgement_rate"`
-	Deadletter               types.Bool   `tfsdk:"deadletter"`
-	DeadletterID             types.String `tfsdk:"deadletter_id"`
+	AmqpUri                  types.String  `tfsdk:"amqp_uri"`
+	AmqpQueueName            types.String  `tfsdk:"amqp_queue_name"`
+	StompURI                 types.String  `tfsdk:"stomp_uri"`
+	StompHost                types.String  `tfsdk:"stomp_host"`
+	StompDestination         types.String  `tfsdk:"stomp_destination"`
+	State                    types.String  `tfsdk:"state"`
+	MessagesReady            types.Int64   `tfsdk:"messages_ready"`
+	MessagesUnacknowledged   types.Int64   `tfsdk:"messages_unacknowledged"`
+	MessagesTotal            types.Int64   `tfsdk:"messages_total"`
+	StatsPublishRate         types.Float64 `tfsdk:"stats_publish_rate"`
+	StatsDeliveryRate        types.Float64 `tfsdk:"stats_delivery_rate"`
+	StatsAcknowledgementRate types.Float64 `tfsdk:"stats_acknowledgement_rate"`
+	Deadletter               types.Bool    `tfsdk:"deadletter"`
+	DeadletterID             types.String  `tfsdk:"deadletter_id"`
 }
 
 func emptyStringToNull(v *types.String) {
