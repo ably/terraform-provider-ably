@@ -59,7 +59,8 @@ func TestAccAblyRuleCloudflareWorker(t *testing.T) {
 					"enabled",
 					"^my-channel.*",
 					"channel.message",
-					"batch",
+					// TODO: change to batch when control api not broken #147
+					"single",
 					"https://example1.com/webhooks",
 					update_headers_block,
 					"ably_api_key.api_key_1.id",
@@ -69,7 +70,7 @@ func TestAccAblyRuleCloudflareWorker(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "source.type", "channel.message"),
-					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "request_mode", "batch"),
+					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "request_mode", "single"),
 					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "target.url", "https://example1.com/webhooks"),
 				),
 			},

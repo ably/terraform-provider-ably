@@ -43,7 +43,8 @@ func TestAccAblyRuleIFTTT(t *testing.T) {
 					"enabled",
 					"^my-channel.*",
 					"channel.message",
-					"batch",
+					// TODO: change to batch when control api not broken #147
+					"single",
 					"dddd",
 					"eeee",
 				),
@@ -52,7 +53,7 @@ func TestAccAblyRuleIFTTT(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_ifttt.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_ifttt.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_ifttt.rule0", "source.type", "channel.message"),
-					resource.TestCheckResourceAttr("ably_rule_ifttt.rule0", "request_mode", "batch"),
+					resource.TestCheckResourceAttr("ably_rule_ifttt.rule0", "request_mode", "single"),
 					resource.TestCheckResourceAttr("ably_rule_ifttt.rule0", "target.webhook_key", "dddd"),
 					resource.TestCheckResourceAttr("ably_rule_ifttt.rule0", "target.event_name", "eeee"),
 				),
