@@ -43,7 +43,7 @@ resource "ably_app" "app1" {
 
 - `apns_certificate` (String, Sensitive) The Apple Push Notification service certificate.
 - `apns_private_key` (String, Sensitive) The Apple Push Notification service private key.
-- `apns_use_sandbox_endpoint` (Boolean) The Apple Push Notification service sandbox endpoint.
+- `apns_use_sandbox_endpoint` (Boolean) Use the Apple Push Notification service sandbox endpoint.
 - `fcm_key` (String, Sensitive) The Firebase Cloud Messaging key.
 - `status` (String) The application status. Disabled applications will not accept new connections and will return an error to all clients. When creating a new application, ensure that its status is set to enabled.
 - `tls_only` (Boolean) Enforce TLS for all connections. This setting overrides any channel setting.
