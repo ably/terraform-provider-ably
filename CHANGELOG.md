@@ -1,5 +1,14 @@
 # Change log
 
+## [0.4.1](https://github.com/ably/terraform-provider-ably/tree/v0.4.1)
+
+- Fix rules not updating correctly
+- Fix resources being recreated when anything changes in app
+- Fix terraform plan saying unknown app.id and app.account_id when they are known
+- Fix description for apns_use_sandbox_endpoint
+- Fix error when TTL is null in amqp/external
+- Fix error when setting multiple capabilities
+
 ## [0.4.0](https://github.com/ably/terraform-provider-ably/tree/v0.4.0)
 
 Bugfixes:
