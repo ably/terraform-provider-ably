@@ -380,9 +380,12 @@ func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 		}
 	}
 
-	channel_filter := types.StringValue(
-		ably_rule.Source.ChannelFilter,
-	)
+	channel_filter := types.StringNull()
+	if ably_rule.Source.ChannelFilter != "" {
+		channel_filter = types.StringValue(
+			ably_rule.Source.ChannelFilter,
+		)
+	}
 
 	resp_source := AblyRuleSource{
 		ChannelFilter: channel_filter,
@@ -442,7 +445,7 @@ func GetRuleSchema(target map[string]tfsdk.Attribute, markdown_description strin
 				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 					"channel_filter": {
 						Type:     types.StringType,
-						Required: true,
+						Optional: true,
 					},
 					"type": {
 						Type:     types.StringType,
