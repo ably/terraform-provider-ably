@@ -35,7 +35,6 @@ func TestAccAblyRuleAzureFunction(t *testing.T) {
 				Config: testAccAblyRuleAzureFunctionConfig(
 					app_name,
 					"enabled",
-					"^my-channel.*",
 					"channel.message",
 					"batch",
 					"coms",
@@ -47,7 +46,6 @@ func TestAccAblyRuleAzureFunction(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
 					resource.TestCheckResourceAttr("ably_rule_azure_function.rule0", "status", "enabled"),
-					resource.TestCheckResourceAttr("ably_rule_azure_function.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_azure_function.rule0", "source.type", "channel.message"),
 					resource.TestCheckResourceAttr("ably_rule_azure_function.rule0", "request_mode", "batch"),
 					resource.TestCheckResourceAttr("ably_rule_azure_function.rule0", "target.function_name", "function0"),
@@ -60,7 +58,6 @@ func TestAccAblyRuleAzureFunction(t *testing.T) {
 				Config: testAccAblyRuleAzureFunctionConfig(
 					update_app_name,
 					"disabled",
-					"^my-channel.*",
 					"channel.presence",
 					"batch",
 					"coms",
@@ -72,7 +69,6 @@ func TestAccAblyRuleAzureFunction(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", update_app_name),
 					resource.TestCheckResourceAttr("ably_rule_azure_function.rule0", "status", "disabled"),
-					resource.TestCheckResourceAttr("ably_rule_azure_function.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_azure_function.rule0", "source.type", "channel.presence"),
 					resource.TestCheckResourceAttr("ably_rule_azure_function.rule0", "request_mode", "batch"),
 					resource.TestCheckResourceAttr("ably_rule_azure_function.rule0", "target.function_name", "function1"),
@@ -92,7 +88,6 @@ func TestAccAblyRuleAzureFunction(t *testing.T) {
 func testAccAblyRuleAzureFunctionConfig(
 	appName string,
 	ruleStatus string,
-	channelFilter string,
 	sourceType string,
 	requestMode string,
 	targetAzureAppId string,
@@ -141,17 +136,16 @@ resource "ably_rule_azure_function" "rule0" {
 	app_id = ably_app.app0.id
 	status = %[2]q
 	source = {
-	  channel_filter = %[3]q,
-	  type           = %[4]q
+	  type = %[3]q
 	}
-	request_mode = %[5]q
+	request_mode = %[4]q
 	target = {
-	  azure_app_id =	%[6]q,
-	  function_name = %[7]q,
-	  headers = %[8]s
-	  signing_key_id = %[9]s
-	  format = %[10]q
+	  azure_app_id = %[5]q,
+	  function_name = %[6]q,
+	  headers = %[7]s
+	  signing_key_id = %[8]s
+	  format = %[9]q
 	}
   }
-`, appName, ruleStatus, channelFilter, sourceType, requestMode, targetAzureAppId, targetAzureFunctionName, targetHeaders, targetSigningKeyId, targetFormat)
+`, appName, ruleStatus, sourceType, requestMode, targetAzureAppId, targetAzureFunctionName, targetHeaders, targetSigningKeyId, targetFormat)
 }
