@@ -396,7 +396,7 @@ func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 		ID:          types.StringValue(ably_rule.ID),
 		AppID:       types.StringValue(ably_rule.AppID),
 		Status:      types.StringValue(ably_rule.Status),
-		Source:      resp_source,
+		Source:      &resp_source,
 		Target:      resp_target,
 		RequestMode: types.StringValue(string(ably_rule.RequestMode)),
 	}

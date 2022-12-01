@@ -91,12 +91,12 @@ func (r *AblyRuleDecoder[_]) Rule() AblyRule {
 }
 
 type AblyRuleDecoder[T any] struct {
-	ID          types.String   `tfsdk:"id"`
-	AppID       types.String   `tfsdk:"app_id"`
-	Status      types.String   `tfsdk:"status"`
-	RequestMode types.String   `tfsdk:"request_mode"`
-	Source      AblyRuleSource `tfsdk:"source"`
-	Target      T              `tfsdk:"target"`
+	ID          types.String    `tfsdk:"id"`
+	AppID       types.String    `tfsdk:"app_id"`
+	Status      types.String    `tfsdk:"status"`
+	RequestMode types.String    `tfsdk:"request_mode"`
+	Source      *AblyRuleSource `tfsdk:"source"`
+	Target      T               `tfsdk:"target"`
 }
 
 type AblyRule AblyRuleDecoder[any]
