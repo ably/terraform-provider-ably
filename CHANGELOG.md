@@ -1,7 +1,14 @@
 # Change log
 
+## [0.4.2](https://github.com/ably/terraform-provider-ably/tree/v0.4.2)
+
+Bugfixes:
+- Fix importing of rules
+- Fix channel filter being required
+
 ## [0.4.1](https://github.com/ably/terraform-provider-ably/tree/v0.4.1)
 
+Bugfixes:
 - Fix rules not updating correctly
 - Fix resources being recreated when anything changes in app
 - Fix terraform plan saying unknown app.id and app.account_id when they are known

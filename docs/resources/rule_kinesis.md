@@ -58,8 +58,11 @@ resource "ably_rule_kinesis" "aws_kinesis" {
 
 Required:
 
-- `channel_filter` (String)
 - `type` (String)
+
+Optional:
+
+- `channel_filter` (String)
 
 
 <a id="nestedatt--target"></a>
