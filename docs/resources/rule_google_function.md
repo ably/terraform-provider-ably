@@ -62,8 +62,11 @@ resource "ably_rule_google_function" "google_function" {
 
 Required:
 
-- `channel_filter` (String)
 - `type` (String)
+
+Optional:
+
+- `channel_filter` (String)
 
 
 <a id="nestedatt--target"></a>
