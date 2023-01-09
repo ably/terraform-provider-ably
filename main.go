@@ -8,6 +8,7 @@ import (
 
 	ably_control "github.com/ably/terraform-provider-ably/internal/provider"
 
+	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
 
@@ -15,6 +16,9 @@ import (
 //
 // It defaults to "dev" but is overridden during the release process using
 // ldflags (e.g. go build -ldflags="-X main.VERSION=x.y.z").
+//
+// It is appended to the Ably-Agent HTTP header sent by the underlying Control
+// API client (e.g. 'Ably-Agent: ably-control-go/1.0 terraform-provider-ably/x.y.z').
 var VERSION = "dev"
 
 func main() {
@@ -28,9 +32,13 @@ func main() {
 		Address: "registry.terraform.io/ably/terraform-provider-ably",
 	}
 
-	err := providerserver.Serve(context.Background(), ably_control.New, opts)
+	err := providerserver.Serve(context.Background(), newProvider, opts)
 
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+}
+
+func newProvider() provider.Provider {
+	return ably_control.New(VERSION)
 }
