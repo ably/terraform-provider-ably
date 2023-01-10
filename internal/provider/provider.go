@@ -15,13 +15,16 @@ import (
 
 const CONTROL_API_DEFAULT_URL = "https://control.ably.net/v1"
 
-func New() tfsdk_provider.Provider {
-	return &provider{}
+func New(version string) tfsdk_provider.Provider {
+	return &provider{
+		version: version,
+	}
 }
 
 type provider struct {
 	configured bool
 	client     *ably_control_go.Client
+	version    string
 }
 
 // GetSchema
@@ -113,6 +116,7 @@ func (p *provider) Configure(ctx context.Context, req tfsdk_provider.ConfigureRe
 		)
 		return
 	}
+	c.AppendAblyAgent("terraform-provider-ably", p.version)
 
 	p.client = &c
 	p.configured = true
