@@ -1,5 +1,14 @@
 # Change log
 
+## [0.4.3](https://github.com/ably/terraform-provider-ably/tree/v0.4.3)
+
+[Full Changelog](https://github.com/ably/terraform-provider-ably/compare/v0.4.2...v0.4.3)
+
+**Merged pull requests:**
+
+- Append 'terraform-provider-ably/VERSION' to the Ably-Agent HTTP header [\#156](https://github.com/ably/terraform-provider-ably/pull/156) ([lmars](https://github.com/lmars))
+- add credit to CHANGELOG for external contribution [\#155](https://github.com/ably/terraform-provider-ably/pull/155) ([owenpearson](https://github.com/owenpearson))
+
 ## [0.4.2](https://github.com/ably/terraform-provider-ably/tree/v0.4.2)
 
 Bugfixes:
