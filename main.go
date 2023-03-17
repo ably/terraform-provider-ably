@@ -14,12 +14,12 @@ import (
 
 // VERSION is the version of this provider.
 //
-// It defaults to "dev" but is overridden during the release process using
+// It defaults to 0.0.0 but is overridden during the release process using
 // ldflags (e.g. go build -ldflags="-X main.VERSION=x.y.z").
 //
 // It is appended to the Ably-Agent HTTP header sent by the underlying Control
 // API client (e.g. 'Ably-Agent: ably-control-go/1.0 terraform-provider-ably/x.y.z').
-var VERSION = "dev"
+var VERSION = "0.0.0"
 
 func main() {
 	// print the version and exit if argv[1] is "version"
