@@ -20,5 +20,8 @@ resource "ably_rule_http" "rule0" {
     ]
     signing_key_id = ably_api_key.api_key_0.id
     format         = "json"
+    # Note, "enveloped" can only be set to true for "single" request_mode.
+    # "batch" request_mode is automatically enveloped.
+    enveloped      = false
   }
 }
