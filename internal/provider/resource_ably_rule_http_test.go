@@ -75,7 +75,7 @@ func TestAccAblyRuleHTTP(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "source.type", "channel.message"),
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "request_mode", "batch"),
-					resource.TestCheckResourceAttr("ably_rule_http.rule0", "target.enveloped", "true"),
+					resource.TestCheckResourceAttr("ably_rule_http.rule0", "target.enveloped", "false"),
 				),
 			},
 			// Delete testing automatically occurs in TestCase
