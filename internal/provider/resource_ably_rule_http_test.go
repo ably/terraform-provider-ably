@@ -44,7 +44,7 @@ func TestAccAblyRuleHTTP(t *testing.T) {
 					"ably_api_key.api_key_0.id",
 					"https://example.com/webhooks",
 					"json",
-					"true",
+					"enveloped = true",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
@@ -67,7 +67,7 @@ func TestAccAblyRuleHTTP(t *testing.T) {
 					"ably_api_key.api_key_1.id",
 					"https://example1.com/webhooks",
 					"msgpack",
-					"true",
+					"",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", update_app_name),
@@ -145,7 +145,7 @@ resource "ably_rule_http" "rule0" {
 	  signing_key_id = %[7]s
 	  url = %[8]q
 	  format = %[9]q
-	  enveloped = %[10]q
+	  %[10]s
 	}
   }
 `, appName, ruleStatus, channelFilter, sourceType, requestMode, targetHeaders, targetSigningKeyId, targetUrl, targetFormat, enveloped)
