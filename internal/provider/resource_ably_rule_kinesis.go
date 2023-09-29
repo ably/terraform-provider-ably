@@ -29,7 +29,7 @@ func (r resourceRuleKinesis) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 				Type:     types.StringType,
 				Optional: true,
 			},
-			"enveloped":      GetEnvelopedchema(),
+			"enveloped":      GetEnvelopedSchema(),
 			"format":         GetFormatSchema(),
 			"authentication": GetAwsAuthSchema(),
 		},

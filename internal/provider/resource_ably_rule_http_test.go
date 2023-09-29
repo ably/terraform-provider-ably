@@ -44,6 +44,7 @@ func TestAccAblyRuleHTTP(t *testing.T) {
 					"ably_api_key.api_key_0.id",
 					"https://example.com/webhooks",
 					"json",
+					"true",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
@@ -51,6 +52,7 @@ func TestAccAblyRuleHTTP(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "source.type", "channel.message"),
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "request_mode", "single"),
+					resource.TestCheckResourceAttr("ably_rule_http.rule0", "target.enveloped", "true"),
 				),
 			},
 			// Update and Read testing of ably_app.app0
@@ -65,6 +67,7 @@ func TestAccAblyRuleHTTP(t *testing.T) {
 					"ably_api_key.api_key_1.id",
 					"https://example1.com/webhooks",
 					"msgpack",
+					"false",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", update_app_name),
@@ -72,6 +75,7 @@ func TestAccAblyRuleHTTP(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "source.type", "channel.message"),
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "request_mode", "batch"),
+					resource.TestCheckResourceAttr("ably_rule_http.rule0", "target.enveloped", "false"),
 				),
 			},
 			// Delete testing automatically occurs in TestCase
@@ -90,6 +94,7 @@ func testAccAblyRuleHTTPConfig(
 	targetSigningKeyId string,
 	targetUrl string,
 	targetFormat string,
+	enveloped string,
 ) string {
 	return fmt.Sprintf(`
 terraform {
@@ -140,7 +145,8 @@ resource "ably_rule_http" "rule0" {
 	  signing_key_id = %[7]s
 	  url = %[8]q
 	  format = %[9]q
+	  enveloped = %[10]q
 	}
   }
-`, appName, ruleStatus, channelFilter, sourceType, requestMode, targetHeaders, targetSigningKeyId, targetUrl, targetFormat)
+`, appName, ruleStatus, channelFilter, sourceType, requestMode, targetHeaders, targetSigningKeyId, targetUrl, targetFormat, enveloped)
 }
