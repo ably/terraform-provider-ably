@@ -43,7 +43,7 @@ func (r resourceRuleAmqpExternal) GetSchema(_ context.Context) (tfsdk.Schema, di
 				Description: "You can optionally override the default TTL on a queue and specify a TTL in minutes for messages to be persisted. It is unusual to change the default TTL, so if this field is left empty, the default TTL for the queue will be used.",
 			},
 			"headers":   GetHeaderSchema(),
-			"enveloped": GetEnvelopedchema(),
+			"enveloped": GetEnvelopedSchema(),
 			"format":    GetFormatSchema(),
 		},
 		"The `ably_rule_amqp_external` resource allows you to create and manage an Ably integration rule for Firehose. Read more at https://ably.com/docs/general/firehose",

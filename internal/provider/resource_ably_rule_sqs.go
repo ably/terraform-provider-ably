@@ -32,7 +32,7 @@ func (r resourceRuleSqs) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 				Optional:    true,
 				Description: "The AWS SQS queue name",
 			},
-			"enveloped":      GetEnvelopedchema(),
+			"enveloped":      GetEnvelopedSchema(),
 			"format":         GetFormatSchema(),
 			"authentication": GetAwsAuthSchema(),
 		},

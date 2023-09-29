@@ -40,7 +40,7 @@ func (r resourceRulePulsar) GetSchema(_ context.Context) (tfsdk.Schema, diag.Dia
 				Sensitive:   true,
 				Description: "All connections to a Pulsar endpoint require TLS. The tls_trust_certs option allows you to configure different or additional trust anchors for those TLS connections. This enables server verification. You can specify an optional list of trusted CA certificates to use to verify the TLS certificate presented by the Pulsar cluster. Each certificate should be encoded in PEM format",
 			},
-			"enveloped": GetEnvelopedchema(),
+			"enveloped": GetEnvelopedSchema(),
 			"format":    GetFormatSchema(),
 			"authentication": {
 				Required:    true,

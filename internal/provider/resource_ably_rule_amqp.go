@@ -23,7 +23,7 @@ func (r resourceRuleAmqp) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagn
 				Description: "The ID of your Ably queue",
 			},
 			"headers":   GetHeaderSchema(),
-			"enveloped": GetEnvelopedchema(),
+			"enveloped": GetEnvelopedSchema(),
 			"format":    GetFormatSchema(),
 		},
 		"The `ably_rule_amqp` resource allows you to create and manage an Ably integration rule for AMQP. Read more at https://ably.com/docs/general/firehose/amqp-rule"), nil

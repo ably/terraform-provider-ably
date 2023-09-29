@@ -517,7 +517,7 @@ func GetHeaderSchema() tfsdk.Attribute {
 	}
 }
 
-func GetEnvelopedchema() tfsdk.Attribute {
+func GetEnvelopedSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Type:        types.BoolType,
 		Optional:    true,
