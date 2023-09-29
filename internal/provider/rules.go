@@ -112,7 +112,7 @@ func GetPlanRule(plan AblyRule) ably_control_go.NewRule {
 			Headers:      headers,
 			SigningKeyID: t.SigningKeyId,
 			Format:       t.Format,
-			Enveloped: t.Enveloped,
+			Enveloped:    t.Enveloped,
 		}
 	case *AblyRuleTargetIFTTT:
 		target = &ably_control_go.HttpIftttTarget{
@@ -338,7 +338,7 @@ func GetRuleResponse(ably_rule *ably_control_go.Rule, plan *AblyRule) AblyRule {
 			Headers:      headers,
 			SigningKeyId: v.SigningKeyID,
 			Format:       v.Format,
-			Enveloped: v.Enveloped,
+			Enveloped:    v.Enveloped,
 		}
 	case *ably_control_go.KafkaTarget:
 		resp_target = &AblyRuleTargetKafka{
