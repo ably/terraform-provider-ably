@@ -1,5 +1,22 @@
 # Change log
 
+## [0.5.0](https://github.com/ably/terraform-provider-ably/tree/v0.5.0)
+
+[Full Changelog](https://github.com/ably/terraform-provider-ably/compare/v0.4.3...v0.5.0)
+
+**Merged pull requests:**
+
+- Provide envelope for HTTP rules [\#167](https://github.com/ably/terraform-provider-ably/pull/167) ([AndyTWF](https://github.com/AndyTWF))
+
+Bugfixes:
+
+- The provider now honours "enveloped" settings for HTTP rules in single publish mode
+
+**Merged pull requests:**
+
+- Append 'terraform-provider-ably/VERSION' to the Ably-Agent HTTP header [\#156](https://github.com/ably/terraform-provider-ably/pull/156) ([lmars](https://github.com/lmars))
+- add credit to CHANGELOG for external contribution [\#155](https://github.com/ably/terraform-provider-ably/pull/155) ([owenpearson](https://github.com/owenpearson))
+
 ## [0.4.3](https://github.com/ably/terraform-provider-ably/tree/v0.4.3)
 
 [Full Changelog](https://github.com/ably/terraform-provider-ably/compare/v0.4.2...v0.4.3)
