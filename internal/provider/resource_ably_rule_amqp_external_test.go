@@ -103,7 +103,7 @@ func testAccAblyRuleAmqpExternalConfig(
 	targetUrl string,
 	targetRoutingKey string,
 	targetExchange string,
-	targetManditoryRoute bool,
+	targetMandatoryRoute bool,
 	targetPersistentMessages bool,
 	targetMessageTtl int,
 	targetHeaders string,
@@ -148,5 +148,5 @@ resource "ably_rule_amqp_external" "rule0" {
 	  
 	}
   }
-`, appName, ruleStatus, channelFilter, sourceType, targetUrl, targetRoutingKey, targetExchange, targetManditoryRoute, targetPersistentMessages, targetMessageTtl, targetHeaders, targetEnveloped, targetFormat)
+`, appName, ruleStatus, channelFilter, sourceType, targetUrl, targetRoutingKey, targetExchange, targetMandatoryRoute, targetPersistentMessages, targetMessageTtl, targetHeaders, targetEnveloped, targetFormat)
 }
