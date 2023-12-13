@@ -22,6 +22,6 @@ resource "ably_rule_http" "rule0" {
     format         = "json"
     # Note, "enveloped" can only be set to true for "single" request_mode.
     # "batch" request_mode is automatically enveloped.
-    enveloped      = false
+    enveloped = false
   }
 }

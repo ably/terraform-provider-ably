@@ -8,8 +8,8 @@
 
 | Name | Version |
 |------|---------|
-| <a name="provider_ably"></a> [ably](#provider\_ably) | 0.4.2 |
-| <a name="provider_tls"></a> [tls](#provider\_tls) | 4.0.3 |
+| <a name="provider_ably"></a> [ably](#provider\_ably) | 0.5.0 |
+| <a name="provider_tls"></a> [tls](#provider\_tls) | 4.0.5 |
 
 ## Modules
 
@@ -25,6 +25,8 @@ No modules.
 | [ably_app.app1](https://registry.terraform.io/providers/ably/ably/latest/docs/resources/app) | resource |
 | [ably_namespace.namespace0](https://registry.terraform.io/providers/ably/ably/latest/docs/resources/namespace) | resource |
 | [ably_queue.example_queue](https://registry.terraform.io/providers/ably/ably/latest/docs/resources/queue) | resource |
+| [ably_rule_amqp.rule0](https://registry.terraform.io/providers/ably/ably/latest/docs/resources/rule_amqp) | resource |
+| [ably_rule_amqp_external.rule0](https://registry.terraform.io/providers/ably/ably/latest/docs/resources/rule_amqp_external) | resource |
 | [ably_rule_azure_function.rule0](https://registry.terraform.io/providers/ably/ably/latest/docs/resources/rule_azure_function) | resource |
 | [ably_rule_cloudflare_worker.rule0](https://registry.terraform.io/providers/ably/ably/latest/docs/resources/rule_cloudflare_worker) | resource |
 | [ably_rule_google_function.google_function](https://registry.terraform.io/providers/ably/ably/latest/docs/resources/rule_google_function) | resource |

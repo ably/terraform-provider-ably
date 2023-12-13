@@ -214,6 +214,7 @@ type AblyRuleTargetAmqp struct {
 type AblyRuleTargetAmqpExternal struct {
 	Url                string                 `tfsdk:"url"`
 	RoutingKey         string                 `tfsdk:"routing_key"`
+	Exchange           string                 `tfsdk:"exchange"`
 	MandatoryRoute     bool                   `tfsdk:"mandatory_route"`
 	PersistentMessages bool                   `tfsdk:"persistent_messages"`
 	MessageTtl         types.Int64            `tfsdk:"message_ttl"`
