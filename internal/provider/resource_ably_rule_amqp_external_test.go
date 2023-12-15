@@ -42,6 +42,7 @@ func TestAccAblyRuleAmqpExternal(t *testing.T) {
 					"channel.message",
 					"amqps://test.example",
 					"topic:key",
+					"exchange",
 					true,
 					true,
 					44,
@@ -55,6 +56,7 @@ func TestAccAblyRuleAmqpExternal(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "source.type", "channel.message"),
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "target.routing_key", "topic:key"),
+					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "target.exchange", "exchange"),
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "target.enveloped", "true"),
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "target.format", "json"),
 				),
@@ -68,6 +70,7 @@ func TestAccAblyRuleAmqpExternal(t *testing.T) {
 					"channel.message",
 					"amqps://test.example",
 					"newtopic:key",
+					"newexchange",
 					false,
 					false,
 					23,
@@ -81,6 +84,7 @@ func TestAccAblyRuleAmqpExternal(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "source.type", "channel.message"),
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "target.routing_key", "newtopic:key"),
+					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "target.exchange", "newexchange"),
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "target.enveloped", "false"),
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "target.format", "msgpack"),
 				),
@@ -98,7 +102,8 @@ func testAccAblyRuleAmqpExternalConfig(
 	sourceType string,
 	targetUrl string,
 	targetRoutingKey string,
-	targetManditoryRoute bool,
+	targetExchange string,
+	targetMandatoryRoute bool,
 	targetPersistentMessages bool,
 	targetMessageTtl int,
 	targetHeaders string,
@@ -133,13 +138,15 @@ resource "ably_rule_amqp_external" "rule0" {
 	target = {
 	  url = %[5]q
 	  routing_key = %[6]q,
-	  mandatory_route = %[7]t
-	  persistent_messages = %[8]t
-	  message_ttl = %[9]d
-	  headers = %[10]s
-	  enveloped = %[11]s,
-	  format    = %[12]q,
+	  exchange = %[7]q,
+	  mandatory_route = %[8]t
+	  persistent_messages = %[9]t
+	  message_ttl = %[10]d
+	  headers = %[11]s
+	  enveloped = %[12]s,
+	  format    = %[13]q,
+	  
 	}
   }
-`, appName, ruleStatus, channelFilter, sourceType, targetUrl, targetRoutingKey, targetManditoryRoute, targetPersistentMessages, targetMessageTtl, targetHeaders, targetEnveloped, targetFormat)
+`, appName, ruleStatus, channelFilter, sourceType, targetUrl, targetRoutingKey, targetExchange, targetMandatoryRoute, targetPersistentMessages, targetMessageTtl, targetHeaders, targetEnveloped, targetFormat)
 }

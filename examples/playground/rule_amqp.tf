@@ -1,13 +1,13 @@
 resource "ably_rule_amqp" "rule0" {
-	app_id = ably_app.app0.id
-	status = "enabled"
-	source = {
-		channel_filter = "^my-channel.*",
-		type           = "channel.message"
-	}
-	request_mode = "single"
-	target = {
-		queue_id = ably_queue.example_queue.id
+  app_id = ably_app.app0.id
+  status = "enabled"
+  source = {
+    channel_filter = "^my-channel.*",
+    type           = "channel.message"
+  }
+  request_mode = "single"
+  target = {
+    queue_id = ably_queue.example_queue.id
     headers = [
       {
         name : "User-Agent",
@@ -19,8 +19,8 @@ resource "ably_rule_amqp" "rule0" {
       },
     ]
 
-		enveloped = false
-		format = "json"
-	}
+    enveloped = false
+    format    = "json"
   }
+}
 
