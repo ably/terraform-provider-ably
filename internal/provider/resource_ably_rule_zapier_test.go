@@ -116,6 +116,7 @@ resource "ably_api_key" "api_key_0" {
 	  "channel3"  = ["subscribe"],
 	  "channel33" = ["subscribe"],
 	}
+	revocable_tokens = true
   }
 
   resource "ably_api_key" "api_key_1" {
@@ -124,6 +125,7 @@ resource "ably_api_key" "api_key_0" {
 	capabilities = {
 	  "channel2"  = ["publish"],
 	}
+	revocable_tokens = false
   }
 
 resource "ably_rule_zapier" "rule0" {

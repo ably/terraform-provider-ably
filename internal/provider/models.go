@@ -32,14 +32,15 @@ type AblyNamespace struct {
 
 // Ably Key
 type AblyKey struct {
-	ID         types.String        `tfsdk:"id"`
-	AppID      types.String        `tfsdk:"app_id"`
-	Name       types.String        `tfsdk:"name"`
-	Capability map[string][]string `tfsdk:"capabilities"`
-	Status     types.Int64         `tfsdk:"status"`
-	Key        types.String        `tfsdk:"key"`
-	Created    types.Int64         `tfsdk:"created"`
-	Modified   types.Int64         `tfsdk:"modified"`
+	ID              types.String        `tfsdk:"id"`
+	AppID           types.String        `tfsdk:"app_id"`
+	Name            types.String        `tfsdk:"name"`
+	RevocableTokens types.Bool          `tfsdk:"revocable_tokens"`
+	Capability      map[string][]string `tfsdk:"capabilities"`
+	Status          types.Int64         `tfsdk:"status"`
+	Key             types.String        `tfsdk:"key"`
+	Created         types.Int64         `tfsdk:"created"`
+	Modified        types.Int64         `tfsdk:"modified"`
 }
 
 // Ably Queue

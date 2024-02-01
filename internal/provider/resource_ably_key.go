@@ -48,6 +48,15 @@ func (r resourceKey) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostic
 				Required:    true,
 				Description: "The capabilities that this key has. More information on capabilities can be found in the [Ably documentation](https://ably.com/docs/core-features/authentication#capabilities-explained)",
 			},
+			"revocable_tokens": {
+				Type:        types.BoolType,
+				Optional:    true,
+				Computed:    true,
+				Description: "Allow tokens issued by this key to be revoked. More information on Token Revocation can be found in the [Ably documentation](https://ably.com/docs/auth/revocation)",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					DefaultAttribute(types.BoolValue(false)),
+				},
+			},
 			"status": {
 				Type:        types.Int64Type,
 				Computed:    true,
@@ -106,8 +115,9 @@ func (r resourceKey) Create(ctx context.Context, req tfsdk_resource.CreateReques
 	}
 
 	new_key := ably_control_go.NewKey{
-		Name:       plan.Name.ValueString(),
-		Capability: plan.Capability,
+		Name:            plan.Name.ValueString(),
+		Capability:      plan.Capability,
+		RevocableTokens: plan.RevocableTokens.ValueBool(),
 	}
 
 	// Creates a new Ably Key by invoking the CreateKey function from the Client Library
@@ -122,14 +132,15 @@ func (r resourceKey) Create(ctx context.Context, req tfsdk_resource.CreateReques
 
 	// Maps response body to resource schema attributes.
 	resp_key := AblyKey{
-		ID:         types.StringValue(ably_key.ID),
-		AppID:      types.StringValue(ably_key.AppID),
-		Name:       types.StringValue(ably_key.Name),
-		Key:        types.StringValue(ably_key.Key),
-		Capability: ably_key.Capability,
-		Status:     types.Int64Value(int64(ably_key.Status)),
-		Created:    types.Int64Value(int64(ably_key.Created)),
-		Modified:   types.Int64Value(int64(ably_key.Modified)),
+		ID:              types.StringValue(ably_key.ID),
+		AppID:           types.StringValue(ably_key.AppID),
+		Name:            types.StringValue(ably_key.Name),
+		Key:             types.StringValue(ably_key.Key),
+		RevocableTokens: types.BoolValue(ably_key.RevocableTokens),
+		Capability:      ably_key.Capability,
+		Status:          types.Int64Value(int64(ably_key.Status)),
+		Created:         types.Int64Value(int64(ably_key.Created)),
+		Modified:        types.Int64Value(int64(ably_key.Modified)),
 	}
 
 	// Sets state for the new Ably App.
@@ -175,14 +186,15 @@ func (r resourceKey) Read(ctx context.Context, req tfsdk_resource.ReadRequest, r
 	for _, v := range keys {
 		if v.AppID == app_id && v.ID == key_id && v.Status == 0 {
 			resp_key := AblyKey{
-				ID:         types.StringValue(v.ID),
-				AppID:      types.StringValue(v.AppID),
-				Name:       types.StringValue(v.Name),
-				Capability: v.Capability,
-				Status:     types.Int64Value(int64(v.Status)),
-				Key:        types.StringValue(v.Key),
-				Created:    types.Int64Value(int64(v.Created)),
-				Modified:   types.Int64Value(int64(v.Modified)),
+				ID:              types.StringValue(v.ID),
+				AppID:           types.StringValue(v.AppID),
+				Name:            types.StringValue(v.Name),
+				RevocableTokens: types.BoolValue(v.RevocableTokens),
+				Capability:      v.Capability,
+				Status:          types.Int64Value(int64(v.Status)),
+				Key:             types.StringValue(v.Key),
+				Created:         types.Int64Value(int64(v.Created)),
+				Modified:        types.Int64Value(int64(v.Modified)),
 			}
 			// Sets state to app values.
 			diags = resp.State.Set(ctx, &resp_key)
@@ -225,8 +237,9 @@ func (r resourceKey) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 
 	// Instantiates struct of type ably_control_go.NewKey and sets values to output of plan
 	key_values := ably_control_go.NewKey{
-		Name:       plan.Name.ValueString(),
-		Capability: plan.Capability,
+		Name:            plan.Name.ValueString(),
+		Capability:      plan.Capability,
+		RevocableTokens: plan.RevocableTokens.ValueBool(),
 	}
 
 	// Updates an Ably API Key. The function invokes the Client Library UpdateKey method.
@@ -240,14 +253,15 @@ func (r resourceKey) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 	}
 
 	resp_key := AblyKey{
-		ID:         types.StringValue(ably_key.ID),
-		AppID:      types.StringValue(ably_key.AppID),
-		Name:       types.StringValue(ably_key.Name),
-		Capability: ably_key.Capability,
-		Status:     types.Int64Value(int64(ably_key.Status)),
-		Key:        types.StringValue(ably_key.Key),
-		Created:    types.Int64Value(int64(ably_key.Created)),
-		Modified:   types.Int64Value(int64(ably_key.Modified)),
+		ID:              types.StringValue(ably_key.ID),
+		AppID:           types.StringValue(ably_key.AppID),
+		Name:            types.StringValue(ably_key.Name),
+		RevocableTokens: types.BoolValue(ably_key.RevocableTokens),
+		Capability:      ably_key.Capability,
+		Status:          types.Int64Value(int64(ably_key.Status)),
+		Key:             types.StringValue(ably_key.Key),
+		Created:         types.Int64Value(int64(ably_key.Created)),
+		Modified:        types.Int64Value(int64(ably_key.Modified)),
 	}
 
 	// Sets state.
