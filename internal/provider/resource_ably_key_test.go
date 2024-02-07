@@ -2,9 +2,10 @@ package ably_control
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"testing"
 )
 
 // Test Create and Update of an Ably Key with:
@@ -21,10 +22,11 @@ func TestAccAblyKey(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing of ably_app.app0
 			{
-				Config: testAccAblyKeyConfig(app_name, key_name, "channel100", `["publish", "subscribe"]`),
+				Config: testAccAblyKeyConfig(app_name, key_name, "channel100", `["publish", "subscribe"]`, true),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
 					resource.TestCheckResourceAttr("ably_api_key.key0", "name", key_name),
+					resource.TestCheckResourceAttr("ably_api_key.key0", "revocable_tokens", "true"),
 					resource.TestCheckResourceAttr("ably_api_key.key0", "capabilities.channel100.0", "publish"),
 					resource.TestCheckResourceAttr("ably_api_key.key0", "capabilities.channel100.1", "subscribe"),
 					resource.TestCheckResourceAttrWith("ably_api_key.key0", "key", func(value string) error {
@@ -37,10 +39,11 @@ func TestAccAblyKey(t *testing.T) {
 			},
 			// Update and Read testing of ably_app.app0
 			{
-				Config: testAccAblyKeyConfig(update_app_name, update_key_name, "channel100", `["history"]`),
+				Config: testAccAblyKeyConfig(update_app_name, update_key_name, "channel100", `["history"]`, false),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", update_app_name),
 					resource.TestCheckResourceAttr("ably_api_key.key0", "name", update_key_name),
+					resource.TestCheckResourceAttr("ably_api_key.key0", "revocable_tokens", "false"),
 					resource.TestCheckResourceAttr("ably_api_key.key0", "capabilities.channel100.0", "history"),
 					resource.TestCheckResourceAttrWith("ably_api_key.key0", "key", func(value string) error {
 						if value == "" {
@@ -57,7 +60,7 @@ func TestAccAblyKey(t *testing.T) {
 
 // Function with inline HCL to provision an ably_app resource
 // Takes App name, Key Name, Capability Name and Capability List as function params.
-func testAccAblyKeyConfig(appName string, keyName string, keyCapabilityName0 string, keyCapabilityCap0 string) string {
+func testAccAblyKeyConfig(appName string, keyName string, keyCapabilityName0 string, keyCapabilityCap0 string, revocableTokens bool) string {
 	return fmt.Sprintf(`
 terraform {
 	required_providers {
@@ -82,6 +85,7 @@ resource "ably_api_key" "key0" {
 	capabilities = {
 	  %[3]q = %[4]s
 	}
+	revocable_tokens = %[5]t
   }
-`, appName, keyName, keyCapabilityName0, keyCapabilityCap0)
+`, appName, keyName, keyCapabilityName0, keyCapabilityCap0, revocableTokens)
 }
