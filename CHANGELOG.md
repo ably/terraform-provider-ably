@@ -1,4 +1,18 @@
-# Change log
+# Changelog
+
+## [0.6.0](https://github.com/ably/terraform-provider-ably/tree/v0.6.0)
+
+[Full Changelog](https://github.com/ably/terraform-provider-ably/compare/v0.5.0...v0.6.0)
+
+**Merged pull requests:**
+
+- Bump google.golang.org/grpc from 1.53.0 to 1.56.3 [\#175](https://github.com/ably/terraform-provider-ably/pull/175) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump golang.org/x/crypto from 0.0.0-20220817201139-bc19a97f63c8 to 0.17.0 [\#174](https://github.com/ably/terraform-provider-ably/pull/174) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump golang.org/x/net from 0.5.0 to 0.17.0 [\#173](https://github.com/ably/terraform-provider-ably/pull/173) ([dependabot[bot]](https://github.com/apps/dependabot))
+- \[INF-3250\] - Add `revocable_tokens` parameter to `ably_api_key` resource [\#171](https://github.com/ably/terraform-provider-ably/pull/171) ([graham-russell](https://github.com/graham-russell))
+- Add `exchange` parameter to AMQP External Rule [\#170](https://github.com/ably/terraform-provider-ably/pull/170) ([graham-russell](https://github.com/graham-russell))
+- docs: bump readme version [\#169](https://github.com/ably/terraform-provider-ably/pull/169) ([AndyTWF](https://github.com/AndyTWF))
+- Bump google.golang.org/grpc from 1.51.0 to 1.53.0 [\#165](https://github.com/ably/terraform-provider-ably/pull/165) ([dependabot[bot]](https://github.com/apps/dependabot))
 
 ## [0.5.0](https://github.com/ably/terraform-provider-ably/tree/v0.5.0)
 
@@ -84,5 +98,3 @@ This version includes the following resources:
 - `ably_key`
 - `ably_namespace`
 - `ably-queue`
-
-
