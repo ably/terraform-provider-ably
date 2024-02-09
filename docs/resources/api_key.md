@@ -33,6 +33,10 @@ resource "ably_api_key" "api_key_1" {
 - `capabilities` (Map of Set of String) The capabilities that this key has. More information on capabilities can be found in the [Ably documentation](https://ably.com/docs/core-features/authentication#capabilities-explained)
 - `name` (String) The name for your API key. This is a friendly name for your reference.
 
+### Optional
+
+- `revocable_tokens` (Boolean) Allow tokens issued by this key to be revoked. More information on Token Revocation can be found in the [Ably documentation](https://ably.com/docs/auth/revocation)
+
 ### Read-Only
 
 - `created` (Number) Enforce TLS for all connections. This setting overrides any channel setting.
