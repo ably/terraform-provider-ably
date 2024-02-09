@@ -3,11 +3,12 @@
 ## Contributing
 
 1. Fork it
-3. Create your feature branch (`git checkout -b my-new-feature`)
-4. Commit your changes (`git commit -am 'Add some feature'`)
-5. Ensure you have added suitable tests and the test suite is passing
-8. Push the branch (`git push origin my-new-feature`)
-9. Create a new Pull Request
+2. Create your feature branch (`git checkout -b my-new-feature`)
+3. Commit your changes (`git commit -am 'Add some feature'`)
+4. Ensure you have added suitable tests and the test suite is passing
+5. Ensure that `tfplugindocs` has been run and that the Ably Terraform provider documentation is up to date. Terraform Plugin Docs tool is available [HERE](https://github.com/hashicorp/terraform-plugin-docs)
+6. Push the branch (`git push origin my-new-feature`)
+7. Create a new Pull Request
 
 ## Release Process
 
