@@ -81,6 +81,33 @@ func TestAccAblyNamespace(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "expose_timeserial", "false"),
 				),
 			},
+			{
+				Config: testAccAblyNamespaceBatchingConfig(app_name, ably_control_go.Namespace{
+					ID:               namespace_name + "batching",
+					Authenticated:    false,
+					Persisted:        false,
+					PersistLast:      false,
+					PushEnabled:      false,
+					TlsOnly:          false,
+					ExposeTimeserial: false,
+					BatchingEnabled:  true,
+					BatchingPolicy:   "some-policy",
+					BatchingInterval: ably_control_go.BatchingInterval(100),
+				}),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "id", namespace_name+"batching"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "authenticated", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "persisted", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "persist_last", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "push_enabled", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "tls_only", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "expose_timeserial", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "batching_enabled", "true"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "batching_policy", "some-policy"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "batching_interval", "100"),
+				),
+			},
 			// Delete testing automatically occurs in TestCase
 		},
 	})
@@ -97,7 +124,7 @@ terraform {
 		}
 	}
 }
-	
+
 # You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 provider "ably" {}
 
@@ -119,4 +146,41 @@ resource "ably_namespace" "namespace0" {
 }
 
 `, appName, namespace.ID, namespace.Authenticated, namespace.Persisted, namespace.PersistLast, namespace.PushEnabled, namespace.TlsOnly, namespace.ExposeTimeserial)
+}
+
+func testAccAblyNamespaceBatchingConfig(appName string, namespace ably_control_go.Namespace) string {
+	return fmt.Sprintf(`
+terraform {
+	required_providers {
+		ably = {
+			source =  "github.com/ably/ably"
+			version = "0.4.3"
+		}
+	}
+}
+
+# You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
+provider "ably" {}
+
+resource "ably_app" "app0" {
+	name     = %[1]q
+	status   = "enabled"
+	tls_only = true
+}
+
+resource "ably_namespace" "namespace0" {
+  app_id            = ably_app.app0.id
+  id                = %[2]q
+  authenticated     = %[3]t
+  persisted         = %[4]t
+  persist_last      = %[5]t
+  push_enabled      = %[6]t
+  tls_only          = %[7]t
+  expose_timeserial = %[8]t
+  batching_enabled  = %[9]t
+  batching_policy   = "%[10]s"
+  batching_interval = %[11]d
+}
+
+`, appName, namespace.ID, namespace.Authenticated, namespace.Persisted, namespace.PersistLast, namespace.PushEnabled, namespace.TlsOnly, namespace.ExposeTimeserial, namespace.BatchingEnabled, namespace.BatchingPolicy, *namespace.BatchingInterval)
 }

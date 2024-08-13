@@ -88,6 +88,33 @@ func (r resourceNamespace) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 					DefaultAttribute(types.BoolValue(false)),
 				},
 			},
+			"batching_enabled": {
+				Type:        types.BoolType,
+				Optional:    true,
+				Computed:    true,
+				Description: "If true, channels within this namespace will start batching inbound messages instead of sending them out immediately to subscribers as per the configured policy.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					DefaultAttribute(types.BoolValue(false)),
+				},
+			},
+			"batching_policy": {
+				Type:        types.StringType,
+				Optional:    true,
+				Computed:    true,
+				Description: "When configured, sets the policy for message batching.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					DefaultAttribute(types.StringValue("")),
+				},
+			},
+			"batching_interval": {
+				Type:        types.Int64Type,
+				Optional:    true,
+				Computed:    true,
+				Description: "When configured, sets the maximium batching interval in the channel.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					DefaultAttribute(types.Int64Null()),
+				},
+			},
 		},
 		MarkdownDescription: "The ably_namespace resource allows you to manage namespaces for channel rules in Ably. Read more in the Ably documentation: https://ably.com/docs/general/channel-rules-namespaces.",
 	}, nil
@@ -123,6 +150,12 @@ func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.Create
 		ExposeTimeserial: plan.ExposeTimeserial.ValueBool(),
 	}
 
+	if plan.BatchingEnabled.ValueBool() {
+		namespace_values.BatchingEnabled = true
+		namespace_values.BatchingPolicy = plan.BatchingPolicy.ValueString()
+		namespace_values.BatchingInterval = ably_control_go.BatchingInterval(int(plan.BatchingInterval.ValueInt64()))
+	}
+
 	// Creates a new Ably namespace by invoking the CreateNamespace function from the Client Library
 	ably_namespace, err := r.p.client.CreateNamespace(plan.AppID.ValueString(), &namespace_values)
 	if err != nil {
@@ -131,6 +164,12 @@ func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.Create
 			"Could not create resource, unexpected error: "+err.Error(),
 		)
 		return
+	}
+
+	// Handle the pointer gracefully
+	batchingInterval := types.Int64Null()
+	if ably_namespace.BatchingInterval != nil {
+		batchingInterval = types.Int64Value(int64(*ably_namespace.BatchingInterval))
 	}
 
 	// Maps response body to resource schema attributes.
@@ -143,6 +182,9 @@ func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.Create
 		PushEnabled:      types.BoolValue(ably_namespace.PushEnabled),
 		TlsOnly:          types.BoolValue(ably_namespace.TlsOnly),
 		ExposeTimeserial: types.BoolValue(namespace_values.ExposeTimeserial),
+		BatchingEnabled:  types.BoolValue(ably_namespace.BatchingEnabled),
+		BatchingPolicy:   types.StringValue(ably_namespace.BatchingPolicy),
+		BatchingInterval: batchingInterval,
 	}
 
 	// Sets state for the new Ably App.
@@ -191,6 +233,12 @@ func (r resourceNamespace) Read(ctx context.Context, req tfsdk_resource.ReadRequ
 	// Loops through namespaces and if id matches, sets state.
 	for _, v := range namespaces {
 		if v.ID == namespace_id {
+			// Handle the pointer gracefully
+			batchingInterval := types.Int64Null()
+			if v.BatchingInterval != nil {
+				batchingInterval = types.Int64Value(int64(*v.BatchingInterval))
+			}
+
 			resp_namespaces := AblyNamespace{
 				AppID:            types.StringValue(app_id),
 				ID:               types.StringValue(namespace_id),
@@ -200,6 +248,9 @@ func (r resourceNamespace) Read(ctx context.Context, req tfsdk_resource.ReadRequ
 				PushEnabled:      types.BoolValue(v.PushEnabled),
 				TlsOnly:          types.BoolValue(v.TlsOnly),
 				ExposeTimeserial: types.BoolValue(v.ExposeTimeserial),
+				BatchingEnabled:  types.BoolValue(v.BatchingEnabled),
+				BatchingPolicy:   types.StringValue(v.BatchingPolicy),
+				BatchingInterval: batchingInterval,
 			}
 			// Sets state to namespace values.
 			diags = resp.State.Set(ctx, &resp_namespaces)
@@ -243,6 +294,12 @@ func (r resourceNamespace) Update(ctx context.Context, req tfsdk_resource.Update
 		ExposeTimeserial: plan.ExposeTimeserial.ValueBool(),
 	}
 
+	if plan.BatchingEnabled.ValueBool() {
+		namespace_values.BatchingEnabled = true
+		namespace_values.BatchingPolicy = plan.BatchingPolicy.ValueString()
+		namespace_values.BatchingInterval = ably_control_go.BatchingInterval(int(plan.BatchingInterval.ValueInt64()))
+	}
+
 	// Updates an Ably Namespace. The function invokes the Client Library UpdateNamespace method.
 	ably_namespace, err := r.p.client.UpdateNamespace(app_id, &namespace_values)
 	if err != nil {
@@ -251,6 +308,12 @@ func (r resourceNamespace) Update(ctx context.Context, req tfsdk_resource.Update
 			"Could not update resource, unexpected error: "+err.Error(),
 		)
 		return
+	}
+
+	// Handle the pointer gracefully
+	batchingInterval := types.Int64Null()
+	if ably_namespace.BatchingInterval != nil {
+		batchingInterval = types.Int64Value(int64(*ably_namespace.BatchingInterval))
 	}
 
 	resp_namespaces := AblyNamespace{
@@ -262,6 +325,9 @@ func (r resourceNamespace) Update(ctx context.Context, req tfsdk_resource.Update
 		PushEnabled:      types.BoolValue(ably_namespace.PushEnabled),
 		TlsOnly:          types.BoolValue(ably_namespace.TlsOnly),
 		ExposeTimeserial: types.BoolValue(ably_namespace.ExposeTimeserial),
+		BatchingEnabled:  types.BoolValue(ably_namespace.BatchingEnabled),
+		BatchingPolicy:   types.StringValue(ably_namespace.BatchingPolicy),
+		BatchingInterval: batchingInterval,
 	}
 
 	// Sets state to new namespace.
