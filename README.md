@@ -39,7 +39,7 @@ provider "ably" {
 }
 ```
 
-4. (Optional) Alternatively you can also specify Control API token in the provider configuration directly: 
+4. (Optional) Alternatively you can also specify Control API token in the provider configuration directly:
 
 ```terraform
 provider "ably" {
@@ -50,7 +50,7 @@ provider "ably" {
 
 ## Using Ably Terraform provider
 
-This readme gives a basic example; for more examples see the [examples/](examples/) folder, rendered documentation on the Terraform Registry, or [docs folder](docs/) in this repository. 
+This readme gives a basic example; for more examples see the [examples/](examples/) folder, rendered documentation on the Terraform Registry, or [docs folder](docs/) in this repository.
 
 
 ```terraform
@@ -84,7 +84,7 @@ resource "ably_queue" "example_queue" {
 
 ## Dependencies
 
-This provider uses [Ably Control API](https://ably.com/docs/api/control-api) and [Ably Control Go SDK](https://github.com/ably/ably-control-go) under the hood. 
+This provider uses [Ably Control API](https://ably.com/docs/api/control-api) and [Ably Control Go SDK](https://github.com/ably/ably-control-go) under the hood.
 
 
 ## Support, feedback and troubleshooting
