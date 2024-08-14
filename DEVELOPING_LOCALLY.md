@@ -21,7 +21,7 @@ provider_installation {
 }
 ```
 
-Build your changes from the repository root with 
+Build your changes from the repository root with
 ```
 $ go install
 $ cd examples/playground && terraform plan

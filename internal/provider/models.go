@@ -28,6 +28,9 @@ type AblyNamespace struct {
 	PushEnabled      types.Bool   `tfsdk:"push_enabled"`
 	TlsOnly          types.Bool   `tfsdk:"tls_only"`
 	ExposeTimeserial types.Bool   `tfsdk:"expose_timeserial"`
+	BatchingEnabled  types.Bool   `tfsdk:"batching_enabled"`
+	BatchingPolicy   types.String `tfsdk:"batching_policy"`
+	BatchingInterval types.Int64  `tfsdk:"batching_interval"`
 }
 
 // Ably Key

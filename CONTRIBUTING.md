@@ -10,6 +10,10 @@
 6. Push the branch (`git push origin my-new-feature`)
 7. Create a new Pull Request
 
+## Testing
+
+See [DEVELOPING_LOCALLY.md](DEVELOPING_LOCALLY.md) for guidance on performing acceptance tests.
+
 ## Release Process
 
 1. Merge all pull requests containing changes intended for this release to `main` branch
