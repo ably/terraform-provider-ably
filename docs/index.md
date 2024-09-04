@@ -64,7 +64,7 @@ provider "ably" {
 
 In order to import a resource, you need to add the resource to your Terraform configuration file, and then follow https://www.terraform.io/cli/import. 
 
-For example, in order to import an app named `ably-tf-provider-app-0000`, add something similar to the following:
+For example, in order to import an app with id `{APP_ID}` (you can retrieve app id from Ably dashboard or via [Control API](https://ably.com/docs/api/control-api#tag/apps/paths/~1accounts~1%7Baccount_id%7D~1apps/get)), add something similar to the following:
   
 ```terraform
 resource "ably_app" "app0" {
@@ -77,7 +77,7 @@ resource "ably_app" "app0" {
 Then run the following command:
   
 ```bash
-terraform import ably_app.app0 ably-tf-provider-app-0000
+terraform import ably_app.app0 {APP_ID}
 ```
 
 This will add the app to your Terraform state file. You can then run `terraform plan` to see what changes will be made to the app.
