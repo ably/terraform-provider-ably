@@ -16,6 +16,8 @@ github.com/ably/ably-control-go v0.3.0 h1:m5Y2SHE69Mwg8iDASZxqmlHFSwpejN4s2TgZi3
 github.com/ably/ably-control-go v0.3.0/go.mod h1:TP7gWAy+ga++gX6OZ0DtjwH8oVKKdiaIGQvZvxDKNdk=
 github.com/ably/ably-control-go v0.4.0 h1:JouYcHKT2TvvAGPpEPQJcFo5p9k1KfLUr/k9bfy+tYI=
 github.com/ably/ably-control-go v0.4.0/go.mod h1:TP7gWAy+ga++gX6OZ0DtjwH8oVKKdiaIGQvZvxDKNdk=
+github.com/ably/ably-control-go v0.4.1-0.20241211161828-60786a2a414b h1:yHdqAi4zYDFIGmzv7WUPwA8JnLwaL5ExFys85Mf0Ih0=
+github.com/ably/ably-control-go v0.4.1-0.20241211161828-60786a2a414b/go.mod h1:D5cHDJdYVHXdxfRwypsLaTySGE/bT3H0wlgxwBWCbxQ=
 github.com/acomagu/bufpipe v1.0.3 h1:fxAGrHZTgQ9w5QqVItgzwj235/uYZYgbXitB+dLupOk=
 github.com/acomagu/bufpipe v1.0.3/go.mod h1:mxdxdup/WdsKVreO5GpW4+M/1CE2sMG4jeGJ2sYmHc4=
 github.com/agext/levenshtein v1.2.3 h1:YB2fHEn0UJagG8T1rrWknE3ZQzWM06O8AMAatNn7lmo=

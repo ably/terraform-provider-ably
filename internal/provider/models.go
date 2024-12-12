@@ -77,6 +77,35 @@ func emptyStringToNull(v *types.String) {
 	}
 }
 
+// Ably Ingress Rule
+func (r *AblyIngressRuleDecoder[_]) IngressRule() AblyIngressRule {
+	return AblyIngressRule{
+		ID:     r.ID,
+		AppID:  r.AppID,
+		Status: r.Status,
+		Target: r.Target,
+	}
+}
+
+type AblyIngressRuleDecoder[T any] struct {
+	ID     types.String `tfsdk:"id"`
+	AppID  types.String `tfsdk:"app_id"`
+	Status types.String `tfsdk:"status"`
+	Target T            `tfsdk:"target"`
+}
+
+type AblyIngressRule AblyIngressRuleDecoder[any]
+
+type AblyIngressRuleTargetMongo struct {
+	Url                      string `tfsdk:"url"`
+	Database                 string `tfsdk:"database"`
+	Collection               string `tfsdk:"collection"`
+	Pipeline                 string `tfsdk:"pipeline"`
+	FullDocument             string `tfsdk:"full_document"`
+	FullDocumentBeforeChange string `tfsdk:"full_document_before_change"`
+	PrimarySite              string `tfsdk:"primary_site"`
+}
+
 // Ably Rule
 type AblyRuleSource struct {
 	ChannelFilter types.String               `tfsdk:"channel_filter"`

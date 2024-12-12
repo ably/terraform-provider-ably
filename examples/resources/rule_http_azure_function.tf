@@ -7,7 +7,7 @@ resource "ably_rule_azure_function" "rule0" {
   }
   request_mode = "batch"
   target = {
-    azure_app_id  = "coms",
+    azure_app_id  = "demo",
     function_name = "function0"
     headers = [
       {

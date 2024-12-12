@@ -91,7 +91,7 @@ func TestAccAblyNamespace(t *testing.T) {
 					TlsOnly:          false,
 					ExposeTimeserial: false,
 					BatchingEnabled:  true,
-					BatchingPolicy:   "some-policy",
+					BatchingPolicy:   "simple",
 					BatchingInterval: ably_control_go.BatchingInterval(100),
 				}),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -104,7 +104,7 @@ func TestAccAblyNamespace(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "tls_only", "false"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "expose_timeserial", "false"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "batching_enabled", "true"),
-					resource.TestCheckResourceAttr("ably_namespace.namespace0", "batching_policy", "some-policy"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "batching_policy", "simple"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "batching_interval", "100"),
 				),
 			},
