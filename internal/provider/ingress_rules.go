@@ -27,6 +27,17 @@ func GetPlanIngressRule(plan AblyIngressRule) ably_control_go.NewIngressRule {
 			FullDocumentBeforeChange: t.FullDocumentBeforeChange,
 			PrimarySite:              t.PrimarySite,
 		}
+	case *AblyIngressRuleTargetPostgresOutbox:
+		target = &ably_control_go.IngressPostgresOutboxTarget{
+			Url:               t.Url,
+			OutboxTableSchema: t.OutboxTableSchema,
+			OutboxTableName:   t.OutboxTableName,
+			NodesTableSchema:  t.NodesTableSchema,
+			NodesTableName:    t.NodesTableName,
+			SslMode:           t.SslMode,
+			SslRootCert:       t.SslRootCert,
+			PrimarySite:       t.PrimarySite,
+		}
 	}
 
 	rule_values := ably_control_go.NewIngressRule{
@@ -44,7 +55,6 @@ func GetIngressRuleResponse(ably_ingress_rule *ably_control_go.IngressRule, plan
 
 	switch v := ably_ingress_rule.Target.(type) {
 	case *ably_control_go.IngressMongoTarget:
-
 		resp_target = &AblyIngressRuleTargetMongo{
 			Url:                      v.Url,
 			Database:                 v.Database,
@@ -53,6 +63,17 @@ func GetIngressRuleResponse(ably_ingress_rule *ably_control_go.IngressRule, plan
 			FullDocument:             v.FullDocument,
 			FullDocumentBeforeChange: v.FullDocumentBeforeChange,
 			PrimarySite:              v.PrimarySite,
+		}
+	case *ably_control_go.IngressPostgresOutboxTarget:
+		resp_target = &AblyIngressRuleTargetPostgresOutbox{
+			Url:               v.Url,
+			OutboxTableSchema: v.OutboxTableSchema,
+			OutboxTableName:   v.OutboxTableName,
+			NodesTableSchema:  v.NodesTableSchema,
+			NodesTableName:    v.NodesTableName,
+			SslMode:           v.SslMode,
+			SslRootCert:       v.SslRootCert,
+			PrimarySite:       v.PrimarySite,
 		}
 	}
 
@@ -174,8 +195,8 @@ func ReadIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_resour
 			return
 		}
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("Error deleting Resource %s", r.Name()),
-			fmt.Sprintf("Could not delete resource %s, unexpected error: %s", r.Name(), err.Error()),
+			fmt.Sprintf("Error reading Resource %s", r.Name()),
+			fmt.Sprintf("Could not read resource %s, unexpected error: %s", r.Name(), err.Error()),
 		)
 		return
 	}

@@ -106,6 +106,17 @@ type AblyIngressRuleTargetMongo struct {
 	PrimarySite              string `tfsdk:"primary_site"`
 }
 
+type AblyIngressRuleTargetPostgresOutbox struct {
+	Url               string `tfsdk:"url"`
+	OutboxTableSchema string `tfsdk:"outbox_table_schema"`
+	OutboxTableName   string `tfsdk:"outbox_table_name"`
+	NodesTableSchema  string `tfsdk:"nodes_table_schema"`
+	NodesTableName    string `tfsdk:"nodes_table_name"`
+	SslMode           string `tfsdk:"ssl_mode"`
+	SslRootCert       string `tfsdk:"ssl_root_cert"`
+	PrimarySite       string `tfsdk:"primary_site"`
+}
+
 // Ably Rule
 type AblyRuleSource struct {
 	ChannelFilter types.String               `tfsdk:"channel_filter"`

@@ -143,6 +143,7 @@ func (p *provider) Resources(context.Context) []func() tfsdk_resource.Resource {
 		func() tfsdk_resource.Resource { return resourceRuleAmqp{p} },
 		func() tfsdk_resource.Resource { return resourceRuleAmqpExternal{p} },
 		func() tfsdk_resource.Resource { return resourceIngressRuleMongo{p} },
+		func() tfsdk_resource.Resource { return resourceIngressRulePostgresOutbox{p} },
 	}
 
 }
