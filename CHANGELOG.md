@@ -1,5 +1,24 @@
 # Changelog
-j
+
+## [0.8.0](https://github.com/ably/terraform-provider-ably/tree/v0.8.0)
+
+[Full Changelog](https://github.com/ably/terraform-provider-ably/compare/v0.7.0..v0.8.0)
+
+**Implemented enhancements:**
+
+- Expose LiveSync to the terraform provider [\#180](https://github.com/ably/terraform-provider-ably/issues/180)
+
+**Closed issues:**
+
+- Following instructions for importing configuration doesn't work [\#181](https://github.com/ably/terraform-provider-ably/issues/181)
+
+**Merged pull requests:**
+
+- Bump golang.org/x/crypto from 0.21.0 to 0.31.0 [\#188](https://github.com/ably/terraform-provider-ably/pull/188) ([dependabot[bot]](https://github.com/apps/dependabot))
+- \[INF-5307\] - Add the MongoDB & PostgreSQL Outbox Ably Ingress Rules [\#187](https://github.com/ably/terraform-provider-ably/pull/187) ([graham-russell](https://github.com/graham-russell))
+- Update documentation for importing existing apps to use app id instead of a name [\#186](https://github.com/ably/terraform-provider-ably/pull/186) ([kavalerov](https://github.com/kavalerov))
+- Update goreleaser [\#185](https://github.com/ably/terraform-provider-ably/pull/185) ([surminus](https://github.com/surminus))
+
 ## [0.7.0](https://github.com/ably/terraform-provider-ably/tree/v0.7.0)
 
 [Full Changelog](https://github.com/ably/terraform-provider-ably/compare/v0.6.1...v0.7.0)
