@@ -15,7 +15,7 @@ This provider supports the following systems/architectures:
 - Linux / ARMv6
 - Windows / AMD64
 
-This provider is built on top of Terraform Protocol 6.0, which is compatible with Terraform CLI version 1.0 and later (see more: https://www.terraform.io/plugin/how-terraform-works#protocol-version-6).
+This provider is built on top of Terraform Protocol 6.0, which is compatible with Terraform CLI version 1.0 and later (see more: [Terraform Plugin Protocol v6](https://www.terraform.io/plugin/terraform-plugin-protocol#protocol-version-6)).
 
 ## Installation
 
