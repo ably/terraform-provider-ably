@@ -22,7 +22,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Set up Go ${{ matrix.go-version }}
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
 
@@ -33,7 +33,12 @@ jobs:
         run: if [ "$(gofmt -l . | wc -l)" -gt 0 ]; then exit 1; fi
 
       - name: Vet
-        run: go vet
+        run: go vet ./...
+
+      - name: Staticcheck
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@latest
+          staticcheck -checks all ./...
 
       - name: Build
         run: |
