@@ -9,15 +9,15 @@ import (
 )
 
 func TestAccAblyRuleHTTP(t *testing.T) {
-	app_name := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
-	update_app_name := "acc-test-" + app_name
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	updateAppName := "acc-test-" + appName
 	original_headers_block := `[
 	{
 		name : "User-Agent-Conf",
 		value : "user-agent-string",
 	},
 	]`
-	update_headers_block := `[
+	updateHeadersBlock := `[
 	{
 		name : "User-Agent-Conf",
 		value : "user-agent-string",
@@ -35,7 +35,7 @@ func TestAccAblyRuleHTTP(t *testing.T) {
 			// Create and Read testing of ably_app.app0
 			{
 				Config: testAccAblyRuleHTTPConfig(
-					app_name,
+					appName,
 					"enabled",
 					"^my-channel.*",
 					"channel.message",
@@ -47,7 +47,7 @@ func TestAccAblyRuleHTTP(t *testing.T) {
 					"true",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "source.type", "channel.message"),
@@ -58,19 +58,19 @@ func TestAccAblyRuleHTTP(t *testing.T) {
 			// Update and Read testing of ably_app.app0
 			{
 				Config: testAccAblyRuleHTTPConfig(
-					update_app_name,
+					updateAppName,
 					"enabled",
 					"^my-channel.*",
 					"channel.message",
 					"batch",
-					update_headers_block,
+					updateHeadersBlock,
 					"ably_api_key.api_key_1.id",
 					"https://example1.com/webhooks",
 					"msgpack",
 					"false",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", update_app_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", updateAppName),
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "source.type", "channel.message"),

@@ -140,7 +140,7 @@ func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.Create
 	}
 
 	// Generates an API request body from the plan values
-	namespace_values := ably_control_go.Namespace{
+	namespaceValues := ably_control_go.Namespace{
 		ID:               plan.ID.ValueString(),
 		Authenticated:    plan.Authenticated.ValueBool(),
 		Persisted:        plan.Persisted.ValueBool(),
@@ -151,13 +151,13 @@ func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.Create
 	}
 
 	if plan.BatchingEnabled.ValueBool() {
-		namespace_values.BatchingEnabled = true
-		namespace_values.BatchingPolicy = plan.BatchingPolicy.ValueString()
-		namespace_values.BatchingInterval = ably_control_go.BatchingInterval(int(plan.BatchingInterval.ValueInt64()))
+		namespaceValues.BatchingEnabled = true
+		namespaceValues.BatchingPolicy = plan.BatchingPolicy.ValueString()
+		namespaceValues.BatchingInterval = ably_control_go.BatchingInterval(int(plan.BatchingInterval.ValueInt64()))
 	}
 
 	// Creates a new Ably namespace by invoking the CreateNamespace function from the Client Library
-	ably_namespace, err := r.p.client.CreateNamespace(plan.AppID.ValueString(), &namespace_values)
+	namespace, err := r.p.client.CreateNamespace(plan.AppID.ValueString(), &namespaceValues)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating Resource",
@@ -168,27 +168,27 @@ func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.Create
 
 	// Handle the pointer gracefully
 	batchingInterval := types.Int64Null()
-	if ably_namespace.BatchingInterval != nil {
-		batchingInterval = types.Int64Value(int64(*ably_namespace.BatchingInterval))
+	if namespace.BatchingInterval != nil {
+		batchingInterval = types.Int64Value(int64(*namespace.BatchingInterval))
 	}
 
 	// Maps response body to resource schema attributes.
-	resp_apps := AblyNamespace{
+	respApps := AblyNamespace{
 		AppID:            types.StringValue(plan.AppID.ValueString()),
-		ID:               types.StringValue(ably_namespace.ID),
-		Authenticated:    types.BoolValue(ably_namespace.Authenticated),
-		Persisted:        types.BoolValue(ably_namespace.Persisted),
-		PersistLast:      types.BoolValue(ably_namespace.PersistLast),
-		PushEnabled:      types.BoolValue(ably_namespace.PushEnabled),
-		TlsOnly:          types.BoolValue(ably_namespace.TlsOnly),
-		ExposeTimeserial: types.BoolValue(namespace_values.ExposeTimeserial),
-		BatchingEnabled:  types.BoolValue(ably_namespace.BatchingEnabled),
-		BatchingPolicy:   types.StringValue(ably_namespace.BatchingPolicy),
+		ID:               types.StringValue(namespace.ID),
+		Authenticated:    types.BoolValue(namespace.Authenticated),
+		Persisted:        types.BoolValue(namespace.Persisted),
+		PersistLast:      types.BoolValue(namespace.PersistLast),
+		PushEnabled:      types.BoolValue(namespace.PushEnabled),
+		TlsOnly:          types.BoolValue(namespace.TlsOnly),
+		ExposeTimeserial: types.BoolValue(namespaceValues.ExposeTimeserial),
+		BatchingEnabled:  types.BoolValue(namespace.BatchingEnabled),
+		BatchingPolicy:   types.StringValue(namespace.BatchingPolicy),
 		BatchingInterval: batchingInterval,
 	}
 
 	// Sets state for the new Ably App.
-	diags = resp.State.Set(ctx, resp_apps)
+	diags = resp.State.Set(ctx, respApps)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -212,14 +212,14 @@ func (r resourceNamespace) Read(ctx context.Context, req tfsdk_resource.ReadRequ
 	}
 
 	// Gets the Ably App ID and namespace ID value for the resource
-	app_id := state.AppID.ValueString()
-	namespace_id := state.ID.ValueString()
+	appID := state.AppID.ValueString()
+	namespaceID := state.ID.ValueString()
 
 	// Fetches all Ably Namespaces in the app. The function invokes the Client Library Namespaces() method.
 	// NOTE: Control API & Client Lib do not currently support fetching single namespace given namespace id
-	namespaces, err := r.p.client.Namespaces(app_id)
+	namespaces, err := r.p.client.Namespaces(appID)
 	if err != nil {
-		if is_404(err) {
+		if is404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -232,16 +232,16 @@ func (r resourceNamespace) Read(ctx context.Context, req tfsdk_resource.ReadRequ
 
 	// Loops through namespaces and if id matches, sets state.
 	for _, v := range namespaces {
-		if v.ID == namespace_id {
+		if v.ID == namespaceID {
 			// Handle the pointer gracefully
 			batchingInterval := types.Int64Null()
 			if v.BatchingInterval != nil {
 				batchingInterval = types.Int64Value(int64(*v.BatchingInterval))
 			}
 
-			resp_namespaces := AblyNamespace{
-				AppID:            types.StringValue(app_id),
-				ID:               types.StringValue(namespace_id),
+			respNamespaces := AblyNamespace{
+				AppID:            types.StringValue(appID),
+				ID:               types.StringValue(namespaceID),
 				Authenticated:    types.BoolValue(v.Authenticated),
 				Persisted:        types.BoolValue(v.Persisted),
 				PersistLast:      types.BoolValue(v.PersistLast),
@@ -253,7 +253,7 @@ func (r resourceNamespace) Read(ctx context.Context, req tfsdk_resource.ReadRequ
 				BatchingInterval: batchingInterval,
 			}
 			// Sets state to namespace values.
-			diags = resp.State.Set(ctx, &resp_namespaces)
+			diags = resp.State.Set(ctx, &respNamespaces)
 			found = true
 
 			resp.Diagnostics.Append(diags...)
@@ -280,12 +280,12 @@ func (r resourceNamespace) Update(ctx context.Context, req tfsdk_resource.Update
 	}
 
 	// Gets the app ID and ID
-	app_id := plan.AppID.ValueString()
-	namespace_id := plan.ID.ValueString()
+	appID := plan.AppID.ValueString()
+	namespaceID := plan.ID.ValueString()
 
 	// Instantiates struct of type ably_control_go.Namespace and sets values to output of plan
-	namespace_values := ably_control_go.Namespace{
-		ID:               namespace_id,
+	namespaceValues := ably_control_go.Namespace{
+		ID:               namespaceID,
 		Authenticated:    plan.Authenticated.ValueBool(),
 		Persisted:        plan.Persisted.ValueBool(),
 		PersistLast:      plan.PersistLast.ValueBool(),
@@ -295,13 +295,13 @@ func (r resourceNamespace) Update(ctx context.Context, req tfsdk_resource.Update
 	}
 
 	if plan.BatchingEnabled.ValueBool() {
-		namespace_values.BatchingEnabled = true
-		namespace_values.BatchingPolicy = plan.BatchingPolicy.ValueString()
-		namespace_values.BatchingInterval = ably_control_go.BatchingInterval(int(plan.BatchingInterval.ValueInt64()))
+		namespaceValues.BatchingEnabled = true
+		namespaceValues.BatchingPolicy = plan.BatchingPolicy.ValueString()
+		namespaceValues.BatchingInterval = ably_control_go.BatchingInterval(int(plan.BatchingInterval.ValueInt64()))
 	}
 
 	// Updates an Ably Namespace. The function invokes the Client Library UpdateNamespace method.
-	ably_namespace, err := r.p.client.UpdateNamespace(app_id, &namespace_values)
+	namespace, err := r.p.client.UpdateNamespace(appID, &namespaceValues)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating Resource",
@@ -312,26 +312,26 @@ func (r resourceNamespace) Update(ctx context.Context, req tfsdk_resource.Update
 
 	// Handle the pointer gracefully
 	batchingInterval := types.Int64Null()
-	if ably_namespace.BatchingInterval != nil {
-		batchingInterval = types.Int64Value(int64(*ably_namespace.BatchingInterval))
+	if namespace.BatchingInterval != nil {
+		batchingInterval = types.Int64Value(int64(*namespace.BatchingInterval))
 	}
 
-	resp_namespaces := AblyNamespace{
-		AppID:            types.StringValue(app_id),
-		ID:               types.StringValue(ably_namespace.ID),
-		Authenticated:    types.BoolValue(ably_namespace.Authenticated),
-		Persisted:        types.BoolValue(ably_namespace.Persisted),
-		PersistLast:      types.BoolValue(ably_namespace.PersistLast),
-		PushEnabled:      types.BoolValue(ably_namespace.PushEnabled),
-		TlsOnly:          types.BoolValue(ably_namespace.TlsOnly),
-		ExposeTimeserial: types.BoolValue(ably_namespace.ExposeTimeserial),
-		BatchingEnabled:  types.BoolValue(ably_namespace.BatchingEnabled),
-		BatchingPolicy:   types.StringValue(ably_namespace.BatchingPolicy),
+	respNamespaces := AblyNamespace{
+		AppID:            types.StringValue(appID),
+		ID:               types.StringValue(namespace.ID),
+		Authenticated:    types.BoolValue(namespace.Authenticated),
+		Persisted:        types.BoolValue(namespace.Persisted),
+		PersistLast:      types.BoolValue(namespace.PersistLast),
+		PushEnabled:      types.BoolValue(namespace.PushEnabled),
+		TlsOnly:          types.BoolValue(namespace.TlsOnly),
+		ExposeTimeserial: types.BoolValue(namespace.ExposeTimeserial),
+		BatchingEnabled:  types.BoolValue(namespace.BatchingEnabled),
+		BatchingPolicy:   types.StringValue(namespace.BatchingPolicy),
 		BatchingInterval: batchingInterval,
 	}
 
 	// Sets state to new namespace.
-	diags = resp.State.Set(ctx, resp_namespaces)
+	diags = resp.State.Set(ctx, respNamespaces)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -349,12 +349,12 @@ func (r resourceNamespace) Delete(ctx context.Context, req tfsdk_resource.Delete
 	}
 
 	// Gets the current state. If it is unable to, the provider responds with an error.
-	app_id := state.AppID.ValueString()
-	namespace_id := state.ID.ValueString()
+	appID := state.AppID.ValueString()
+	namespaceID := state.ID.ValueString()
 
-	err := r.p.client.DeleteNamespace(app_id, namespace_id)
+	err := r.p.client.DeleteNamespace(appID, namespaceID)
 	if err != nil {
-		if is_404(err) {
+		if is404(err) {
 			resp.Diagnostics.AddWarning(
 				"Resource does not exist",
 				"Resource does not exist, it may have already been deleted: "+err.Error(),

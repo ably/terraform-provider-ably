@@ -171,7 +171,7 @@ func (r resourceQueue) Create(ctx context.Context, req tfsdk_resource.CreateRequ
 	}
 
 	// Generates an API request body from the plan values
-	queue_values := ably_control_go.NewQueue{
+	queueValues := ably_control_go.NewQueue{
 		Name:      plan.Name.ValueString(),
 		Ttl:       int(plan.Ttl.ValueInt64()),
 		MaxLength: int(plan.MaxLength.ValueInt64()),
@@ -179,7 +179,7 @@ func (r resourceQueue) Create(ctx context.Context, req tfsdk_resource.CreateRequ
 	}
 
 	// Creates a new Ably queue by invoking the CreateQueue function from the Client Library
-	ably_queue, err := r.p.client.CreateQueue(plan.AppID.ValueString(), &queue_values)
+	queue, err := r.p.client.CreateQueue(plan.AppID.ValueString(), &queueValues)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating Resource",
@@ -189,32 +189,32 @@ func (r resourceQueue) Create(ctx context.Context, req tfsdk_resource.CreateRequ
 	}
 
 	// Maps response body to resource schema attributes.
-	resp_apps := AblyQueue{
+	respApps := AblyQueue{
 		AppID:     types.StringValue(plan.AppID.ValueString()),
-		ID:        types.StringValue(ably_queue.ID),
-		Name:      types.StringValue(ably_queue.Name),
-		Ttl:       types.Int64Value(int64(ably_queue.Ttl)),
-		MaxLength: types.Int64Value(int64(ably_queue.MaxLength)),
-		Region:    types.StringValue(string(ably_queue.Region)),
+		ID:        types.StringValue(queue.ID),
+		Name:      types.StringValue(queue.Name),
+		Ttl:       types.Int64Value(int64(queue.Ttl)),
+		MaxLength: types.Int64Value(int64(queue.MaxLength)),
+		Region:    types.StringValue(string(queue.Region)),
 
-		AmqpUri:                  types.StringValue(ably_queue.Amqp.Uri),
-		AmqpQueueName:            types.StringValue(ably_queue.Amqp.QueueName),
-		StompURI:                 types.StringValue(ably_queue.Stomp.Uri),
-		StompHost:                types.StringValue(ably_queue.Stomp.Host),
-		StompDestination:         types.StringValue(ably_queue.Stomp.Destination),
-		State:                    types.StringValue(ably_queue.State),
-		MessagesReady:            types.Int64Value(int64(ably_queue.Messages.Ready)),
-		MessagesUnacknowledged:   types.Int64Value(int64(ably_queue.Messages.Unacknowledged)),
-		MessagesTotal:            types.Int64Value(int64(ably_queue.Messages.Total)),
-		StatsPublishRate:         types.Float64Value(ably_queue.Stats.PublishRate),
-		StatsDeliveryRate:        types.Float64Value(ably_queue.Stats.DeliveryRate),
-		StatsAcknowledgementRate: types.Float64Value(ably_queue.Stats.AcknowledgementRate),
-		Deadletter:               types.BoolValue(ably_queue.DeadLetter),
-		DeadletterID:             types.StringValue(ably_queue.DeadLetterID),
+		AmqpUri:                  types.StringValue(queue.Amqp.Uri),
+		AmqpQueueName:            types.StringValue(queue.Amqp.QueueName),
+		StompURI:                 types.StringValue(queue.Stomp.Uri),
+		StompHost:                types.StringValue(queue.Stomp.Host),
+		StompDestination:         types.StringValue(queue.Stomp.Destination),
+		State:                    types.StringValue(queue.State),
+		MessagesReady:            types.Int64Value(int64(queue.Messages.Ready)),
+		MessagesUnacknowledged:   types.Int64Value(int64(queue.Messages.Unacknowledged)),
+		MessagesTotal:            types.Int64Value(int64(queue.Messages.Total)),
+		StatsPublishRate:         types.Float64Value(queue.Stats.PublishRate),
+		StatsDeliveryRate:        types.Float64Value(queue.Stats.DeliveryRate),
+		StatsAcknowledgementRate: types.Float64Value(queue.Stats.AcknowledgementRate),
+		Deadletter:               types.BoolValue(queue.DeadLetter),
+		DeadletterID:             types.StringValue(queue.DeadLetterID),
 	}
 
 	// Sets state for the new Ably App.
-	diags = resp.State.Set(ctx, resp_apps)
+	diags = resp.State.Set(ctx, respApps)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -234,14 +234,14 @@ func (r resourceQueue) Read(ctx context.Context, req tfsdk_resource.ReadRequest,
 	}
 
 	// Gets the Ably App ID and queue ID value for the resource
-	app_id := state.AppID.ValueString()
-	queue_id := state.ID.ValueString()
+	appID := state.AppID.ValueString()
+	queueID := state.ID.ValueString()
 
 	// Fetches all Ably Queues in the app. The function invokes the Client Library Queues() method.
 	// NOTE: Control API & Client Lib do not currently support fetching single queue given queue id
-	queues, err := r.p.client.Queues(app_id)
+	queues, err := r.p.client.Queues(appID)
 	if err != nil {
-		if is_404(err) {
+		if is404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -254,8 +254,8 @@ func (r resourceQueue) Read(ctx context.Context, req tfsdk_resource.ReadRequest,
 
 	// Loops through queues and if id matches, sets state.
 	for _, v := range queues {
-		if v.ID == queue_id {
-			resp_queues := AblyQueue{
+		if v.ID == queueID {
+			respQueues := AblyQueue{
 				AppID:     types.StringValue(v.AppID),
 				ID:        types.StringValue(v.ID),
 				Name:      types.StringValue(v.Name),
@@ -279,7 +279,7 @@ func (r resourceQueue) Read(ctx context.Context, req tfsdk_resource.ReadRequest,
 				DeadletterID:             types.StringValue(v.DeadLetterID),
 			}
 			// Sets state to queue values.
-			diags = resp.State.Set(ctx, &resp_queues)
+			diags = resp.State.Set(ctx, &respQueues)
 			found = true
 
 			resp.Diagnostics.Append(diags...)
@@ -316,12 +316,12 @@ func (r resourceQueue) Delete(ctx context.Context, req tfsdk_resource.DeleteRequ
 	}
 
 	// Gets the current state. If it is unable to, the provider responds with an error.
-	app_id := state.AppID.ValueString()
-	queue_id := state.ID.ValueString()
+	appID := state.AppID.ValueString()
+	queueID := state.ID.ValueString()
 
-	err := r.p.client.DeleteQueue(app_id, queue_id)
+	err := r.p.client.DeleteQueue(appID, queueID)
 	if err != nil {
-		if is_404(err) {
+		if is404(err) {
 			resp.Diagnostics.AddWarning(
 				"Resource does not exist",
 				"Resource does not exist, it may have already been deleted: "+err.Error(),

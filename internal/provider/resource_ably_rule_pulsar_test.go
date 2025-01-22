@@ -8,8 +8,8 @@ import (
 )
 
 func TestAccAblyRulePulsar(t *testing.T) {
-	app_name := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
-	update_app_name := "acc-test-" + app_name
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	updateAppName := "acc-test-" + appName
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
@@ -18,7 +18,7 @@ func TestAccAblyRulePulsar(t *testing.T) {
 			// Create and Read testing of ably_app.app0
 			{
 				Config: testAccAblyRulePulsarConfig(
-					app_name,
+					appName,
 					"enabled",
 					"^my-channel.*",
 					"channel.message",
@@ -31,7 +31,7 @@ func TestAccAblyRulePulsar(t *testing.T) {
 					"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "source.type", "channel.message"),
@@ -47,7 +47,7 @@ func TestAccAblyRulePulsar(t *testing.T) {
 			// Update and Read testing of ably_app.app0
 			{
 				Config: testAccAblyRulePulsarConfig(
-					update_app_name,
+					updateAppName,
 					"enabled",
 					"^my-channel.*",
 					"channel.message",
@@ -60,7 +60,7 @@ func TestAccAblyRulePulsar(t *testing.T) {
 					"YWxnOkhTNTEyIHR5cDpKV1QK",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", update_app_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", updateAppName),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "source.type", "channel.message"),

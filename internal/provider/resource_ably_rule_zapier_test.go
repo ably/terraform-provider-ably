@@ -8,15 +8,15 @@ import (
 )
 
 func TestAccAblyRuleZapier(t *testing.T) {
-	app_name := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
-	update_app_name := "acc-test-" + app_name
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	updateAppName := "acc-test-" + appName
 	original_headers_block := `[
 	{
 		name : "User-Agent-Conf",
 		value : "user-agent-string",
 	},
 	]`
-	update_headers_block := `[
+	updateHeadersBlock := `[
 	{
 		name : "User-Agent-Conf",
 		value : "user-agent-string",
@@ -34,7 +34,7 @@ func TestAccAblyRuleZapier(t *testing.T) {
 			// Create and Read testing of ably_app.app0
 			{
 				Config: testAccAblyRuleZapierConfig(
-					app_name,
+					appName,
 					"enabled",
 					"^my-channel.*",
 					"channel.message",
@@ -44,7 +44,7 @@ func TestAccAblyRuleZapier(t *testing.T) {
 					"ably_api_key.api_key_0.id",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
 					resource.TestCheckResourceAttr("ably_rule_zapier.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_zapier.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_zapier.rule0", "source.type", "channel.message"),
@@ -55,18 +55,18 @@ func TestAccAblyRuleZapier(t *testing.T) {
 			// Update and Read testing of ably_app.app0
 			{
 				Config: testAccAblyRuleZapierConfig(
-					update_app_name,
+					updateAppName,
 					"enabled",
 					"^my-channel.*",
 					"channel.message",
 					// TODO: change to batch when control api not broken #147
 					"single",
 					"https://example1.com/webhooks",
-					update_headers_block,
+					updateHeadersBlock,
 					"ably_api_key.api_key_1.id",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", update_app_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", updateAppName),
 					resource.TestCheckResourceAttr("ably_rule_zapier.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_zapier.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_zapier.rule0", "source.type", "channel.message"),

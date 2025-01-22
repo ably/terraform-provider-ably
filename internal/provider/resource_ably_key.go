@@ -114,14 +114,14 @@ func (r resourceKey) Create(ctx context.Context, req tfsdk_resource.CreateReques
 		return
 	}
 
-	new_key := ably_control_go.NewKey{
+	newKey := ably_control_go.NewKey{
 		Name:            plan.Name.ValueString(),
 		Capability:      plan.Capability,
 		RevocableTokens: plan.RevocableTokens.ValueBool(),
 	}
 
 	// Creates a new Ably Key by invoking the CreateKey function from the Client Library
-	ably_key, err := r.p.client.CreateKey(plan.AppID.ValueString(), &new_key)
+	key, err := r.p.client.CreateKey(plan.AppID.ValueString(), &newKey)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating Resource",
@@ -131,20 +131,20 @@ func (r resourceKey) Create(ctx context.Context, req tfsdk_resource.CreateReques
 	}
 
 	// Maps response body to resource schema attributes.
-	resp_key := AblyKey{
-		ID:              types.StringValue(ably_key.ID),
-		AppID:           types.StringValue(ably_key.AppID),
-		Name:            types.StringValue(ably_key.Name),
-		Key:             types.StringValue(ably_key.Key),
-		RevocableTokens: types.BoolValue(ably_key.RevocableTokens),
-		Capability:      ably_key.Capability,
-		Status:          types.Int64Value(int64(ably_key.Status)),
-		Created:         types.Int64Value(int64(ably_key.Created)),
-		Modified:        types.Int64Value(int64(ably_key.Modified)),
+	respKey := AblyKey{
+		ID:              types.StringValue(key.ID),
+		AppID:           types.StringValue(key.AppID),
+		Name:            types.StringValue(key.Name),
+		Key:             types.StringValue(key.Key),
+		RevocableTokens: types.BoolValue(key.RevocableTokens),
+		Capability:      key.Capability,
+		Status:          types.Int64Value(int64(key.Status)),
+		Created:         types.Int64Value(int64(key.Created)),
+		Modified:        types.Int64Value(int64(key.Modified)),
 	}
 
 	// Sets state for the new Ably App.
-	diags = resp.State.Set(ctx, resp_key)
+	diags = resp.State.Set(ctx, respKey)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -164,13 +164,13 @@ func (r resourceKey) Read(ctx context.Context, req tfsdk_resource.ReadRequest, r
 	}
 
 	// Gets the Ably App ID and Ably API Key ID value for the resource
-	app_id := state.AppID.ValueString()
-	key_id := state.ID.ValueString()
+	appID := state.AppID.ValueString()
+	keyID := state.ID.ValueString()
 
 	// Fetches all Ably Keys for the Ably App. The function invokes the Client Library Keys() method.
-	keys, err := r.p.client.Keys(app_id)
+	keys, err := r.p.client.Keys(appID)
 	if err != nil {
-		if is_404(err) {
+		if is404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -184,8 +184,8 @@ func (r resourceKey) Read(ctx context.Context, req tfsdk_resource.ReadRequest, r
 
 	// Loops through apps and if account id and key id match, sets state.
 	for _, v := range keys {
-		if v.AppID == app_id && v.ID == key_id && v.Status == 0 {
-			resp_key := AblyKey{
+		if v.AppID == appID && v.ID == keyID && v.Status == 0 {
+			respKey := AblyKey{
 				ID:              types.StringValue(v.ID),
 				AppID:           types.StringValue(v.AppID),
 				Name:            types.StringValue(v.Name),
@@ -197,7 +197,7 @@ func (r resourceKey) Read(ctx context.Context, req tfsdk_resource.ReadRequest, r
 				Modified:        types.Int64Value(int64(v.Modified)),
 			}
 			// Sets state to app values.
-			diags = resp.State.Set(ctx, &resp_key)
+			diags = resp.State.Set(ctx, &respKey)
 			found = true
 
 			resp.Diagnostics.Append(diags...)
@@ -232,18 +232,18 @@ func (r resourceKey) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 	}
 
 	// Gets the app ID and Key ID
-	app_id := plan.AppID.ValueString()
-	key_id := state.ID.ValueString()
+	appID := plan.AppID.ValueString()
+	keyID := state.ID.ValueString()
 
 	// Instantiates struct of type ably_control_go.NewKey and sets values to output of plan
-	key_values := ably_control_go.NewKey{
+	keyValues := ably_control_go.NewKey{
 		Name:            plan.Name.ValueString(),
 		Capability:      plan.Capability,
 		RevocableTokens: plan.RevocableTokens.ValueBool(),
 	}
 
 	// Updates an Ably API Key. The function invokes the Client Library UpdateKey method.
-	ably_key, err := r.p.client.UpdateKey(app_id, key_id, &key_values)
+	key, err := r.p.client.UpdateKey(appID, keyID, &keyValues)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating Resource",
@@ -252,20 +252,20 @@ func (r resourceKey) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 		return
 	}
 
-	resp_key := AblyKey{
-		ID:              types.StringValue(ably_key.ID),
-		AppID:           types.StringValue(ably_key.AppID),
-		Name:            types.StringValue(ably_key.Name),
-		RevocableTokens: types.BoolValue(ably_key.RevocableTokens),
-		Capability:      ably_key.Capability,
-		Status:          types.Int64Value(int64(ably_key.Status)),
-		Key:             types.StringValue(ably_key.Key),
-		Created:         types.Int64Value(int64(ably_key.Created)),
-		Modified:        types.Int64Value(int64(ably_key.Modified)),
+	respKey := AblyKey{
+		ID:              types.StringValue(key.ID),
+		AppID:           types.StringValue(key.AppID),
+		Name:            types.StringValue(key.Name),
+		RevocableTokens: types.BoolValue(key.RevocableTokens),
+		Capability:      key.Capability,
+		Status:          types.Int64Value(int64(key.Status)),
+		Key:             types.StringValue(key.Key),
+		Created:         types.Int64Value(int64(key.Created)),
+		Modified:        types.Int64Value(int64(key.Modified)),
 	}
 
 	// Sets state.
-	diags = resp.State.Set(ctx, resp_key)
+	diags = resp.State.Set(ctx, respKey)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -283,12 +283,12 @@ func (r resourceKey) Delete(ctx context.Context, req tfsdk_resource.DeleteReques
 	}
 
 	// Gets the current state. If it is unable to, the provider responds with an error.
-	app_id := state.AppID.ValueString()
-	key_id := state.ID.ValueString()
+	appID := state.AppID.ValueString()
+	keyID := state.ID.ValueString()
 
-	err := r.p.client.RevokeKey(app_id, key_id)
+	err := r.p.client.RevokeKey(appID, keyID)
 	if err != nil {
-		if is_404(err) {
+		if is404(err) {
 			resp.Diagnostics.AddWarning(
 				"Resource does not exist",
 				"Resource does not exist, it may have already been deleted: "+err.Error(),

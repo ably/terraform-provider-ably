@@ -8,10 +8,10 @@ import (
 )
 
 func TestAccAblyIngressRuleMongo(t *testing.T) {
-	app_name := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
-	update_app_name := "acc-test-" + app_name
-	update_mongo_url := "mongodb://me:lon@honeydew.io:27017"
-	test_mongo_url := "mongodb://coco:nut@coco.io:27017"
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	updateAppName := "acc-test-" + appName
+	updateMongoURL := "mongodb://me:lon@honeydew.io:27017"
+	testMongoURL := "mongodb://coco:nut@coco.io:27017"
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
@@ -19,9 +19,9 @@ func TestAccAblyIngressRuleMongo(t *testing.T) {
 			// Create and Read testing of ably_app.app0
 			{
 				Config: testAccAblyIngressRuleMongoConfig(
-					app_name,
+					appName,
 					"enabled",
-					test_mongo_url,
+					testMongoURL,
 					"coconut",
 					"coconut",
 					"off",
@@ -29,9 +29,9 @@ func TestAccAblyIngressRuleMongo(t *testing.T) {
 					"us-east-1-A",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
 					resource.TestCheckResourceAttr("ably_ingress_rule_mongodb.rule0", "status", "enabled"),
-					resource.TestCheckResourceAttr("ably_ingress_rule_mongodb.rule0", "target.url", test_mongo_url),
+					resource.TestCheckResourceAttr("ably_ingress_rule_mongodb.rule0", "target.url", testMongoURL),
 					resource.TestCheckResourceAttr("ably_ingress_rule_mongodb.rule0", "target.collection", "coconut"),
 					resource.TestCheckResourceAttr("ably_ingress_rule_mongodb.rule0", "target.database", "coconut"),
 					resource.TestCheckResourceAttr("ably_ingress_rule_mongodb.rule0", "target.full_document", "off"),
@@ -42,9 +42,9 @@ func TestAccAblyIngressRuleMongo(t *testing.T) {
 			// Update and Read testing of ably_app.app0
 			{
 				Config: testAccAblyIngressRuleMongoConfig(
-					update_app_name,
+					updateAppName,
 					"enabled",
-					update_mongo_url,
+					updateMongoURL,
 					"melon",
 					"melon",
 					"off",
@@ -52,9 +52,9 @@ func TestAccAblyIngressRuleMongo(t *testing.T) {
 					"us-east-1-A",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", update_app_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", updateAppName),
 					resource.TestCheckResourceAttr("ably_ingress_rule_mongodb.rule0", "status", "enabled"),
-					resource.TestCheckResourceAttr("ably_ingress_rule_mongodb.rule0", "target.url", update_mongo_url),
+					resource.TestCheckResourceAttr("ably_ingress_rule_mongodb.rule0", "target.url", updateMongoURL),
 					resource.TestCheckResourceAttr("ably_ingress_rule_mongodb.rule0", "target.collection", "melon"),
 					resource.TestCheckResourceAttr("ably_ingress_rule_mongodb.rule0", "target.database", "melon"),
 					resource.TestCheckResourceAttr("ably_ingress_rule_mongodb.rule0", "target.full_document", "off"),

@@ -40,22 +40,22 @@ func GetPlanIngressRule(plan AblyIngressRule) ably_control_go.NewIngressRule {
 		}
 	}
 
-	rule_values := ably_control_go.NewIngressRule{
+	ruleValues := ably_control_go.NewIngressRule{
 		Status: plan.Status.ValueString(),
 		Target: target,
 	}
 
-	return rule_values
+	return ruleValues
 }
 
 // Maps response body to resource schema attributes.
 // Using plan to fill in values that the api does not return.
-func GetIngressRuleResponse(ably_ingress_rule *ably_control_go.IngressRule, plan *AblyIngressRule) AblyIngressRule {
-	var resp_target interface{}
+func GetIngressRuleResponse(ingressRule *ably_control_go.IngressRule, plan *AblyIngressRule) AblyIngressRule {
+	var respTarget interface{}
 
-	switch v := ably_ingress_rule.Target.(type) {
+	switch v := ingressRule.Target.(type) {
 	case *ably_control_go.IngressMongoTarget:
-		resp_target = &AblyIngressRuleTargetMongo{
+		respTarget = &AblyIngressRuleTargetMongo{
 			Url:                      v.Url,
 			Database:                 v.Database,
 			Collection:               v.Collection,
@@ -65,7 +65,7 @@ func GetIngressRuleResponse(ably_ingress_rule *ably_control_go.IngressRule, plan
 			PrimarySite:              v.PrimarySite,
 		}
 	case *ably_control_go.IngressPostgresOutboxTarget:
-		resp_target = &AblyIngressRuleTargetPostgresOutbox{
+		respTarget = &AblyIngressRuleTargetPostgresOutbox{
 			Url:               v.Url,
 			OutboxTableSchema: v.OutboxTableSchema,
 			OutboxTableName:   v.OutboxTableName,
@@ -77,19 +77,19 @@ func GetIngressRuleResponse(ably_ingress_rule *ably_control_go.IngressRule, plan
 		}
 	}
 
-	resp_rule := AblyIngressRule{
-		ID:     types.StringValue(ably_ingress_rule.ID),
-		AppID:  types.StringValue(ably_ingress_rule.AppID),
-		Status: types.StringValue(ably_ingress_rule.Status),
-		Target: resp_target,
+	respRule := AblyIngressRule{
+		ID:     types.StringValue(ingressRule.ID),
+		AppID:  types.StringValue(ingressRule.AppID),
+		Status: types.StringValue(ingressRule.Status),
+		Target: respTarget,
 	}
 
-	return resp_rule
+	return respRule
 }
 
-func GetIngressRuleSchema(target map[string]tfsdk.Attribute, markdown_description string) tfsdk.Schema {
+func GetIngressRuleSchema(target map[string]tfsdk.Attribute, markdownDescription string) tfsdk.Schema {
 	return tfsdk.Schema{
-		MarkdownDescription: markdown_description,
+		MarkdownDescription: markdownDescription,
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
 				Type:        types.StringType,
@@ -146,10 +146,10 @@ func CreateIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_reso
 	}
 
 	plan := p.IngressRule()
-	plan_values := GetPlanIngressRule(plan)
+	planValues := GetPlanIngressRule(plan)
 
 	// Creates a new Ably Ingress Rule by invoking the CreateRule function from the Client Library
-	ingress_rule, err := r.Provider().client.CreateIngressRule(plan.AppID.ValueString(), &plan_values)
+	ingressRule, err := r.Provider().client.CreateIngressRule(plan.AppID.ValueString(), &planValues)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Error creating Resource '%s'", r.Name()),
@@ -159,10 +159,10 @@ func CreateIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_reso
 		return
 	}
 
-	response_values := GetIngressRuleResponse(&ingress_rule, &plan)
+	responseValues := GetIngressRuleResponse(&ingressRule, &plan)
 
 	// Sets state for the new Ably Ingress Rule.
-	diags = resp.State.Set(ctx, response_values)
+	diags = resp.State.Set(ctx, responseValues)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -183,14 +183,14 @@ func ReadIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_resour
 	state := s.IngressRule()
 
 	// Gets the Ably App ID and Ably Ingress Rule ID value for the resource
-	app_id := s.AppID.ValueString()
-	ingress_rule_id := s.ID.ValueString()
+	appID := s.AppID.ValueString()
+	ingressRuleID := s.ID.ValueString()
 
 	// Get Ingress Rule data
-	ingress_rule, err := r.Provider().client.IngressRule(app_id, ingress_rule_id)
+	ingressRule, err := r.Provider().client.IngressRule(appID, ingressRuleID)
 
 	if err != nil {
-		if is_404(err) {
+		if is404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -201,10 +201,10 @@ func ReadIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_resour
 		return
 	}
 
-	response_values := GetIngressRuleResponse(&ingress_rule, &state)
+	responseValues := GetIngressRuleResponse(&ingressRule, &state)
 
 	// Sets state to app values.
-	diags = resp.State.Set(ctx, &response_values)
+	diags = resp.State.Set(ctx, &responseValues)
 
 	resp.Diagnostics.Append(diags...)
 
@@ -226,14 +226,14 @@ func UpdateIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_reso
 
 	plan := p.IngressRule()
 
-	rule_values := GetPlanIngressRule(plan)
+	ruleValues := GetPlanIngressRule(plan)
 
 	// Gets the Ably App ID and Ably Ingress Rule ID value for the resource
-	app_id := plan.AppID.ValueString()
-	rule_id := plan.ID.ValueString()
+	appID := plan.AppID.ValueString()
+	ruleID := plan.ID.ValueString()
 
 	// Update Ably Ingress Rule
-	ingress_rule, err := r.Provider().client.UpdateIngressRule(app_id, rule_id, &rule_values)
+	ingressRule, err := r.Provider().client.UpdateIngressRule(appID, ruleID, &ruleValues)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Error updating Resource %s", r.Name()),
@@ -242,10 +242,10 @@ func UpdateIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_reso
 		return
 	}
 
-	response_values := GetIngressRuleResponse(&ingress_rule, &plan)
+	responseValues := GetIngressRuleResponse(&ingressRule, &plan)
 
 	// Sets state to app values.
-	diags = resp.State.Set(ctx, &response_values)
+	diags = resp.State.Set(ctx, &responseValues)
 
 	resp.Diagnostics.Append(diags...)
 
@@ -268,12 +268,12 @@ func DeleteIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_reso
 	state := s.IngressRule()
 
 	// Gets the Ably App ID and Ably Rule ID value for the resource
-	app_id := state.AppID.ValueString()
-	ingress_rule_id := state.ID.ValueString()
+	appID := state.AppID.ValueString()
+	ingressRuleID := state.ID.ValueString()
 
-	err := r.Provider().client.DeleteIngressRule(app_id, ingress_rule_id)
+	err := r.Provider().client.DeleteIngressRule(appID, ingressRuleID)
 	if err != nil {
-		if is_404(err) {
+		if is404(err) {
 			resp.Diagnostics.AddWarning(
 				fmt.Sprintf("Resource does %s not exist", r.Name()),
 				fmt.Sprintf("Resource does %s not exist, it may have already been deleted: %s", r.Name(), err.Error()),

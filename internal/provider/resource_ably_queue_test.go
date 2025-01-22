@@ -10,21 +10,21 @@ import (
 )
 
 func TestAccAblyQueue(t *testing.T) {
-	app_name := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
 	queue_name := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccAblyQueueConfig(app_name, ably_control_go.NewQueue{
+				Config: testAccAblyQueueConfig(appName, ably_control_go.NewQueue{
 					Name:      queue_name,
 					Ttl:       44,
 					MaxLength: 83,
 					Region:    ably_control_go.EuWest1A,
 				}),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
 					resource.TestCheckResourceAttr("ably_queue.queue0", "name", queue_name),
 					resource.TestCheckResourceAttr("ably_queue.queue0", "ttl", "44"),
 					resource.TestCheckResourceAttr("ably_queue.queue0", "max_length", "83"),
@@ -32,14 +32,14 @@ func TestAccAblyQueue(t *testing.T) {
 			},
 			{
 
-				Config: testAccAblyQueueConfig(app_name, ably_control_go.NewQueue{
+				Config: testAccAblyQueueConfig(appName, ably_control_go.NewQueue{
 					Name:      queue_name + "new",
 					Ttl:       30,
 					MaxLength: 83,
 					Region:    ably_control_go.UsEast1A,
 				}),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
 					resource.TestCheckResourceAttr("ably_queue.queue0", "name", queue_name+"new"),
 					resource.TestCheckResourceAttr("ably_queue.queue0", "ttl", "30"),
 					resource.TestCheckResourceAttr("ably_queue.queue0", "max_length", "83"),

@@ -112,7 +112,7 @@ func (r resourceApp) Create(ctx context.Context, req tfsdk_resource.CreateReques
 	}
 
 	// Generates an API request body from the plan values
-	app_values := ably_control_go.NewApp{
+	appValues := ably_control_go.NewApp{
 		ID:                     plan.ID.ValueString(),
 		Name:                   plan.Name.ValueString(),
 		Status:                 plan.Status.ValueString(),
@@ -124,7 +124,7 @@ func (r resourceApp) Create(ctx context.Context, req tfsdk_resource.CreateReques
 	}
 
 	// Creates a new Ably App by invoking the CreateApp function from the Client Library
-	ably_app, err := r.p.client.CreateApp(&app_values)
+	app, err := r.p.client.CreateApp(&appValues)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating Resource",
@@ -134,23 +134,23 @@ func (r resourceApp) Create(ctx context.Context, req tfsdk_resource.CreateReques
 	}
 
 	// Maps response body to resource schema attributes.
-	resp_apps := AblyApp{
-		AccountID:              types.StringValue(ably_app.AccountID),
-		ID:                     types.StringValue(ably_app.ID),
-		Name:                   types.StringValue(ably_app.Name),
-		Status:                 types.StringValue(ably_app.Status),
-		TLSOnly:                types.BoolValue(ably_app.TLSOnly),
+	respApps := AblyApp{
+		AccountID:              types.StringValue(app.AccountID),
+		ID:                     types.StringValue(app.ID),
+		Name:                   types.StringValue(app.Name),
+		Status:                 types.StringValue(app.Status),
+		TLSOnly:                types.BoolValue(app.TLSOnly),
 		FcmKey:                 plan.FcmKey,
 		ApnsCertificate:        plan.ApnsCertificate,
 		ApnsPrivateKey:         plan.ApnsPrivateKey,
-		ApnsUseSandboxEndpoint: types.BoolValue(ably_app.ApnsUseSandboxEndpoint),
+		ApnsUseSandboxEndpoint: types.BoolValue(app.ApnsUseSandboxEndpoint),
 	}
-	emptyStringToNull(&resp_apps.FcmKey)
-	emptyStringToNull(&resp_apps.ApnsCertificate)
-	emptyStringToNull(&resp_apps.ApnsPrivateKey)
+	emptyStringToNull(&respApps.FcmKey)
+	emptyStringToNull(&respApps.ApnsCertificate)
+	emptyStringToNull(&respApps.ApnsPrivateKey)
 
 	// Sets state for the new Ably App.
-	diags = resp.State.Set(ctx, resp_apps)
+	diags = resp.State.Set(ctx, respApps)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -170,7 +170,7 @@ func (r resourceApp) Read(ctx context.Context, req tfsdk_resource.ReadRequest, r
 	}
 
 	// Gets the Ably App ID value for the resource
-	app_id := state.ID.ValueString()
+	appID := state.ID.ValueString()
 
 	// Fetches all Ably Apps in the account. The function invokes the Client Library Apps() method.
 	// NOTE: Control API & Client Lib do not currently support fetching single app given app id
@@ -185,8 +185,8 @@ func (r resourceApp) Read(ctx context.Context, req tfsdk_resource.ReadRequest, r
 
 	// Loops through apps and if account id matches, sets state.
 	for _, v := range apps {
-		if v.ID == app_id {
-			resp_apps := AblyApp{
+		if v.ID == appID {
+			respApps := AblyApp{
 				AccountID:              types.StringValue(v.AccountID),
 				ID:                     types.StringValue(v.ID),
 				Name:                   types.StringValue(v.Name),
@@ -197,13 +197,13 @@ func (r resourceApp) Read(ctx context.Context, req tfsdk_resource.ReadRequest, r
 				ApnsPrivateKey:         state.ApnsPrivateKey,
 				ApnsUseSandboxEndpoint: types.BoolValue(v.ApnsUseSandboxEndpoint),
 			}
-			emptyStringToNull(&resp_apps.FcmKey)
-			emptyStringToNull(&resp_apps.ApnsCertificate)
-			emptyStringToNull(&resp_apps.ApnsPrivateKey)
+			emptyStringToNull(&respApps.FcmKey)
+			emptyStringToNull(&respApps.ApnsCertificate)
+			emptyStringToNull(&respApps.ApnsPrivateKey)
 			found = true
 
 			// Sets state to app values.
-			diags = resp.State.Set(ctx, &resp_apps)
+			diags = resp.State.Set(ctx, &respApps)
 
 			resp.Diagnostics.Append(diags...)
 			if resp.Diagnostics.HasError() {
@@ -236,13 +236,13 @@ func (r resourceApp) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 	}
 
 	// Gets the app ID
-	app_id := plan.ID.ValueString()
+	appID := plan.ID.ValueString()
 	if plan.ID.IsUnknown() {
-		app_id = state.ID.ValueString()
+		appID = state.ID.ValueString()
 	}
 
 	// Instantiates struct of type ably_control_go.App and sets values to output of plan
-	app_values := ably_control_go.NewApp{
+	appValues := ably_control_go.NewApp{
 		Name:                   plan.Name.ValueString(),
 		Status:                 plan.Status.ValueString(),
 		TLSOnly:                plan.TLSOnly.ValueBool(),
@@ -253,7 +253,7 @@ func (r resourceApp) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 	}
 
 	// Updates an Ably App. The function invokes the Client Library UpdateApp method.
-	ably_app, err := r.p.client.UpdateApp(app_id, &app_values)
+	app, err := r.p.client.UpdateApp(appID, &appValues)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating Resource",
@@ -262,23 +262,23 @@ func (r resourceApp) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 		return
 	}
 
-	resp_apps := AblyApp{
-		ID:                     types.StringValue(ably_app.ID),
-		AccountID:              types.StringValue(ably_app.AccountID),
-		Name:                   types.StringValue(ably_app.Name),
-		Status:                 types.StringValue(ably_app.Status),
-		TLSOnly:                types.BoolValue(ably_app.TLSOnly),
+	respApps := AblyApp{
+		ID:                     types.StringValue(app.ID),
+		AccountID:              types.StringValue(app.AccountID),
+		Name:                   types.StringValue(app.Name),
+		Status:                 types.StringValue(app.Status),
+		TLSOnly:                types.BoolValue(app.TLSOnly),
 		FcmKey:                 plan.FcmKey,
 		ApnsCertificate:        plan.ApnsCertificate,
 		ApnsPrivateKey:         plan.ApnsPrivateKey,
-		ApnsUseSandboxEndpoint: types.BoolValue(ably_app.ApnsUseSandboxEndpoint),
+		ApnsUseSandboxEndpoint: types.BoolValue(app.ApnsUseSandboxEndpoint),
 	}
-	emptyStringToNull(&resp_apps.FcmKey)
-	emptyStringToNull(&resp_apps.ApnsCertificate)
-	emptyStringToNull(&resp_apps.ApnsPrivateKey)
+	emptyStringToNull(&respApps.FcmKey)
+	emptyStringToNull(&respApps.ApnsCertificate)
+	emptyStringToNull(&respApps.ApnsPrivateKey)
 
 	// Sets state to new app.
-	diags = resp.State.Set(ctx, resp_apps)
+	diags = resp.State.Set(ctx, respApps)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -296,11 +296,11 @@ func (r resourceApp) Delete(ctx context.Context, req tfsdk_resource.DeleteReques
 	}
 
 	// Gets the current state. If it is unable to, the provider responds with an error.
-	app_id := state.ID.ValueString()
+	appID := state.ID.ValueString()
 
-	err := r.p.client.DeleteApp(app_id)
+	err := r.p.client.DeleteApp(appID)
 	if err != nil {
-		if is_404(err) {
+		if is404(err) {
 			resp.Diagnostics.AddWarning(
 				"Resource does not exist",
 				"Resource does not exist, it may have already been deleted: "+err.Error(),
