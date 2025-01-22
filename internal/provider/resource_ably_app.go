@@ -1,4 +1,4 @@
-package ably_control
+package provider
 
 import (
 	"context"

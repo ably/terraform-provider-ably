@@ -1,4 +1,4 @@
-package ably_control
+package provider
 
 import (
 	ably_control_go "github.com/ably/ably-control-go"

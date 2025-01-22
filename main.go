@@ -6,9 +6,9 @@ import (
 	"log"
 	"os"
 
-	ably_control "github.com/ably/terraform-provider-ably/internal/provider"
+	"github.com/ably/terraform-provider-ably/internal/provider"
 
-	"github.com/hashicorp/terraform-plugin-framework/provider"
+	tpf "github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
 
@@ -39,6 +39,6 @@ func main() {
 	}
 }
 
-func newProvider() provider.Provider {
-	return ably_control.New(VERSION)
+func newProvider() tpf.Provider {
+	return provider.New(VERSION)
 }
