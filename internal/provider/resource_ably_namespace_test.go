@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	ably_control_go "github.com/ably/ably-control-go"
+	control "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
@@ -18,7 +18,7 @@ func TestAccAblyNamespace(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing of ably_app.app0
 			{
-				Config: testAccAblyNamespaceConfig(appName, ably_control_go.Namespace{
+				Config: testAccAblyNamespaceConfig(appName, control.Namespace{
 					ID:               namespace_name,
 					Authenticated:    true,
 					Persisted:        true,
@@ -40,7 +40,7 @@ func TestAccAblyNamespace(t *testing.T) {
 			},
 			// Update and Read testing of ably_app.app0
 			{
-				Config: testAccAblyNamespaceConfig(appName, ably_control_go.Namespace{
+				Config: testAccAblyNamespaceConfig(appName, control.Namespace{
 					ID:               namespace_name,
 					Authenticated:    false,
 					Persisted:        false,
@@ -61,7 +61,7 @@ func TestAccAblyNamespace(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccAblyNamespaceConfig(appName, ably_control_go.Namespace{
+				Config: testAccAblyNamespaceConfig(appName, control.Namespace{
 					ID:               namespace_name + "new",
 					Authenticated:    false,
 					Persisted:        false,
@@ -82,7 +82,7 @@ func TestAccAblyNamespace(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccAblyNamespaceBatchingConfig(appName, ably_control_go.Namespace{
+				Config: testAccAblyNamespaceBatchingConfig(appName, control.Namespace{
 					ID:               namespace_name + "batching",
 					Authenticated:    false,
 					Persisted:        false,
@@ -92,7 +92,7 @@ func TestAccAblyNamespace(t *testing.T) {
 					ExposeTimeserial: false,
 					BatchingEnabled:  true,
 					BatchingPolicy:   "simple",
-					BatchingInterval: ably_control_go.BatchingInterval(100),
+					BatchingInterval: control.BatchingInterval(100),
 				}),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
@@ -115,7 +115,7 @@ func TestAccAblyNamespace(t *testing.T) {
 
 // Function with inline HCL to provision an ably_app resource
 // Takes App name, status and tls_only status as function params.
-func testAccAblyNamespaceConfig(appName string, namespace ably_control_go.Namespace) string {
+func testAccAblyNamespaceConfig(appName string, namespace control.Namespace) string {
 	return fmt.Sprintf(`
 terraform {
 	required_providers {
@@ -148,7 +148,7 @@ resource "ably_namespace" "namespace0" {
 `, appName, namespace.ID, namespace.Authenticated, namespace.Persisted, namespace.PersistLast, namespace.PushEnabled, namespace.TlsOnly, namespace.ExposeTimeserial)
 }
 
-func testAccAblyNamespaceBatchingConfig(appName string, namespace ably_control_go.Namespace) string {
+func testAccAblyNamespaceBatchingConfig(appName string, namespace control.Namespace) string {
 	return fmt.Sprintf(`
 terraform {
 	required_providers {

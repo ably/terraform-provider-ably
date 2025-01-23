@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	ably_control_go "github.com/ably/ably-control-go"
+	control "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 
@@ -156,12 +156,12 @@ func (r resourceQueue) Create(ctx context.Context, req tfsdk_resource.CreateRequ
 		return
 	}
 
-	var region ably_control_go.Region
+	var region control.Region
 	switch plan.Region.ValueString() {
-	case string(ably_control_go.UsEast1A):
-		region = ably_control_go.UsEast1A
-	case string(ably_control_go.EuWest1A):
-		region = ably_control_go.EuWest1A
+	case string(control.UsEast1A):
+		region = control.UsEast1A
+	case string(control.EuWest1A):
+		region = control.EuWest1A
 	default:
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -171,7 +171,7 @@ func (r resourceQueue) Create(ctx context.Context, req tfsdk_resource.CreateRequ
 	}
 
 	// Generates an API request body from the plan values
-	queueValues := ably_control_go.NewQueue{
+	queueValues := control.NewQueue{
 		Name:      plan.Name.ValueString(),
 		Ttl:       int(plan.Ttl.ValueInt64()),
 		MaxLength: int(plan.MaxLength.ValueInt64()),

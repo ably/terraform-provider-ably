@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	ably_control_go "github.com/ably/ably-control-go"
+	control "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
@@ -59,7 +59,7 @@ func TestAccAblyApp(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing of ably_app.app0
 			{
-				Config: testAccAblyAppConfig(&ably_control_go.App{
+				Config: testAccAblyAppConfig(&control.App{
 					Name:                   appName,
 					Status:                 "enabled",
 					TLSOnly:                true,
@@ -76,7 +76,7 @@ func TestAccAblyApp(t *testing.T) {
 			},
 			// Update and Read testing of ably_app.app0
 			{
-				Config: testAccAblyAppConfig(&ably_control_go.App{
+				Config: testAccAblyAppConfig(&control.App{
 					Name:                   updateAppName,
 					Status:                 "disabled",
 					TLSOnly:                false,
@@ -120,7 +120,7 @@ func TestAccAblyApp(t *testing.T) {
 
 // Function with inline HCL to provision an ably_app resource
 // Takes App name, status and tls_only status as function params.
-func testAccAblyAppConfig(app *ably_control_go.App) string {
+func testAccAblyAppConfig(app *control.App) string {
 	return fmt.Sprintf(`
 terraform {
 	required_providers {

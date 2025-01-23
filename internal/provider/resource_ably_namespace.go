@@ -3,7 +3,7 @@ package provider
 import (
 	"context"
 
-	ably_control_go "github.com/ably/ably-control-go"
+	control "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -140,7 +140,7 @@ func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.Create
 	}
 
 	// Generates an API request body from the plan values
-	namespaceValues := ably_control_go.Namespace{
+	namespaceValues := control.Namespace{
 		ID:               plan.ID.ValueString(),
 		Authenticated:    plan.Authenticated.ValueBool(),
 		Persisted:        plan.Persisted.ValueBool(),
@@ -153,7 +153,7 @@ func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.Create
 	if plan.BatchingEnabled.ValueBool() {
 		namespaceValues.BatchingEnabled = true
 		namespaceValues.BatchingPolicy = plan.BatchingPolicy.ValueString()
-		namespaceValues.BatchingInterval = ably_control_go.BatchingInterval(int(plan.BatchingInterval.ValueInt64()))
+		namespaceValues.BatchingInterval = control.BatchingInterval(int(plan.BatchingInterval.ValueInt64()))
 	}
 
 	// Creates a new Ably namespace by invoking the CreateNamespace function from the Client Library
@@ -283,8 +283,8 @@ func (r resourceNamespace) Update(ctx context.Context, req tfsdk_resource.Update
 	appID := plan.AppID.ValueString()
 	namespaceID := plan.ID.ValueString()
 
-	// Instantiates struct of type ably_control_go.Namespace and sets values to output of plan
-	namespaceValues := ably_control_go.Namespace{
+	// Instantiates struct of type control.Namespace and sets values to output of plan
+	namespaceValues := control.Namespace{
 		ID:               namespaceID,
 		Authenticated:    plan.Authenticated.ValueBool(),
 		Persisted:        plan.Persisted.ValueBool(),
@@ -297,7 +297,7 @@ func (r resourceNamespace) Update(ctx context.Context, req tfsdk_resource.Update
 	if plan.BatchingEnabled.ValueBool() {
 		namespaceValues.BatchingEnabled = true
 		namespaceValues.BatchingPolicy = plan.BatchingPolicy.ValueString()
-		namespaceValues.BatchingInterval = ably_control_go.BatchingInterval(int(plan.BatchingInterval.ValueInt64()))
+		namespaceValues.BatchingInterval = control.BatchingInterval(int(plan.BatchingInterval.ValueInt64()))
 	}
 
 	// Updates an Ably Namespace. The function invokes the Client Library UpdateNamespace method.

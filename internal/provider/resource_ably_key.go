@@ -3,7 +3,7 @@ package provider
 import (
 	"context"
 
-	ably_control_go "github.com/ably/ably-control-go"
+	control "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -114,7 +114,7 @@ func (r resourceKey) Create(ctx context.Context, req tfsdk_resource.CreateReques
 		return
 	}
 
-	newKey := ably_control_go.NewKey{
+	newKey := control.NewKey{
 		Name:            plan.Name.ValueString(),
 		Capability:      plan.Capability,
 		RevocableTokens: plan.RevocableTokens.ValueBool(),
@@ -235,8 +235,8 @@ func (r resourceKey) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 	appID := plan.AppID.ValueString()
 	keyID := state.ID.ValueString()
 
-	// Instantiates struct of type ably_control_go.NewKey and sets values to output of plan
-	keyValues := ably_control_go.NewKey{
+	// Instantiates struct of type control.NewKey and sets values to output of plan
+	keyValues := control.NewKey{
 		Name:            plan.Name.ValueString(),
 		Capability:      plan.Capability,
 		RevocableTokens: plan.RevocableTokens.ValueBool(),

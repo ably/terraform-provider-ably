@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	ably_control_go "github.com/ably/ably-control-go"
+	control "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
@@ -17,11 +17,11 @@ func TestAccAblyQueue(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccAblyQueueConfig(appName, ably_control_go.NewQueue{
+				Config: testAccAblyQueueConfig(appName, control.NewQueue{
 					Name:      queue_name,
 					Ttl:       44,
 					MaxLength: 83,
-					Region:    ably_control_go.EuWest1A,
+					Region:    control.EuWest1A,
 				}),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
@@ -32,11 +32,11 @@ func TestAccAblyQueue(t *testing.T) {
 			},
 			{
 
-				Config: testAccAblyQueueConfig(appName, ably_control_go.NewQueue{
+				Config: testAccAblyQueueConfig(appName, control.NewQueue{
 					Name:      queue_name + "new",
 					Ttl:       30,
 					MaxLength: 83,
-					Region:    ably_control_go.UsEast1A,
+					Region:    control.UsEast1A,
 				}),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
@@ -52,7 +52,7 @@ func TestAccAblyQueue(t *testing.T) {
 
 // Function with inline HCL to provision an ably_app resource
 // Takes App name, status and tls_only status as function params.
-func testAccAblyQueueConfig(appName string, queue ably_control_go.NewQueue) string {
+func testAccAblyQueueConfig(appName string, queue control.NewQueue) string {
 	return fmt.Sprintf(`
 terraform {
 	required_providers {
