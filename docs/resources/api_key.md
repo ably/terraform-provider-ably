@@ -18,7 +18,7 @@ resource "ably_api_key" "api_key_1" {
   name   = "key-0001"
   capabilities = {
     "channel1" = ["publish", "subscribe"],
-    "channel2" = ["history"]
+    "channel2" = ["history"],
     "channel3" = ["subscribe"],
   }
 }
@@ -30,7 +30,7 @@ resource "ably_api_key" "api_key_1" {
 ### Required
 
 - `app_id` (String) The Ably application ID which this key is associated with.
-- `capabilities` (Map of Set of String) The capabilities that this key has. More information on capabilities can be found in the [Ably documentation](https://ably.com/docs/core-features/authentication#capabilities-explained)
+- `capabilities` (Map of Set of String) The capabilities that this key has. More information on capabilities can be found in the [Ably documentation](https://ably.com/docs/auth/capabilities)
 - `name` (String) The name for your API key. This is a friendly name for your reference.
 
 ### Optional

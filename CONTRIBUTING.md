@@ -23,7 +23,7 @@ See [DEVELOPING_LOCALLY.md](DEVELOPING_LOCALLY.md) for guidance on performing ac
 5. Review the draft GitHub release and publish it if everything is ok
 6. Publishing a Github release will send a webhook to Terraform Registry, which will in turn ingest the new release
 
-N.B. Releasing and publishing Terraform provider follows a process that is different from the [general release guidance for Ably SDKs](https://github.com/ably/engineering/blob/main/sdk/releases.md) due to the requirements of Terraform Registry.
+N.B. Releasing and publishing Terraform provider follows a process that is different from the [general release guidance for Ably SDKs](https://github.com/ably/engineering/blob/main/best-practices/releases.md) due to the requirements of Terraform Registry.
 
 ### Release Branch
 
