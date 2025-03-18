@@ -91,8 +91,7 @@ func TestAccAblyNamespace(t *testing.T) {
 					TlsOnly:          false,
 					ExposeTimeserial: false,
 					BatchingEnabled:  true,
-					BatchingPolicy:   "simple",
-					BatchingInterval: ably_control_go.BatchingInterval(100),
+					BatchingInterval: ably_control_go.Interval(100),
 				}),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
@@ -104,8 +103,34 @@ func TestAccAblyNamespace(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "tls_only", "false"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "expose_timeserial", "false"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "batching_enabled", "true"),
-					resource.TestCheckResourceAttr("ably_namespace.namespace0", "batching_policy", "simple"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "batching_interval", "100"),
+				),
+			},
+			{
+				Config: testAccAblyNamespaceConflationConfig(app_name, ably_control_go.Namespace{
+					ID:                 namespace_name + "conflation",
+					Authenticated:      false,
+					Persisted:          false,
+					PersistLast:        false,
+					PushEnabled:        false,
+					TlsOnly:            false,
+					ExposeTimeserial:   false,
+					ConflationEnabled:  true,
+					ConflationInterval: ably_control_go.Interval(1000),
+					ConflationKey:      "test",
+				}),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "id", namespace_name+"conflation"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "authenticated", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "persisted", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "persist_last", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "push_enabled", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "tls_only", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "expose_timeserial", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "conflation_enabled", "true"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "conflation_interval", "1000"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "conflation_key", "test"),
 				),
 			},
 			// Delete testing automatically occurs in TestCase
@@ -120,7 +145,7 @@ func testAccAblyNamespaceConfig(appName string, namespace ably_control_go.Namesp
 terraform {
 	required_providers {
 		ably = {
-		source = "github.com/ably/ably"
+			source = "github.com/ably/ably"
 		}
 	}
 }
@@ -145,7 +170,16 @@ resource "ably_namespace" "namespace0" {
   expose_timeserial = %[8]t
 }
 
-`, appName, namespace.ID, namespace.Authenticated, namespace.Persisted, namespace.PersistLast, namespace.PushEnabled, namespace.TlsOnly, namespace.ExposeTimeserial)
+`,
+		appName,
+		namespace.ID,
+		namespace.Authenticated,
+		namespace.Persisted,
+		namespace.PersistLast,
+		namespace.PushEnabled,
+		namespace.TlsOnly,
+		namespace.ExposeTimeserial,
+	)
 }
 
 func testAccAblyNamespaceBatchingConfig(appName string, namespace ably_control_go.Namespace) string {
@@ -154,7 +188,6 @@ terraform {
 	required_providers {
 		ably = {
 			source =  "github.com/ably/ably"
-			version = "0.4.3"
 		}
 	}
 }
@@ -169,18 +202,76 @@ resource "ably_app" "app0" {
 }
 
 resource "ably_namespace" "namespace0" {
-  app_id            = ably_app.app0.id
-  id                = %[2]q
-  authenticated     = %[3]t
-  persisted         = %[4]t
-  persist_last      = %[5]t
-  push_enabled      = %[6]t
-  tls_only          = %[7]t
-  expose_timeserial = %[8]t
-  batching_enabled  = %[9]t
-  batching_policy   = "%[10]s"
-  batching_interval = %[11]d
+  app_id              = ably_app.app0.id
+  id                  = %[2]q
+  authenticated       = %[3]t
+  persisted           = %[4]t
+  persist_last        = %[5]t
+  push_enabled        = %[6]t
+  tls_only            = %[7]t
+  expose_timeserial   = %[8]t
+  batching_enabled    = %[9]t
+  batching_interval   = %[10]d
 }
 
-`, appName, namespace.ID, namespace.Authenticated, namespace.Persisted, namespace.PersistLast, namespace.PushEnabled, namespace.TlsOnly, namespace.ExposeTimeserial, namespace.BatchingEnabled, namespace.BatchingPolicy, *namespace.BatchingInterval)
+`,
+		appName,
+		namespace.ID,
+		namespace.Authenticated,
+		namespace.Persisted,
+		namespace.PersistLast,
+		namespace.PushEnabled,
+		namespace.TlsOnly,
+		namespace.ExposeTimeserial,
+		namespace.BatchingEnabled,
+		*namespace.BatchingInterval,
+	)
+}
+
+func testAccAblyNamespaceConflationConfig(appName string, namespace ably_control_go.Namespace) string {
+	return fmt.Sprintf(`
+terraform {
+	required_providers {
+		ably = {
+			source =  "github.com/ably/ably"
+		}
+	}
+}
+
+# You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
+provider "ably" {}
+
+resource "ably_app" "app0" {
+	name     = %[1]q
+	status   = "enabled"
+	tls_only = true
+}
+
+resource "ably_namespace" "namespace0" {
+  app_id              = ably_app.app0.id
+  id                  = %[2]q
+  authenticated       = %[3]t
+  persisted           = %[4]t
+  persist_last        = %[5]t
+  push_enabled        = %[6]t
+  tls_only            = %[7]t
+  expose_timeserial   = %[8]t
+  conflation_enabled  = %[9]t
+  conflation_interval = %[10]d
+  conflation_key      = %[11]q
+}
+
+`,
+		appName,
+		namespace.ID,
+		namespace.Authenticated,
+		namespace.Persisted,
+		namespace.PersistLast,
+		namespace.PushEnabled,
+		namespace.TlsOnly,
+		namespace.ExposeTimeserial,
+		namespace.ConflationEnabled,
+		*namespace.ConflationInterval,
+		namespace.ConflationKey,
+	)
 }

@@ -20,17 +20,19 @@ type AblyApp struct {
 
 // Ably Namespace
 type AblyNamespace struct {
-	AppID            types.String `tfsdk:"app_id"`
-	ID               types.String `tfsdk:"id"`
-	Authenticated    types.Bool   `tfsdk:"authenticated"`
-	Persisted        types.Bool   `tfsdk:"persisted"`
-	PersistLast      types.Bool   `tfsdk:"persist_last"`
-	PushEnabled      types.Bool   `tfsdk:"push_enabled"`
-	TlsOnly          types.Bool   `tfsdk:"tls_only"`
-	ExposeTimeserial types.Bool   `tfsdk:"expose_timeserial"`
-	BatchingEnabled  types.Bool   `tfsdk:"batching_enabled"`
-	BatchingPolicy   types.String `tfsdk:"batching_policy"`
-	BatchingInterval types.Int64  `tfsdk:"batching_interval"`
+	AppID              types.String `tfsdk:"app_id"`
+	ID                 types.String `tfsdk:"id"`
+	Authenticated      types.Bool   `tfsdk:"authenticated"`
+	Persisted          types.Bool   `tfsdk:"persisted"`
+	PersistLast        types.Bool   `tfsdk:"persist_last"`
+	PushEnabled        types.Bool   `tfsdk:"push_enabled"`
+	TlsOnly            types.Bool   `tfsdk:"tls_only"`
+	ExposeTimeserial   types.Bool   `tfsdk:"expose_timeserial"`
+	BatchingEnabled    types.Bool   `tfsdk:"batching_enabled"`
+	BatchingInterval   types.Int64  `tfsdk:"batching_interval"`
+	ConflationEnabled  types.Bool   `tfsdk:"conflation_enabled"`
+	ConflationInterval types.Int64  `tfsdk:"conflation_interval"`
+	ConflationKey      types.String `tfsdk:"conflation_key"`
 }
 
 // Ably Key

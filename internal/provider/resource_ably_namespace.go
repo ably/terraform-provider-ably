@@ -97,15 +97,6 @@ func (r resourceNamespace) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 					DefaultAttribute(types.BoolValue(false)),
 				},
 			},
-			"batching_policy": {
-				Type:        types.StringType,
-				Optional:    true,
-				Computed:    true,
-				Description: "When configured, sets the policy for message batching.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.StringValue("")),
-				},
-			},
 			"batching_interval": {
 				Type:        types.Int64Type,
 				Optional:    true,
@@ -113,6 +104,33 @@ func (r resourceNamespace) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 				Description: "When configured, sets the maximium batching interval in the channel.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					DefaultAttribute(types.Int64Null()),
+				},
+			},
+			"conflation_enabled": {
+				Type:        types.BoolType,
+				Optional:    true,
+				Computed:    true,
+				Description: "If true, enables conflation for channels within this namespace. Conflation reduces the number of messages sent to subscribers by combining multiple messages into a single message.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					DefaultAttribute(types.BoolValue(false)),
+				},
+			},
+			"conflation_interval": {
+				Type:        types.Int64Type,
+				Optional:    true,
+				Computed:    true,
+				Description: "The interval in milliseconds at which messages are conflated. This determines how frequently messages are combined into a single message.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					DefaultAttribute(types.Int64Null()),
+				},
+			},
+			"conflation_key": {
+				Type:        types.StringType,
+				Optional:    true,
+				Computed:    true,
+				Description: "The key used to determine which messages should be conflated. Messages with the same conflation key will be combined into a single message.",
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					DefaultAttribute(types.StringNull()),
 				},
 			},
 		},
@@ -152,8 +170,13 @@ func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.Create
 
 	if plan.BatchingEnabled.ValueBool() {
 		namespace_values.BatchingEnabled = true
-		namespace_values.BatchingPolicy = plan.BatchingPolicy.ValueString()
-		namespace_values.BatchingInterval = ably_control_go.BatchingInterval(int(plan.BatchingInterval.ValueInt64()))
+		namespace_values.BatchingInterval = ably_control_go.Interval(int(plan.BatchingInterval.ValueInt64()))
+	}
+
+	if plan.ConflationEnabled.ValueBool() {
+		namespace_values.ConflationEnabled = true
+		namespace_values.ConflationInterval = ably_control_go.Interval(int(plan.ConflationInterval.ValueInt64()))
+		namespace_values.ConflationKey = plan.ConflationKey.ValueString()
 	}
 
 	// Creates a new Ably namespace by invoking the CreateNamespace function from the Client Library
@@ -166,25 +189,27 @@ func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.Create
 		return
 	}
 
-	// Handle the pointer gracefully
-	batchingInterval := types.Int64Null()
-	if ably_namespace.BatchingInterval != nil {
-		batchingInterval = types.Int64Value(int64(*ably_namespace.BatchingInterval))
-	}
-
 	// Maps response body to resource schema attributes.
 	resp_apps := AblyNamespace{
-		AppID:            types.StringValue(plan.AppID.ValueString()),
-		ID:               types.StringValue(ably_namespace.ID),
-		Authenticated:    types.BoolValue(ably_namespace.Authenticated),
-		Persisted:        types.BoolValue(ably_namespace.Persisted),
-		PersistLast:      types.BoolValue(ably_namespace.PersistLast),
-		PushEnabled:      types.BoolValue(ably_namespace.PushEnabled),
-		TlsOnly:          types.BoolValue(ably_namespace.TlsOnly),
-		ExposeTimeserial: types.BoolValue(namespace_values.ExposeTimeserial),
-		BatchingEnabled:  types.BoolValue(ably_namespace.BatchingEnabled),
-		BatchingPolicy:   types.StringValue(ably_namespace.BatchingPolicy),
-		BatchingInterval: batchingInterval,
+		AppID:             types.StringValue(plan.AppID.ValueString()),
+		ID:                types.StringValue(ably_namespace.ID),
+		Authenticated:     types.BoolValue(ably_namespace.Authenticated),
+		Persisted:         types.BoolValue(ably_namespace.Persisted),
+		PersistLast:       types.BoolValue(ably_namespace.PersistLast),
+		PushEnabled:       types.BoolValue(ably_namespace.PushEnabled),
+		TlsOnly:           types.BoolValue(ably_namespace.TlsOnly),
+		ExposeTimeserial:  types.BoolValue(namespace_values.ExposeTimeserial),
+		BatchingEnabled:   types.BoolValue(ably_namespace.BatchingEnabled),
+		ConflationEnabled: types.BoolValue(ably_namespace.ConflationEnabled),
+	}
+
+	if ably_namespace.BatchingEnabled {
+		resp_apps.BatchingInterval = ptrValueInt(ably_namespace.BatchingInterval)
+	}
+
+	if ably_namespace.ConflationEnabled {
+		resp_apps.ConflationInterval = ptrValueInt(ably_namespace.ConflationInterval)
+		resp_apps.ConflationKey = types.StringValue(ably_namespace.ConflationKey)
 	}
 
 	// Sets state for the new Ably App.
@@ -233,25 +258,28 @@ func (r resourceNamespace) Read(ctx context.Context, req tfsdk_resource.ReadRequ
 	// Loops through namespaces and if id matches, sets state.
 	for _, v := range namespaces {
 		if v.ID == namespace_id {
-			// Handle the pointer gracefully
-			batchingInterval := types.Int64Null()
-			if v.BatchingInterval != nil {
-				batchingInterval = types.Int64Value(int64(*v.BatchingInterval))
+			resp_namespaces := AblyNamespace{
+				AppID:             types.StringValue(app_id),
+				ID:                types.StringValue(namespace_id),
+				Authenticated:     types.BoolValue(v.Authenticated),
+				Persisted:         types.BoolValue(v.Persisted),
+				PersistLast:       types.BoolValue(v.PersistLast),
+				PushEnabled:       types.BoolValue(v.PushEnabled),
+				TlsOnly:           types.BoolValue(v.TlsOnly),
+				ExposeTimeserial:  types.BoolValue(v.ExposeTimeserial),
+				BatchingEnabled:   types.BoolValue(v.BatchingEnabled),
+				ConflationEnabled: types.BoolValue(v.ConflationEnabled),
 			}
 
-			resp_namespaces := AblyNamespace{
-				AppID:            types.StringValue(app_id),
-				ID:               types.StringValue(namespace_id),
-				Authenticated:    types.BoolValue(v.Authenticated),
-				Persisted:        types.BoolValue(v.Persisted),
-				PersistLast:      types.BoolValue(v.PersistLast),
-				PushEnabled:      types.BoolValue(v.PushEnabled),
-				TlsOnly:          types.BoolValue(v.TlsOnly),
-				ExposeTimeserial: types.BoolValue(v.ExposeTimeserial),
-				BatchingEnabled:  types.BoolValue(v.BatchingEnabled),
-				BatchingPolicy:   types.StringValue(v.BatchingPolicy),
-				BatchingInterval: batchingInterval,
+			if v.BatchingEnabled {
+				resp_namespaces.BatchingInterval = ptrValueInt(v.BatchingInterval)
 			}
+
+			if v.ConflationEnabled {
+				resp_namespaces.ConflationInterval = ptrValueInt(v.ConflationInterval)
+				resp_namespaces.ConflationKey = types.StringValue(v.ConflationKey)
+			}
+
 			// Sets state to namespace values.
 			diags = resp.State.Set(ctx, &resp_namespaces)
 			found = true
@@ -296,8 +324,13 @@ func (r resourceNamespace) Update(ctx context.Context, req tfsdk_resource.Update
 
 	if plan.BatchingEnabled.ValueBool() {
 		namespace_values.BatchingEnabled = true
-		namespace_values.BatchingPolicy = plan.BatchingPolicy.ValueString()
-		namespace_values.BatchingInterval = ably_control_go.BatchingInterval(int(plan.BatchingInterval.ValueInt64()))
+		namespace_values.BatchingInterval = ably_control_go.Interval(int(plan.BatchingInterval.ValueInt64()))
+	}
+
+	if plan.ConflationEnabled.ValueBool() {
+		namespace_values.ConflationEnabled = true
+		namespace_values.ConflationInterval = ably_control_go.Interval(int(plan.ConflationInterval.ValueInt64()))
+		namespace_values.ConflationKey = plan.ConflationKey.ValueString()
 	}
 
 	// Updates an Ably Namespace. The function invokes the Client Library UpdateNamespace method.
@@ -310,24 +343,26 @@ func (r resourceNamespace) Update(ctx context.Context, req tfsdk_resource.Update
 		return
 	}
 
-	// Handle the pointer gracefully
-	batchingInterval := types.Int64Null()
-	if ably_namespace.BatchingInterval != nil {
-		batchingInterval = types.Int64Value(int64(*ably_namespace.BatchingInterval))
+	resp_namespaces := AblyNamespace{
+		AppID:             types.StringValue(app_id),
+		ID:                types.StringValue(ably_namespace.ID),
+		Authenticated:     types.BoolValue(ably_namespace.Authenticated),
+		Persisted:         types.BoolValue(ably_namespace.Persisted),
+		PersistLast:       types.BoolValue(ably_namespace.PersistLast),
+		PushEnabled:       types.BoolValue(ably_namespace.PushEnabled),
+		TlsOnly:           types.BoolValue(ably_namespace.TlsOnly),
+		ExposeTimeserial:  types.BoolValue(ably_namespace.ExposeTimeserial),
+		BatchingEnabled:   types.BoolValue(ably_namespace.BatchingEnabled),
+		ConflationEnabled: types.BoolValue(ably_namespace.ConflationEnabled),
 	}
 
-	resp_namespaces := AblyNamespace{
-		AppID:            types.StringValue(app_id),
-		ID:               types.StringValue(ably_namespace.ID),
-		Authenticated:    types.BoolValue(ably_namespace.Authenticated),
-		Persisted:        types.BoolValue(ably_namespace.Persisted),
-		PersistLast:      types.BoolValue(ably_namespace.PersistLast),
-		PushEnabled:      types.BoolValue(ably_namespace.PushEnabled),
-		TlsOnly:          types.BoolValue(ably_namespace.TlsOnly),
-		ExposeTimeserial: types.BoolValue(ably_namespace.ExposeTimeserial),
-		BatchingEnabled:  types.BoolValue(ably_namespace.BatchingEnabled),
-		BatchingPolicy:   types.StringValue(ably_namespace.BatchingPolicy),
-		BatchingInterval: batchingInterval,
+	if ably_namespace.BatchingEnabled {
+		resp_namespaces.BatchingInterval = ptrValueInt(ably_namespace.BatchingInterval)
+	}
+
+	if ably_namespace.ConflationEnabled {
+		resp_namespaces.ConflationInterval = ptrValueInt(ably_namespace.ConflationInterval)
+		resp_namespaces.ConflationKey = types.StringValue(ably_namespace.ConflationKey)
 	}
 
 	// Sets state to new namespace.
@@ -375,5 +410,13 @@ func (r resourceNamespace) Delete(ctx context.Context, req tfsdk_resource.Delete
 // Import resource
 func (r resourceNamespace) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
+}
 
+// Safely return an interval as null if it's not set
+func ptrValueInt(in *int) types.Int64 {
+	res := types.Int64Null()
+	if in != nil {
+		res = types.Int64Value(int64(*in))
+	}
+	return res
 }
