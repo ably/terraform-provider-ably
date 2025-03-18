@@ -50,5 +50,3 @@ Default: prefer.
 Optional:
 
 - `ssl_root_cert` (String) Optional. Specifies the SSL certificate authority (CA) certificates. Required if SSL mode is verify-ca or verify-full.
-
-
