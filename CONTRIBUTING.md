@@ -12,7 +12,7 @@
 
 ## Testing
 
-See [DEVELOPING_LOCALLY.md](DEVELOPING_LOCALLY.md) for guidance on performing acceptance tests.
+See [DEVELOPMENT.md](DEVELOPMENT.md) for guidance on testing locally.
 
 ## Release Process
 

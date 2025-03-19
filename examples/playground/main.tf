@@ -2,7 +2,7 @@ terraform {
 
   required_providers {
     ably = {
-      source  = "local/ably/ably"
+      source  = "ably/ably"
       version = "0.8.0"
     }
   }

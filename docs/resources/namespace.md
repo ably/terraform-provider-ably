@@ -34,8 +34,21 @@ resource "ably_namespace" "namespace_batching" {
   tls_only          = false
   expose_timeserial = false
   batching_enabled  = true
-  batching_policy   = "some-policy"
   batching_interval = 100
+}
+
+resource "ably_namespace" "namespace_conflation" {
+  app_id              = ably_app.app0.id
+  id                  = "namespace"
+  authenticated       = false
+  persisted           = false
+  persist_last        = false
+  push_enabled        = false
+  tls_only            = false
+  expose_timeserial   = false
+  conflation_enabled  = true
+  conflation_interval = 1000
+  conflation_key      = "example"
 }
 ```
 
@@ -52,7 +65,9 @@ resource "ably_namespace" "namespace_batching" {
 - `authenticated` (Boolean) Require clients to be authenticated to use channels in this namespace.
 - `batching_enabled` (Boolean) If true, channels within this namespace will start batching inbound messages instead of sending them out immediately to subscribers as per the configured policy.
 - `batching_interval` (Number) When configured, sets the maximium batching interval in the channel.
-- `batching_policy` (String) When configured, sets the policy for message batching.
+- `conflation_enabled` (Boolean) If true, enables conflation for channels within this namespace. Conflation reduces the number of messages sent to subscribers by combining multiple messages into a single message.
+- `conflation_interval` (Number) The interval in milliseconds at which messages are conflated. This determines how frequently messages are combined into a single message.
+- `conflation_key` (String) The key used to determine which messages should be conflated. Messages with the same conflation key will be combined into a single message.
 - `expose_timeserial` (Boolean) If true, messages received on a channel will contain a unique timeserial that can be referenced by later messages for use with message interactions.
 - `persist_last` (Boolean) If true, the last message on each channel will persist for 365 days.
 - `persisted` (Boolean) If true, messages will be stored for 24 hours.

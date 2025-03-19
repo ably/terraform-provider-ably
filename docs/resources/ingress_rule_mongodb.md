@@ -40,5 +40,3 @@ Required:
 - `pipeline` (String) A MongoDB pipeline to pass to the Change Stream API. This field allows you to control which types of change events are published, and which channel the change event should be published to. The pipeline must set the _ablyChannel field on the root of the change event. It must also be a valid JSON array of pipeline operations.
 - `primary_site` (String) The primary site that the connector will run in. You should choose a site that is close to your database.
 - `url` (String) The connection string of your MongoDB instance. (e.g. mongodb://user:pass@myhost.com)
-
-
