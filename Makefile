@@ -3,14 +3,14 @@ HOSTNAME=github.com
 NAMESPACE=ably
 NAME=ably
 BINARY=terraform-provider-${NAME}
-VERSION=0.8.0
+VERSION=0.9.0
 OS ?= $(shell uname -s | tr '[:upper:]' '[:lower:]')
 ARCH_NATIVE := $(shell uname -m)
 ARCH_MAPPED := $(shell echo "$(ARCH_NATIVE)" | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/' -e 's/armv7l/arm/')
 ifneq ($(ARCH_MAPPED),$(filter amd64 arm64 arm,$(ARCH_MAPPED)))
 $(error Unsupported architecture: $(ARCH_NATIVE))
 endif
-ARCH ?= $(ARCH_MAPPED) 
+ARCH ?= $(ARCH_MAPPED)
 OS_ARCH=${OS}_${ARCH}
 
 default: install

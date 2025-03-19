@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.9.0](https://github.com/ably/terraform-provider-ably/tree/v0.9.0)
+
+[Full Changelog](https://github.com/ably/terraform-provider-ably/compare/v0.8.0..v0.9.0)
+
+**Implemented enhancements:**
+
+- Upgraded `ably-control-go` to the latest version [\#196](https://github.com/ably/terraform-provider-ably/pull/196)
+
+**Merged pull requests:**
+
+- Upgrade to ably-control-go 0.6.0 [\#196](https://github.com/ably/terraform-provider-ably/pull/196) ([surminus](https://github.com/surminus))
+- Bump golang.org/x/net from 0.33.0 to 0.36.0 [\#193](https://github.com/ably/terraform-provider-ably/pull/193) ([dependabot[bot]](https://github.com/apps/dependabot))
+- docs(api_key): recent links path [\#192](https://github.com/ably/terraform-provider-ably/pull/192) ([guspan-tanadi](https://github.com/guspan-tanadi))
+- Bump golang.org/x/net from 0.23.0 to 0.33.0 [\#191](https://github.com/ably/terraform-provider-ably/pull/191) ([dependabot[bot]](https://github.com/apps/dependabot))
+- docs(README): intended terraform links [\#190](https://github.com/ably/terraform-provider-ably/pull/190) ([guspan-tanadi](https://github.com/guspan-tanadi))
+
 ## [0.8.0](https://github.com/ably/terraform-provider-ably/tree/v0.8.0)
 
 [Full Changelog](https://github.com/ably/terraform-provider-ably/compare/v0.7.0..v0.8.0)
