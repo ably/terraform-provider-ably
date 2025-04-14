@@ -7,7 +7,7 @@ import (
 	ably_control_go "github.com/ably/ably-control-go"
 	tfsdk_datasource "github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -15,7 +15,7 @@ import (
 
 const CONTROL_API_DEFAULT_URL = "https://control.ably.net/v1"
 
-func New(version string) tfsdk_provider.Provider {
+func New(version string) provider.Provider {
 	return &AblyProvider{
 		version: version,
 	}
@@ -50,7 +50,7 @@ type AblyProviderData struct {
 	Url   types.String `tfsdk:"url"`
 }
 
-func (p *AblyProvider) Configure(ctx context.Context, req tfsdk_provider.ConfigureRequest, resp *tfsdk_provider.ConfigureResponse) {
+func (p *AblyProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 	// Retrieve AblyProvider data from configuration
 	var config AblyProviderData
 	diags := req.Config.Get(ctx, &config)
