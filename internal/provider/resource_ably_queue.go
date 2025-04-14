@@ -14,7 +14,7 @@ import (
 )
 
 type resourceQueue struct {
-	p *provider
+	p *AblyProvider
 }
 
 // Get Queue Resource schema

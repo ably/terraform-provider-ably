@@ -10,7 +10,7 @@ import (
 )
 
 type resourceRuleKafka struct {
-	p *provider
+	p *AblyProvider
 }
 
 // Get Rule Resource schema
@@ -69,7 +69,7 @@ func (r resourceRuleKafka) Metadata(ctx context.Context, req tfsdk_resource.Meta
 	resp.TypeName = "ably_rule_kafka"
 }
 
-func (r *resourceRuleKafka) Provider() *provider {
+func (r *resourceRuleKafka) Provider() *AblyProvider {
 	return r.p
 }
 

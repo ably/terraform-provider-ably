@@ -10,7 +10,7 @@ import (
 )
 
 type resourceRuleAzureFunction struct {
-	p *provider
+	p *AblyProvider
 }
 
 // Get Rule Resource schema
@@ -43,7 +43,7 @@ func (r resourceRuleAzureFunction) Metadata(ctx context.Context, req tfsdk_resou
 	resp.TypeName = "ably_rule_azure_function"
 }
 
-func (r *resourceRuleAzureFunction) Provider() *provider {
+func (r *resourceRuleAzureFunction) Provider() *AblyProvider {
 	return r.p
 }
 

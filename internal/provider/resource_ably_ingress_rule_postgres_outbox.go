@@ -10,7 +10,7 @@ import (
 )
 
 type resourceIngressRulePostgresOutbox struct {
-	p *provider
+	p *AblyProvider
 }
 
 // Get Rule Resource schema
@@ -71,7 +71,7 @@ func (r resourceIngressRulePostgresOutbox) Metadata(ctx context.Context, req tfs
 	resp.TypeName = "ably_ingress_rule_postgres_outbox"
 }
 
-func (r *resourceIngressRulePostgresOutbox) Provider() *provider {
+func (r *resourceIngressRulePostgresOutbox) Provider() *AblyProvider {
 	return r.p
 }
 

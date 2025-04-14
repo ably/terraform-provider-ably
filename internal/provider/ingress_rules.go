@@ -122,7 +122,7 @@ func GetIngressRuleSchema(target map[string]tfsdk.Attribute, markdown_descriptio
 }
 
 type IngressRule interface {
-	Provider() *provider
+	Provider() *AblyProvider
 	Name() string
 }
 

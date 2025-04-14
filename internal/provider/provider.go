@@ -16,19 +16,19 @@ import (
 const CONTROL_API_DEFAULT_URL = "https://control.ably.net/v1"
 
 func New(version string) tfsdk_provider.Provider {
-	return &provider{
+	return &AblyProvider{
 		version: version,
 	}
 }
 
-type provider struct {
+type AblyProvider struct {
 	configured bool
 	client     *ably_control_go.Client
 	version    string
 }
 
 // GetSchema
-func (p *provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (p *AblyProvider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"token": {
@@ -45,14 +45,14 @@ func (p *provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics)
 }
 
 // Provider schema struct
-type providerData struct {
+type AblyProviderData struct {
 	Token types.String `tfsdk:"token"`
 	Url   types.String `tfsdk:"url"`
 }
 
-func (p *provider) Configure(ctx context.Context, req tfsdk_provider.ConfigureRequest, resp *tfsdk_provider.ConfigureResponse) {
-	// Retrieve provider data from configuration
-	var config providerData
+func (p *AblyProvider) Configure(ctx context.Context, req tfsdk_provider.ConfigureRequest, resp *tfsdk_provider.ConfigureResponse) {
+	// Retrieve AblyProvider data from configuration
+	var config AblyProviderData
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -123,7 +123,7 @@ func (p *provider) Configure(ctx context.Context, req tfsdk_provider.ConfigureRe
 }
 
 // Resources - Gets the resources that this provider provides
-func (p *provider) Resources(context.Context) []func() tfsdk_resource.Resource {
+func (p *AblyProvider) Resources(context.Context) []func() tfsdk_resource.Resource {
 	return []func() tfsdk_resource.Resource{
 		func() tfsdk_resource.Resource { return resourceApp{p} },
 		func() tfsdk_resource.Resource { return resourceNamespace{p} },
@@ -149,7 +149,7 @@ func (p *provider) Resources(context.Context) []func() tfsdk_resource.Resource {
 }
 
 // DataSources - Gets the data sources this provider provides
-func (p *provider) DataSources(context.Context) []func() tfsdk_datasource.DataSource {
+func (p *AblyProvider) DataSources(context.Context) []func() tfsdk_datasource.DataSource {
 	return []func() tfsdk_datasource.DataSource{}
 
 }

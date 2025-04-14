@@ -30,7 +30,7 @@ func Provider() *schema.Provider {
 func init() {
 	testAccProvider = Provider()
 	testAccProviders = map[string]*schema.Provider{
-		"tarraform-provider-ably": testAccProvider,
+		"terraform-provider-ably": testAccProvider,
 	}
 }
 

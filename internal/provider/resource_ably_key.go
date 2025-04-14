@@ -11,7 +11,7 @@ import (
 )
 
 type resourceKey struct {
-	p *provider
+	p *AblyProvider
 }
 
 // Get Resource schema

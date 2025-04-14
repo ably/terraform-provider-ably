@@ -603,7 +603,7 @@ func GetKafkaAuthSchema(headers []AblyRuleHeaders) []ably_control_go.Header {
 }
 
 type Rule interface {
-	Provider() *provider
+	Provider() *AblyProvider
 	Name() string
 }
 

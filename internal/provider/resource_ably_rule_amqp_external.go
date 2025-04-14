@@ -10,7 +10,7 @@ import (
 )
 
 type resourceRuleAmqpExternal struct {
-	p *provider
+	p *AblyProvider
 }
 
 // Get Rule Resource schema
@@ -59,7 +59,7 @@ func (r resourceRuleAmqpExternal) Metadata(ctx context.Context, req tfsdk_resour
 	resp.TypeName = "ably_rule_amqp_external"
 }
 
-func (r *resourceRuleAmqpExternal) Provider() *provider {
+func (r *resourceRuleAmqpExternal) Provider() *AblyProvider {
 	return r.p
 }
 

@@ -10,7 +10,7 @@ import (
 )
 
 type resourceIngressRuleMongo struct {
-	p *provider
+	p *AblyProvider
 }
 
 // Get Rule Resource schema
@@ -60,7 +60,7 @@ func (r resourceIngressRuleMongo) Metadata(ctx context.Context, req tfsdk_resour
 	resp.TypeName = "ably_ingress_rule_mongodb"
 }
 
-func (r *resourceIngressRuleMongo) Provider() *provider {
+func (r *resourceIngressRuleMongo) Provider() *AblyProvider {
 	return r.p
 }
 

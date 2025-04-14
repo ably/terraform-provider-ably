@@ -11,7 +11,7 @@ import (
 )
 
 type resourceNamespace struct {
-	p *provider
+	p *AblyProvider
 }
 
 // Get Namespace Resource schema

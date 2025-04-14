@@ -10,7 +10,7 @@ import (
 )
 
 type resourceRulePulsar struct {
-	p *provider
+	p *AblyProvider
 }
 
 // Get Rule Resource schema
@@ -67,7 +67,7 @@ func (r resourceRulePulsar) Metadata(ctx context.Context, req tfsdk_resource.Met
 	resp.TypeName = "ably_rule_pulsar"
 }
 
-func (r *resourceRulePulsar) Provider() *provider {
+func (r *resourceRulePulsar) Provider() *AblyProvider {
 	return r.p
 }
 

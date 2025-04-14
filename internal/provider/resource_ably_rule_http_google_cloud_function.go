@@ -10,7 +10,7 @@ import (
 )
 
 type resourceRuleGoogleFunction struct {
-	p *provider
+	p *AblyProvider
 }
 
 // Get Rule Resource schema
@@ -49,7 +49,7 @@ func (r resourceRuleGoogleFunction) Metadata(ctx context.Context, req tfsdk_reso
 	resp.TypeName = "ably_rule_google_function"
 }
 
-func (r *resourceRuleGoogleFunction) Provider() *provider {
+func (r *resourceRuleGoogleFunction) Provider() *AblyProvider {
 	return r.p
 }
 

@@ -10,7 +10,7 @@ import (
 )
 
 type resourceRuleZapier struct {
-	p *provider
+	p *AblyProvider
 }
 
 // Get Rule Resource schema
@@ -37,7 +37,7 @@ func (r resourceRuleZapier) Metadata(ctx context.Context, req tfsdk_resource.Met
 	resp.TypeName = "ably_rule_zapier"
 }
 
-func (r *resourceRuleZapier) Provider() *provider {
+func (r *resourceRuleZapier) Provider() *AblyProvider {
 	return r.p
 }
 

@@ -10,7 +10,7 @@ import (
 )
 
 type resourceRuleSqs struct {
-	p *provider
+	p *AblyProvider
 }
 
 // Get Rule Resource schema
@@ -44,7 +44,7 @@ func (r resourceRuleSqs) Metadata(ctx context.Context, req tfsdk_resource.Metada
 	resp.TypeName = "ably_rule_sqs"
 }
 
-func (r *resourceRuleSqs) Provider() *provider {
+func (r *resourceRuleSqs) Provider() *AblyProvider {
 	return r.p
 }
 

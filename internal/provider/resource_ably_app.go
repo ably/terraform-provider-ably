@@ -12,7 +12,7 @@ import (
 )
 
 type resourceApp struct {
-	p *provider
+	p *AblyProvider
 }
 
 // Get App Resource schema

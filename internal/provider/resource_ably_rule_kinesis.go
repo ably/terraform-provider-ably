@@ -10,7 +10,7 @@ import (
 )
 
 type resourceRuleKinesis struct {
-	p *provider
+	p *AblyProvider
 }
 
 // Get Rule Resource schema
@@ -41,7 +41,7 @@ func (r resourceRuleKinesis) Metadata(ctx context.Context, req tfsdk_resource.Me
 	resp.TypeName = "ably_rule_kinesis"
 }
 
-func (r *resourceRuleKinesis) Provider() *provider {
+func (r *resourceRuleKinesis) Provider() *AblyProvider {
 	return r.p
 }
 

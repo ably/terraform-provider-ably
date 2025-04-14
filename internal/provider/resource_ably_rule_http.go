@@ -10,7 +10,7 @@ import (
 )
 
 type resourceRuleHTTP struct {
-	p *provider
+	p *AblyProvider
 }
 
 // Get Rule Resource schema
@@ -39,7 +39,7 @@ func (r resourceRuleHTTP) Metadata(ctx context.Context, req tfsdk_resource.Metad
 	resp.TypeName = "ably_rule_http"
 }
 
-func (r *resourceRuleHTTP) Provider() *provider {
+func (r *resourceRuleHTTP) Provider() *AblyProvider {
 	return r.p
 }
 

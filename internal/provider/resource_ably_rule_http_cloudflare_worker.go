@@ -10,7 +10,7 @@ import (
 )
 
 type resourceRuleCloudflareWorker struct {
-	p *provider
+	p *AblyProvider
 }
 
 // Get Rule Resource schema
@@ -36,7 +36,7 @@ func (r resourceRuleCloudflareWorker) Metadata(ctx context.Context, req tfsdk_re
 	resp.TypeName = "ably_rule_cloudflare_worker"
 }
 
-func (r *resourceRuleCloudflareWorker) Provider() *provider {
+func (r *resourceRuleCloudflareWorker) Provider() *AblyProvider {
 	return r.p
 }
 
