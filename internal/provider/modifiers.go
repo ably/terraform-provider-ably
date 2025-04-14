@@ -3,28 +3,13 @@ package ably_control
 import (
 	"context"
 
-	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type DefaultAttributePlanModifier struct {
-	Default attr.Value
-}
-
-func DefaultAttribute(value attr.Value) DefaultAttributePlanModifier {
-	return DefaultAttributePlanModifier{Default: value}
-}
-
-func (m DefaultAttributePlanModifier) Modify(ctx context.Context, req tfsdk.ModifyAttributePlanRequest, resp *tfsdk.ModifyAttributePlanResponse) {
-	if resp.AttributePlan == nil || req.AttributeConfig == nil {
-		return
-	}
-
-	if !req.AttributeConfig.IsNull() {
-		return
-	}
-
-	resp.AttributePlan = m.Default
+	Bool  types.Bool
+	Int64 types.Int64
 }
 
 func (m DefaultAttributePlanModifier) Description(ctx context.Context) string {
@@ -33,4 +18,36 @@ func (m DefaultAttributePlanModifier) Description(ctx context.Context) string {
 
 func (m DefaultAttributePlanModifier) MarkdownDescription(ctx context.Context) string {
 	return m.Description(ctx)
+}
+
+func DefaultBoolAttribute(value types.Bool) DefaultAttributePlanModifier {
+	return DefaultAttributePlanModifier{Bool: value}
+}
+
+func (m DefaultAttributePlanModifier) PlanModifyBool(ctx context.Context, req planmodifier.BoolRequest, resp *planmodifier.BoolResponse) {
+	if resp.PlanValue.IsNull() || req.ConfigValue.IsNull() {
+		return
+	}
+
+	if !req.ConfigValue.IsNull() {
+		return
+	}
+
+	resp.PlanValue = m.Bool
+}
+
+func DefaultInt64Attribute(value types.Int64) DefaultAttributePlanModifier {
+	return DefaultAttributePlanModifier{Int64: value}
+}
+
+func (m DefaultAttributePlanModifier) PlanModifyInt64(ctx context.Context, req planmodifier.Int64Request, resp *planmodifier.Int64Response) {
+	if resp.PlanValue.IsNull() || req.ConfigValue.IsNull() {
+		return
+	}
+
+	if !req.ConfigValue.IsNull() {
+		return
+	}
+
+	resp.PlanValue = m.Int64
 }

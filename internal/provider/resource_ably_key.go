@@ -4,99 +4,91 @@ import (
 	"context"
 
 	control "github.com/ably/ably-control-go"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceKey struct {
+var _ resource.Resource = &ResourceKey{}
+var _ resource.ResourceWithImportState = &ResourceKey{}
+
+type ResourceKey struct {
 	p *AblyProvider
 }
 
 // Get Resource schema
-func (r resourceKey) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:        types.StringType,
+func (r *ResourceKey) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "The key ID.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					resource.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"app_id": {
-				Type:        types.StringType,
+			"app_id": schema.StringAttribute{
 				Required:    true,
 				Description: "The Ably application ID which this key is associated with.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					resource.RequiresReplace(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"name": {
-				Type:        types.StringType,
+			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "The name for your API key. This is a friendly name for your reference.",
 			},
-			"capabilities": {
-				Type: types.MapType{
-					ElemType: types.SetType{
-						ElemType: types.StringType,
-					},
-				},
+			"capabilities": schema.MapAttribute{
+				ElementType: types.StringType,
 				Required:    true,
 				Description: "The capabilities that this key has. More information on capabilities can be found in the [Ably documentation](https://ably.com/docs/core-features/authentication#capabilities-explained)",
 			},
-			"revocable_tokens": {
-				Type:        types.BoolType,
+			"revocable_tokens": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "Allow tokens issued by this key to be revoked. More information on Token Revocation can be found in the [Ably documentation](https://ably.com/docs/auth/revocation)",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.BoolValue(false)),
+				PlanModifiers: []planmodifier.Bool{
+					DefaultBoolAttribute(types.BoolValue(false)),
 				},
 			},
-			"status": {
-				Type:        types.Int64Type,
+			"status": schema.Int64Attribute{
 				Computed:    true,
 				Description: "The status of the key. 0 is enabled, 1 is revoked.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.Int64Value(0)),
+				PlanModifiers: []planmodifier.Int64{
+					DefaultInt64Attribute(types.Int64Value(0)),
 				},
 			},
-			"created": {
-				Type:        types.Int64Type,
+			"created": schema.Int64Attribute{
 				Computed:    true,
 				Description: "Enforce TLS for all connections. This setting overrides any channel setting.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					resource.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.Int64{
+					DefaultInt64Attribute(types.Int64Value(0)),
 				},
 			},
-			"key": {
-				Type:        types.StringType,
+			"key": schema.StringAttribute{
 				Computed:    true,
 				Description: "The complete API key including API secret.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					resource.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"modified": {
-				Type:        types.Int64Type,
+			"modified": schema.Int64Attribute{
 				Computed:    true,
 				Description: "Unix timestamp representing the date and time of the last modification of the key.",
 			},
 		},
 		MarkdownDescription: "The `ably_key` resource allows you to create and manage Ably API keys.",
-	}, nil
+	}
 }
 
-func (r resourceKey) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r ResourceKey) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "ably_api_key"
 }
 
 // Create a new resource
-func (r resourceKey) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r ResourceKey) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Checks whether the provider and API Client are configured. If they are not, the provider responds with an error.
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
@@ -152,7 +144,7 @@ func (r resourceKey) Create(ctx context.Context, req resource.CreateRequest, res
 }
 
 // Read resource
-func (r resourceKey) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r ResourceKey) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var state AblyKey
 	found := false
@@ -215,7 +207,7 @@ func (r resourceKey) Read(ctx context.Context, req resource.ReadRequest, resp *r
 }
 
 // Update resource
-func (r resourceKey) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r ResourceKey) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
 	var plan AblyKey
 	diags := req.Plan.Get(ctx, &plan)
@@ -273,7 +265,7 @@ func (r resourceKey) Update(ctx context.Context, req resource.UpdateRequest, res
 }
 
 // Delete resource
-func (r resourceKey) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r ResourceKey) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Get current state
 	var state AblyKey
 	diags := req.State.Get(ctx, &state)
@@ -307,6 +299,6 @@ func (r resourceKey) Delete(ctx context.Context, req resource.DeleteRequest, res
 }
 
 // // Import resource
-func (r resourceKey) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r ResourceKey) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }
