@@ -4,22 +4,19 @@ import (
 	"context"
 	"os"
 
-	control "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	control "github.com/ably/ably-control-go"
 )
 
 const CONTROL_API_DEFAULT_URL = "https://control.ably.net/v1"
 
-func New(version string) provider.Provider {
-	return &AblyProvider{
-		version: version,
-	}
-}
+// Ensure AblyProvider satisfies various provider interfaces.
+var _ provider.Provider = &AblyProvider{}
 
 type AblyProvider struct {
 	configured bool
@@ -27,21 +24,31 @@ type AblyProvider struct {
 	version    string
 }
 
-// GetSchema
-func (p *AblyProvider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
-		Attributes: map[string]tfsdk.Attribute{
-			"token": {
-				Type:      types.StringType,
+func (p *AblyProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
+	resp.TypeName = "ably"
+	resp.Version = p.version
+}
+
+func New(version string) func() provider.Provider {
+	return func() provider.Provider {
+		return &AblyProvider{
+			version: version,
+		}
+	}
+}
+
+func (p *AblyProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Attributes: map[string]schema.Attribute{
+			"token": schema.StringAttribute{
 				Sensitive: true,
 				Optional:  true,
 			},
-			"url": {
-				Type:     types.StringType,
+			"url": schema.StringAttribute{
 				Optional: true,
 			},
 		},
-	}, nil
+	}
 }
 
 // Provider schema struct
