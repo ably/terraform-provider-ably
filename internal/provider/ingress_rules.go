@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	ably_control_go "github.com/ably/ably-control-go"
+	control "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -13,12 +13,12 @@ import (
 )
 
 // converts ingress rule from terraform format to control sdk format
-func GetPlanIngressRule(plan AblyIngressRule) ably_control_go.NewIngressRule {
-	var target ably_control_go.IngressTarget
+func GetPlanIngressRule(plan AblyIngressRule) control.NewIngressRule {
+	var target control.IngressTarget
 
 	switch t := plan.Target.(type) {
 	case *AblyIngressRuleTargetMongo:
-		target = &ably_control_go.IngressMongoTarget{
+		target = &control.IngressMongoTarget{
 			Url:                      t.Url,
 			Database:                 t.Database,
 			Collection:               t.Collection,
@@ -28,7 +28,7 @@ func GetPlanIngressRule(plan AblyIngressRule) ably_control_go.NewIngressRule {
 			PrimarySite:              t.PrimarySite,
 		}
 	case *AblyIngressRuleTargetPostgresOutbox:
-		target = &ably_control_go.IngressPostgresOutboxTarget{
+		target = &control.IngressPostgresOutboxTarget{
 			Url:               t.Url,
 			OutboxTableSchema: t.OutboxTableSchema,
 			OutboxTableName:   t.OutboxTableName,
@@ -40,7 +40,7 @@ func GetPlanIngressRule(plan AblyIngressRule) ably_control_go.NewIngressRule {
 		}
 	}
 
-	rule_values := ably_control_go.NewIngressRule{
+	rule_values := control.NewIngressRule{
 		Status: plan.Status.ValueString(),
 		Target: target,
 	}
@@ -50,11 +50,11 @@ func GetPlanIngressRule(plan AblyIngressRule) ably_control_go.NewIngressRule {
 
 // Maps response body to resource schema attributes.
 // Using plan to fill in values that the api does not return.
-func GetIngressRuleResponse(ably_ingress_rule *ably_control_go.IngressRule, plan *AblyIngressRule) AblyIngressRule {
+func GetIngressRuleResponse(ably_ingress_rule *control.IngressRule, plan *AblyIngressRule) AblyIngressRule {
 	var resp_target interface{}
 
 	switch v := ably_ingress_rule.Target.(type) {
-	case *ably_control_go.IngressMongoTarget:
+	case *control.IngressMongoTarget:
 		resp_target = &AblyIngressRuleTargetMongo{
 			Url:                      v.Url,
 			Database:                 v.Database,
@@ -64,7 +64,7 @@ func GetIngressRuleResponse(ably_ingress_rule *ably_control_go.IngressRule, plan
 			FullDocumentBeforeChange: v.FullDocumentBeforeChange,
 			PrimarySite:              v.PrimarySite,
 		}
-	case *ably_control_go.IngressPostgresOutboxTarget:
+	case *control.IngressPostgresOutboxTarget:
 		resp_target = &AblyIngressRuleTargetPostgresOutbox{
 			Url:               v.Url,
 			OutboxTableSchema: v.OutboxTableSchema,

@@ -3,7 +3,7 @@ package ably_control
 import (
 	"context"
 
-	ably_control_go "github.com/ably/ably-control-go"
+	control "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
@@ -112,7 +112,7 @@ func (r resourceApp) Create(ctx context.Context, req tfsdk_resource.CreateReques
 	}
 
 	// Generates an API request body from the plan values
-	app_values := ably_control_go.NewApp{
+	app_values := control.NewApp{
 		ID:                     plan.ID.ValueString(),
 		Name:                   plan.Name.ValueString(),
 		Status:                 plan.Status.ValueString(),
@@ -241,8 +241,8 @@ func (r resourceApp) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 		app_id = state.ID.ValueString()
 	}
 
-	// Instantiates struct of type ably_control_go.App and sets values to output of plan
-	app_values := ably_control_go.NewApp{
+	// Instantiates struct of type control.App and sets values to output of plan
+	app_values := control.NewApp{
 		Name:                   plan.Name.ValueString(),
 		Status:                 plan.Status.ValueString(),
 		TLSOnly:                plan.TLSOnly.ValueBool(),

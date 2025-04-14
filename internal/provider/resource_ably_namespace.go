@@ -3,7 +3,7 @@ package ably_control
 import (
 	"context"
 
-	ably_control_go "github.com/ably/ably-control-go"
+	control "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -158,7 +158,7 @@ func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.Create
 	}
 
 	// Generates an API request body from the plan values
-	namespace_values := ably_control_go.Namespace{
+	namespace_values := control.Namespace{
 		ID:               plan.ID.ValueString(),
 		Authenticated:    plan.Authenticated.ValueBool(),
 		Persisted:        plan.Persisted.ValueBool(),
@@ -170,12 +170,12 @@ func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.Create
 
 	if plan.BatchingEnabled.ValueBool() {
 		namespace_values.BatchingEnabled = true
-		namespace_values.BatchingInterval = ably_control_go.Interval(int(plan.BatchingInterval.ValueInt64()))
+		namespace_values.BatchingInterval = control.Interval(int(plan.BatchingInterval.ValueInt64()))
 	}
 
 	if plan.ConflationEnabled.ValueBool() {
 		namespace_values.ConflationEnabled = true
-		namespace_values.ConflationInterval = ably_control_go.Interval(int(plan.ConflationInterval.ValueInt64()))
+		namespace_values.ConflationInterval = control.Interval(int(plan.ConflationInterval.ValueInt64()))
 		namespace_values.ConflationKey = plan.ConflationKey.ValueString()
 	}
 
@@ -311,8 +311,8 @@ func (r resourceNamespace) Update(ctx context.Context, req tfsdk_resource.Update
 	app_id := plan.AppID.ValueString()
 	namespace_id := plan.ID.ValueString()
 
-	// Instantiates struct of type ably_control_go.Namespace and sets values to output of plan
-	namespace_values := ably_control_go.Namespace{
+	// Instantiates struct of type control.Namespace and sets values to output of plan
+	namespace_values := control.Namespace{
 		ID:               namespace_id,
 		Authenticated:    plan.Authenticated.ValueBool(),
 		Persisted:        plan.Persisted.ValueBool(),
@@ -324,12 +324,12 @@ func (r resourceNamespace) Update(ctx context.Context, req tfsdk_resource.Update
 
 	if plan.BatchingEnabled.ValueBool() {
 		namespace_values.BatchingEnabled = true
-		namespace_values.BatchingInterval = ably_control_go.Interval(int(plan.BatchingInterval.ValueInt64()))
+		namespace_values.BatchingInterval = control.Interval(int(plan.BatchingInterval.ValueInt64()))
 	}
 
 	if plan.ConflationEnabled.ValueBool() {
 		namespace_values.ConflationEnabled = true
-		namespace_values.ConflationInterval = ably_control_go.Interval(int(plan.ConflationInterval.ValueInt64()))
+		namespace_values.ConflationInterval = control.Interval(int(plan.ConflationInterval.ValueInt64()))
 		namespace_values.ConflationKey = plan.ConflationKey.ValueString()
 	}
 

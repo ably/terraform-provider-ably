@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 
-	ably_control_go "github.com/ably/ably-control-go"
+	control "github.com/ably/ably-control-go"
 	tfsdk_datasource "github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -23,7 +23,7 @@ func New(version string) provider.Provider {
 
 type AblyProvider struct {
 	configured bool
-	client     *ably_control_go.Client
+	client     *control.Client
 	version    string
 }
 
@@ -107,7 +107,7 @@ func (p *AblyProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 	if url == "" {
 		url = CONTROL_API_DEFAULT_URL
 	}
-	c, _, err := ably_control_go.NewClientWithURL(token, url)
+	c, _, err := control.NewClientWithURL(token, url)
 
 	if err != nil {
 		resp.Diagnostics.AddError(
