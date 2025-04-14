@@ -4,96 +4,91 @@ import (
 	"context"
 
 	control "github.com/ably/ably-control-go"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceApp struct {
+var _ resource.Resource = &ResourceApp{}
+var _ resource.ResourceWithImportState = &ResourceApp{}
+
+type ResourceApp struct {
 	p *AblyProvider
 }
 
 // Get App Resource schema
-func (r resourceApp) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:        types.StringType,
+func (r ResourceApp) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "The application ID.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					resource.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"account_id": {
-				Type:        types.StringType,
+			"account_id": schema.StringAttribute{
 				Computed:    true,
 				Description: "The ID of your Ably account.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					resource.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"name": {
-				Type:        types.StringType,
+			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "The application name.",
 			},
 			// TODO: Update this after Control API bug has been fixed.
-			"status": {
-				Type:        types.StringType,
+			"status": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "The application status. Disabled applications will not accept new connections and will return an error to all clients. When creating a new application, ensure that its status is set to enabled.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.StringValue("enabled")),
+				PlanModifiers: []planmodifier.String{
+					DefaultStringAttribute(types.StringValue("enabled")),
 				},
 			},
-			"tls_only": {
-				Type:        types.BoolType,
+			"tls_only": schema.BoolAttribute{
 				Optional:    true,
 				Description: "Enforce TLS for all connections. This setting overrides any channel setting.",
 			},
-			"fcm_key": {
-				Type:        types.StringType,
+			"fcm_key": schema.StringAttribute{
 				Optional:    true,
 				Sensitive:   true,
 				Description: "The Firebase Cloud Messaging key.",
 			},
-			"apns_certificate": {
-				Type:        types.StringType,
+			"apns_certificate": schema.StringAttribute{
 				Optional:    true,
 				Sensitive:   true,
 				Description: "The Apple Push Notification service certificate.",
 			},
-			"apns_private_key": {
-				Type:        types.StringType,
+			"apns_private_key": schema.StringAttribute{
 				Optional:    true,
 				Sensitive:   true,
 				Description: "The Apple Push Notification service private key.",
 			},
-			"apns_use_sandbox_endpoint": {
-				Type:        types.BoolType,
+			"apns_use_sandbox_endpoint": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "Use the Apple Push Notification service sandbox endpoint.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.BoolValue(false)),
+				PlanModifiers: []planmodifier.Bool{
+					DefaultBoolAttribute(types.BoolValue(false)),
 				},
 			},
 		},
 		MarkdownDescription: "The `ably_app` resource allows you to create and manage Ably Apps " +
 			"and configure Ably Push notifications. Read more about Ably Push Notifications in Ably documentation: https://ably.com/docs/general/push",
-	}, nil
+	}
 }
 
-func (r resourceApp) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r ResourceApp) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "ably_app"
 }
 
 // Create a new resource
-func (r resourceApp) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r ResourceApp) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Checks whether the provider and API Client are configured. If they are not, the provider responds with an error.
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
@@ -158,7 +153,7 @@ func (r resourceApp) Create(ctx context.Context, req resource.CreateRequest, res
 }
 
 // Read resource
-func (r resourceApp) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r ResourceApp) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var state AblyApp
 	found := false
@@ -219,7 +214,7 @@ func (r resourceApp) Read(ctx context.Context, req resource.ReadRequest, resp *r
 }
 
 // Update resource
-func (r resourceApp) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r ResourceApp) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
 	var plan AblyApp
 	diags := req.Plan.Get(ctx, &plan)
@@ -286,7 +281,7 @@ func (r resourceApp) Update(ctx context.Context, req resource.UpdateRequest, res
 }
 
 // Delete resource
-func (r resourceApp) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r ResourceApp) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Get current state
 	var state AblyApp
 	diags := req.State.Get(ctx, &state)
@@ -319,8 +314,7 @@ func (r resourceApp) Delete(ctx context.Context, req resource.DeleteRequest, res
 }
 
 // Import resource
-func (r resourceApp) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r ResourceApp) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	// Save the import identifier in the id attribute
-	// Recent PR in TF Plugin Framework for paths but Hashicorp examples not updated - https://github.com/hashicorp/terraform-plugin-framework/pull/390
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }

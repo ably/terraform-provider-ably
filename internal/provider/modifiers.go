@@ -8,8 +8,9 @@ import (
 )
 
 type DefaultAttributePlanModifier struct {
-	Bool  types.Bool
-	Int64 types.Int64
+	Bool   types.Bool
+	Int64  types.Int64
+	String types.String
 }
 
 func (m DefaultAttributePlanModifier) Description(ctx context.Context) string {
@@ -50,4 +51,20 @@ func (m DefaultAttributePlanModifier) PlanModifyInt64(ctx context.Context, req p
 	}
 
 	resp.PlanValue = m.Int64
+}
+
+func DefaultStringAttribute(value types.String) DefaultAttributePlanModifier {
+	return DefaultAttributePlanModifier{String: value}
+}
+
+func (m DefaultAttributePlanModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
+	if resp.PlanValue.IsNull() || req.ConfigValue.IsNull() {
+		return
+	}
+
+	if !req.ConfigValue.IsNull() {
+		return
+	}
+
+	resp.PlanValue = m.String
 }

@@ -132,7 +132,7 @@ func (p *AblyProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 // Resources - Gets the resources that this provider provides
 func (p *AblyProvider) Resources(context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		func() resource.Resource { return resourceApp{p} },
+		func() resource.Resource { return ResourceApp{p} },
 		func() resource.Resource { return resourceNamespace{p} },
 		func() resource.Resource { return ResourceKey{p} },
 		func() resource.Resource { return resourceQueue{p} },
