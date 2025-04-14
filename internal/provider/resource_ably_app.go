@@ -6,7 +6,7 @@ import (
 	control "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -24,7 +24,7 @@ func (r resourceApp) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostic
 				Computed:    true,
 				Description: "The application ID.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.UseStateForUnknown(),
+					resource.UseStateForUnknown(),
 				},
 			},
 			"account_id": {
@@ -32,7 +32,7 @@ func (r resourceApp) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostic
 				Computed:    true,
 				Description: "The ID of your Ably account.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.UseStateForUnknown(),
+					resource.UseStateForUnknown(),
 				},
 			},
 			"name": {
@@ -88,12 +88,12 @@ func (r resourceApp) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostic
 	}, nil
 }
 
-func (r resourceApp) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+func (r resourceApp) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "ably_app"
 }
 
 // Create a new resource
-func (r resourceApp) Create(ctx context.Context, req tfsdk_resource.CreateRequest, resp *tfsdk_resource.CreateResponse) {
+func (r resourceApp) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Checks whether the provider and API Client are configured. If they are not, the provider responds with an error.
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
@@ -158,7 +158,7 @@ func (r resourceApp) Create(ctx context.Context, req tfsdk_resource.CreateReques
 }
 
 // Read resource
-func (r resourceApp) Read(ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
+func (r resourceApp) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var state AblyApp
 	found := false
@@ -219,7 +219,7 @@ func (r resourceApp) Read(ctx context.Context, req tfsdk_resource.ReadRequest, r
 }
 
 // Update resource
-func (r resourceApp) Update(ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
+func (r resourceApp) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
 	var plan AblyApp
 	diags := req.Plan.Get(ctx, &plan)
@@ -286,7 +286,7 @@ func (r resourceApp) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 }
 
 // Delete resource
-func (r resourceApp) Delete(ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
+func (r resourceApp) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Get current state
 	var state AblyApp
 	diags := req.State.Get(ctx, &state)
@@ -319,8 +319,8 @@ func (r resourceApp) Delete(ctx context.Context, req tfsdk_resource.DeleteReques
 }
 
 // Import resource
-func (r resourceApp) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
+func (r resourceApp) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	// Save the import identifier in the id attribute
 	// Recent PR in TF Plugin Framework for paths but Hashicorp examples not updated - https://github.com/hashicorp/terraform-plugin-framework/pull/390
-	tfsdk_resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }

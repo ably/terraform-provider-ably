@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 
-	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -26,7 +26,7 @@ func (r resourceQueue) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnost
 				Required:    true,
 				Description: "The application ID.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.RequiresReplace(),
+					resource.RequiresReplace(),
 				},
 			},
 			"id": {
@@ -34,7 +34,7 @@ func (r resourceQueue) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnost
 				Computed:    true,
 				Description: "The ID of the queue",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.UseStateForUnknown(),
+					resource.UseStateForUnknown(),
 				},
 			},
 			"name": {
@@ -133,12 +133,12 @@ func (r resourceQueue) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnost
 	}, nil
 }
 
-func (r resourceQueue) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+func (r resourceQueue) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "ably_queue"
 }
 
 // Create a new resource
-func (r resourceQueue) Create(ctx context.Context, req tfsdk_resource.CreateRequest, resp *tfsdk_resource.CreateResponse) {
+func (r resourceQueue) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Checks whether the provider and API Client are configured. If they are not, the provider responds with an error.
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
@@ -222,7 +222,7 @@ func (r resourceQueue) Create(ctx context.Context, req tfsdk_resource.CreateRequ
 }
 
 // Read resource
-func (r resourceQueue) Read(ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
+func (r resourceQueue) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var state AblyQueue
 	found := false
@@ -296,7 +296,7 @@ func (r resourceQueue) Read(ctx context.Context, req tfsdk_resource.ReadRequest,
 }
 
 // Update resource
-func (r resourceQueue) Update(ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
+func (r resourceQueue) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// This function should never end up being run but needs to exist to satisfy the interface
 	// this error is just in case terraform decides to call it.
 	resp.Diagnostics.AddError(
@@ -306,7 +306,7 @@ func (r resourceQueue) Update(ctx context.Context, req tfsdk_resource.UpdateRequ
 }
 
 // Delete resource
-func (r resourceQueue) Delete(ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
+func (r resourceQueue) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Get current state
 	var state AblyQueue
 	diags := req.State.Get(ctx, &state)
@@ -340,13 +340,13 @@ func (r resourceQueue) Delete(ctx context.Context, req tfsdk_resource.DeleteRequ
 }
 
 // Import resource
-func (r resourceQueue) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
+func (r resourceQueue) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "id")
 }
 
-var _ tfsdk_resource.ResourceWithModifyPlan = resourceQueue{}
+var _ resource.ResourceWithModifyPlan = resourceQueue{}
 
-func (r resourceQueue) ModifyPlan(ctx context.Context, req tfsdk_resource.ModifyPlanRequest, resp *tfsdk_resource.ModifyPlanResponse) {
+func (r resourceQueue) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
 	for k := range req.Plan.Schema.Attributes {
 		resp.RequiresReplace.Append(path.Root(k))
 	}

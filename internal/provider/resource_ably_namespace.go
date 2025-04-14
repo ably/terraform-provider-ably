@@ -5,7 +5,7 @@ import (
 
 	control "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -23,7 +23,7 @@ func (r resourceNamespace) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 				Required:    true,
 				Description: "The application ID.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.RequiresReplace(),
+					resource.RequiresReplace(),
 				},
 			},
 			"id": {
@@ -31,7 +31,7 @@ func (r resourceNamespace) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 				Required:    true,
 				Description: "The namespace or channel name that the channel rule will apply to.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.RequiresReplace(),
+					resource.RequiresReplace(),
 				},
 			},
 			"authenticated": {
@@ -139,7 +139,7 @@ func (r resourceNamespace) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 }
 
 // Create a new resource
-func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.CreateRequest, resp *tfsdk_resource.CreateResponse) {
+func (r resourceNamespace) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Checks whether the provider and API Client are configured. If they are not, the provider responds with an error.
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
@@ -220,12 +220,12 @@ func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.Create
 	}
 }
 
-func (r resourceNamespace) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+func (r resourceNamespace) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "ably_namespace"
 }
 
 // Read resource
-func (r resourceNamespace) Read(ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
+func (r resourceNamespace) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var state AblyNamespace
 	found := false
@@ -298,7 +298,7 @@ func (r resourceNamespace) Read(ctx context.Context, req tfsdk_resource.ReadRequ
 }
 
 // Update resource
-func (r resourceNamespace) Update(ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
+func (r resourceNamespace) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
 	var plan AblyNamespace
 	diags := req.Plan.Get(ctx, &plan)
@@ -374,7 +374,7 @@ func (r resourceNamespace) Update(ctx context.Context, req tfsdk_resource.Update
 }
 
 // Delete resource
-func (r resourceNamespace) Delete(ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
+func (r resourceNamespace) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Get current state
 	var state AblyNamespace
 	diags := req.State.Get(ctx, &state)
@@ -408,7 +408,7 @@ func (r resourceNamespace) Delete(ctx context.Context, req tfsdk_resource.Delete
 }
 
 // Import resource
-func (r resourceNamespace) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
+func (r resourceNamespace) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }
 

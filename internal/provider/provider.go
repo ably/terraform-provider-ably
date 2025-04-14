@@ -5,10 +5,10 @@ import (
 	"os"
 
 	control "github.com/ably/ably-control-go"
-	tfsdk_datasource "github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
-	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -123,33 +123,32 @@ func (p *AblyProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 }
 
 // Resources - Gets the resources that this provider provides
-func (p *AblyProvider) Resources(context.Context) []func() tfsdk_resource.Resource {
-	return []func() tfsdk_resource.Resource{
-		func() tfsdk_resource.Resource { return resourceApp{p} },
-		func() tfsdk_resource.Resource { return resourceNamespace{p} },
-		func() tfsdk_resource.Resource { return resourceKey{p} },
-		func() tfsdk_resource.Resource { return resourceQueue{p} },
-		func() tfsdk_resource.Resource { return resourceRuleKinesis{p} },
-		func() tfsdk_resource.Resource { return resourceRuleSqs{p} },
-		func() tfsdk_resource.Resource { return resourceRuleLambda{p} },
-		func() tfsdk_resource.Resource { return resourceRulePulsar{p} },
-		func() tfsdk_resource.Resource { return resourceRuleZapier{p} },
-		func() tfsdk_resource.Resource { return resourceRuleGoogleFunction{p} },
-		func() tfsdk_resource.Resource { return resourceRuleIFTTT{p} },
-		func() tfsdk_resource.Resource { return resourceRuleCloudflareWorker{p} },
-		func() tfsdk_resource.Resource { return resourceRuleAzureFunction{p} },
-		func() tfsdk_resource.Resource { return resourceRuleHTTP{p} },
-		func() tfsdk_resource.Resource { return resourceRuleKafka{p} },
-		func() tfsdk_resource.Resource { return resourceRuleAmqp{p} },
-		func() tfsdk_resource.Resource { return resourceRuleAmqpExternal{p} },
-		func() tfsdk_resource.Resource { return resourceIngressRuleMongo{p} },
-		func() tfsdk_resource.Resource { return resourceIngressRulePostgresOutbox{p} },
+func (p *AblyProvider) Resources(context.Context) []func() resource.Resource {
+	return []func() resource.Resource{
+		func() resource.Resource { return resourceApp{p} },
+		func() resource.Resource { return resourceNamespace{p} },
+		func() resource.Resource { return resourceKey{p} },
+		func() resource.Resource { return resourceQueue{p} },
+		func() resource.Resource { return resourceRuleKinesis{p} },
+		func() resource.Resource { return resourceRuleSqs{p} },
+		func() resource.Resource { return resourceRuleLambda{p} },
+		func() resource.Resource { return resourceRulePulsar{p} },
+		func() resource.Resource { return resourceRuleZapier{p} },
+		func() resource.Resource { return resourceRuleGoogleFunction{p} },
+		func() resource.Resource { return resourceRuleIFTTT{p} },
+		func() resource.Resource { return resourceRuleCloudflareWorker{p} },
+		func() resource.Resource { return resourceRuleAzureFunction{p} },
+		func() resource.Resource { return resourceRuleHTTP{p} },
+		func() resource.Resource { return resourceRuleKafka{p} },
+		func() resource.Resource { return resourceRuleAmqp{p} },
+		func() resource.Resource { return resourceRuleAmqpExternal{p} },
+		func() resource.Resource { return resourceIngressRuleMongo{p} },
+		func() resource.Resource { return resourceIngressRulePostgresOutbox{p} },
 	}
 
 }
 
 // DataSources - Gets the data sources this provider provides
-func (p *AblyProvider) DataSources(context.Context) []func() tfsdk_datasource.DataSource {
-	return []func() tfsdk_datasource.DataSource{}
-
+func (p *AblyProvider) DataSources(context.Context) []func() datasource.DataSource {
+	return []func() datasource.DataSource{}
 }

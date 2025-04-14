@@ -7,7 +7,7 @@ import (
 
 	control "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -417,7 +417,7 @@ func GetRuleSchema(target map[string]tfsdk.Attribute, markdown_description strin
 				Computed:    true,
 				Description: "The rule ID.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.UseStateForUnknown(),
+					resource.UseStateForUnknown(),
 				},
 			},
 			"app_id": {
@@ -425,7 +425,7 @@ func GetRuleSchema(target map[string]tfsdk.Attribute, markdown_description strin
 				Required:    true,
 				Description: "The Ably application ID.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.RequiresReplace(),
+					resource.RequiresReplace(),
 				},
 			},
 			"status": {
@@ -440,7 +440,7 @@ func GetRuleSchema(target map[string]tfsdk.Attribute, markdown_description strin
 				Description: "This is Single Request mode or Batch Request mode. Single Request mode sends each event separately to the endpoint specified by the rule",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					DefaultAttribute(types.StringValue("single")),
-					tfsdk_resource.UseStateForUnknown(),
+					resource.UseStateForUnknown(),
 				},
 			},
 			"source": {
@@ -475,7 +475,7 @@ func GetAwsAuthSchema() tfsdk.Attribute {
 				Type:     types.StringType,
 				Required: true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.RequiresReplace(),
+					resource.RequiresReplace(),
 				},
 				Description: "Authentication method. Use 'credentials' or 'assumeRole'",
 			},
@@ -608,7 +608,7 @@ type Rule interface {
 }
 
 // Create a new resource
-func CreateRule[T any](r Rule, ctx context.Context, req tfsdk_resource.CreateRequest, resp *tfsdk_resource.CreateResponse) {
+func CreateRule[T any](r Rule, ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Checks whether the provider and API Client are configured. If they are not, the provider responds with an error.
 	if !r.Provider().configured {
 		resp.Diagnostics.AddError(
@@ -651,7 +651,7 @@ func CreateRule[T any](r Rule, ctx context.Context, req tfsdk_resource.CreateReq
 }
 
 // Read resource
-func ReadRule[T any](r Rule, ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
+func ReadRule[T any](r Rule, ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var s AblyRuleDecoder[*T]
 	diags := req.State.Get(ctx, &s)
@@ -695,7 +695,7 @@ func ReadRule[T any](r Rule, ctx context.Context, req tfsdk_resource.ReadRequest
 }
 
 // // Update resource
-func UpdateRule[T any](r Rule, ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
+func UpdateRule[T any](r Rule, ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Gets plan values
 	var p AblyRuleDecoder[*T]
 	diags := req.Plan.Get(ctx, &p)
@@ -736,7 +736,7 @@ func UpdateRule[T any](r Rule, ctx context.Context, req tfsdk_resource.UpdateReq
 }
 
 // Delete resource
-func DeleteRule[T any](r Rule, ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
+func DeleteRule[T any](r Rule, ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var s AblyRuleDecoder[*T]
 	diags := req.State.Get(ctx, &s)
@@ -773,7 +773,7 @@ func DeleteRule[T any](r Rule, ctx context.Context, req tfsdk_resource.DeleteReq
 }
 
 // // Import resource
-func ImportResource(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse, fields ...string) {
+func ImportResource(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse, fields ...string) {
 	// Save the import identifier in the id attribute
 	// identifier should be in the format app_id,key_id
 	idParts := strings.Split(req.ID, ",")

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -67,7 +67,7 @@ Default: prefer.`,
 		"The `ably_ingress_rule_postgres_outbox` resource Use the Postgres database connector to distribute changes from your Postgres database to end users at scale. It enables you to distribute records using the outbox pattern to large numbers of subscribing clients, in realtime, as the changes occur."), nil
 }
 
-func (r resourceIngressRulePostgresOutbox) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+func (r resourceIngressRulePostgresOutbox) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "ably_ingress_rule_postgres_outbox"
 }
 
@@ -80,26 +80,26 @@ func (r *resourceIngressRulePostgresOutbox) Name() string {
 }
 
 // Create a new resource
-func (r resourceIngressRulePostgresOutbox) Create(ctx context.Context, req tfsdk_resource.CreateRequest, resp *tfsdk_resource.CreateResponse) {
+func (r resourceIngressRulePostgresOutbox) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	CreateIngressRule[AblyIngressRuleTargetPostgresOutbox](&r, ctx, req, resp)
 }
 
 // Read resource
-func (r resourceIngressRulePostgresOutbox) Read(ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
+func (r resourceIngressRulePostgresOutbox) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	ReadIngressRule[AblyIngressRuleTargetPostgresOutbox](&r, ctx, req, resp)
 }
 
 // Update resource
-func (r resourceIngressRulePostgresOutbox) Update(ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
+func (r resourceIngressRulePostgresOutbox) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	UpdateIngressRule[AblyIngressRuleTargetPostgresOutbox](&r, ctx, req, resp)
 }
 
 // Delete resource
-func (r resourceIngressRulePostgresOutbox) Delete(ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
+func (r resourceIngressRulePostgresOutbox) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	DeleteIngressRule[AblyIngressRuleTargetPostgresOutbox](&r, ctx, req, resp)
 }
 
 // Import resource
-func (r resourceIngressRulePostgresOutbox) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
+func (r resourceIngressRulePostgresOutbox) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }

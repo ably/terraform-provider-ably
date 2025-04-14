@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -55,7 +55,7 @@ func (r resourceRuleAmqpExternal) GetSchema(_ context.Context) (tfsdk.Schema, di
 	), nil
 }
 
-func (r resourceRuleAmqpExternal) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+func (r resourceRuleAmqpExternal) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "ably_rule_amqp_external"
 }
 
@@ -68,27 +68,27 @@ func (r *resourceRuleAmqpExternal) Name() string {
 }
 
 // Create a new resource
-func (r resourceRuleAmqpExternal) Create(ctx context.Context, req tfsdk_resource.CreateRequest, resp *tfsdk_resource.CreateResponse) {
+func (r resourceRuleAmqpExternal) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	CreateRule[AblyRuleTargetAmqpExternal](&r, ctx, req, resp)
 }
 
 // Read resource
-func (r resourceRuleAmqpExternal) Read(ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
+func (r resourceRuleAmqpExternal) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	ReadRule[AblyRuleTargetAmqpExternal](&r, ctx, req, resp)
 }
 
 // // Update resource
-func (r resourceRuleAmqpExternal) Update(ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
+func (r resourceRuleAmqpExternal) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	UpdateRule[AblyRuleTargetAmqpExternal](&r, ctx, req, resp)
 }
 
 // Delete resource
-func (r resourceRuleAmqpExternal) Delete(ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
+func (r resourceRuleAmqpExternal) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	DeleteRule[AblyRuleTargetAmqpExternal](&r, ctx, req, resp)
 }
 
 // Import resource
-func (r resourceRuleAmqpExternal) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
+func (r resourceRuleAmqpExternal) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -32,7 +32,7 @@ func (r resourceRuleCloudflareWorker) GetSchema(_ context.Context) (tfsdk.Schema
 		"The `ably_rule_cloudflare_worker` resource allows you to create and manage an Ably integration rule for Cloudflare workers. Read more at https://ably.com/docs/general/webhooks/cloudflare"), nil
 }
 
-func (r resourceRuleCloudflareWorker) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+func (r resourceRuleCloudflareWorker) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "ably_rule_cloudflare_worker"
 }
 
@@ -45,26 +45,26 @@ func (r *resourceRuleCloudflareWorker) Name() string {
 }
 
 // Create a new resource
-func (r resourceRuleCloudflareWorker) Create(ctx context.Context, req tfsdk_resource.CreateRequest, resp *tfsdk_resource.CreateResponse) {
+func (r resourceRuleCloudflareWorker) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	CreateRule[AblyRuleTargetCloudflareWorker](&r, ctx, req, resp)
 }
 
 // Read resource
-func (r resourceRuleCloudflareWorker) Read(ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
+func (r resourceRuleCloudflareWorker) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	ReadRule[AblyRuleTargetCloudflareWorker](&r, ctx, req, resp)
 }
 
 // // Update resource
-func (r resourceRuleCloudflareWorker) Update(ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
+func (r resourceRuleCloudflareWorker) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	UpdateRule[AblyRuleTargetCloudflareWorker](&r, ctx, req, resp)
 }
 
 // Delete resource
-func (r resourceRuleCloudflareWorker) Delete(ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
+func (r resourceRuleCloudflareWorker) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	DeleteRule[AblyRuleTargetCloudflareWorker](&r, ctx, req, resp)
 }
 
 // Import resource
-func (r resourceRuleCloudflareWorker) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
+func (r resourceRuleCloudflareWorker) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }

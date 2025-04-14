@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -56,7 +56,7 @@ func (r resourceIngressRuleMongo) GetSchema(_ context.Context) (tfsdk.Schema, di
 		"The `ably_ingress_rule_mongodb` resource sets up a MongoDB Integration Rule to stream document changes from a database collection over Ably."), nil
 }
 
-func (r resourceIngressRuleMongo) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+func (r resourceIngressRuleMongo) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "ably_ingress_rule_mongodb"
 }
 
@@ -69,26 +69,26 @@ func (r *resourceIngressRuleMongo) Name() string {
 }
 
 // Create a new resource
-func (r resourceIngressRuleMongo) Create(ctx context.Context, req tfsdk_resource.CreateRequest, resp *tfsdk_resource.CreateResponse) {
+func (r resourceIngressRuleMongo) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	CreateIngressRule[AblyIngressRuleTargetMongo](&r, ctx, req, resp)
 }
 
 // Read resource
-func (r resourceIngressRuleMongo) Read(ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
+func (r resourceIngressRuleMongo) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	ReadIngressRule[AblyIngressRuleTargetMongo](&r, ctx, req, resp)
 }
 
 // Update resource
-func (r resourceIngressRuleMongo) Update(ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
+func (r resourceIngressRuleMongo) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	UpdateIngressRule[AblyIngressRuleTargetMongo](&r, ctx, req, resp)
 }
 
 // Delete resource
-func (r resourceIngressRuleMongo) Delete(ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
+func (r resourceIngressRuleMongo) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	DeleteIngressRule[AblyIngressRuleTargetMongo](&r, ctx, req, resp)
 }
 
 // Import resource
-func (r resourceIngressRuleMongo) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
+func (r resourceIngressRuleMongo) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }

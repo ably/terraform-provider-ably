@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -45,7 +45,7 @@ func (r resourceRuleGoogleFunction) GetSchema(_ context.Context) (tfsdk.Schema, 
 	), nil
 }
 
-func (r resourceRuleGoogleFunction) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+func (r resourceRuleGoogleFunction) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "ably_rule_google_function"
 }
 
@@ -58,26 +58,26 @@ func (r *resourceRuleGoogleFunction) Name() string {
 }
 
 // Create a new resource
-func (r resourceRuleGoogleFunction) Create(ctx context.Context, req tfsdk_resource.CreateRequest, resp *tfsdk_resource.CreateResponse) {
+func (r resourceRuleGoogleFunction) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	CreateRule[AblyRuleTargetGoogleFunction](&r, ctx, req, resp)
 }
 
 // Read resource
-func (r resourceRuleGoogleFunction) Read(ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
+func (r resourceRuleGoogleFunction) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	ReadRule[AblyRuleTargetGoogleFunction](&r, ctx, req, resp)
 }
 
 // // Update resource
-func (r resourceRuleGoogleFunction) Update(ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
+func (r resourceRuleGoogleFunction) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	UpdateRule[AblyRuleTargetGoogleFunction](&r, ctx, req, resp)
 }
 
 // Delete resource
-func (r resourceRuleGoogleFunction) Delete(ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
+func (r resourceRuleGoogleFunction) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	DeleteRule[AblyRuleTargetGoogleFunction](&r, ctx, req, resp)
 }
 
 // Import resource
-func (r resourceRuleGoogleFunction) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
+func (r resourceRuleGoogleFunction) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }

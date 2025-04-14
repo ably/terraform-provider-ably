@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -32,7 +32,7 @@ func (r resourceRuleIFTTT) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 	), nil
 }
 
-func (r resourceRuleIFTTT) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+func (r resourceRuleIFTTT) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "ably_rule_ifttt"
 }
 
@@ -45,26 +45,26 @@ func (r *resourceRuleIFTTT) Name() string {
 }
 
 // Create a new resource
-func (r resourceRuleIFTTT) Create(ctx context.Context, req tfsdk_resource.CreateRequest, resp *tfsdk_resource.CreateResponse) {
+func (r resourceRuleIFTTT) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	CreateRule[AblyRuleTargetIFTTT](&r, ctx, req, resp)
 }
 
 // Read resource
-func (r resourceRuleIFTTT) Read(ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
+func (r resourceRuleIFTTT) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	ReadRule[AblyRuleTargetIFTTT](&r, ctx, req, resp)
 }
 
 // // Update resource
-func (r resourceRuleIFTTT) Update(ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
+func (r resourceRuleIFTTT) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	UpdateRule[AblyRuleTargetIFTTT](&r, ctx, req, resp)
 }
 
 // Delete resource
-func (r resourceRuleIFTTT) Delete(ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
+func (r resourceRuleIFTTT) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	DeleteRule[AblyRuleTargetIFTTT](&r, ctx, req, resp)
 }
 
 // Import resource
-func (r resourceRuleIFTTT) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
+func (r resourceRuleIFTTT) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }

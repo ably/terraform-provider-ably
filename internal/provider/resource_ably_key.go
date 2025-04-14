@@ -5,7 +5,7 @@ import (
 
 	control "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -23,7 +23,7 @@ func (r resourceKey) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostic
 				Computed:    true,
 				Description: "The key ID.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.UseStateForUnknown(),
+					resource.UseStateForUnknown(),
 				},
 			},
 			"app_id": {
@@ -31,7 +31,7 @@ func (r resourceKey) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostic
 				Required:    true,
 				Description: "The Ably application ID which this key is associated with.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.RequiresReplace(),
+					resource.RequiresReplace(),
 				},
 			},
 			"name": {
@@ -70,7 +70,7 @@ func (r resourceKey) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostic
 				Computed:    true,
 				Description: "Enforce TLS for all connections. This setting overrides any channel setting.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.UseStateForUnknown(),
+					resource.UseStateForUnknown(),
 				},
 			},
 			"key": {
@@ -78,7 +78,7 @@ func (r resourceKey) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostic
 				Computed:    true,
 				Description: "The complete API key including API secret.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.UseStateForUnknown(),
+					resource.UseStateForUnknown(),
 				},
 			},
 			"modified": {
@@ -91,12 +91,12 @@ func (r resourceKey) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostic
 	}, nil
 }
 
-func (r resourceKey) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+func (r resourceKey) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "ably_api_key"
 }
 
 // Create a new resource
-func (r resourceKey) Create(ctx context.Context, req tfsdk_resource.CreateRequest, resp *tfsdk_resource.CreateResponse) {
+func (r resourceKey) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Checks whether the provider and API Client are configured. If they are not, the provider responds with an error.
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
@@ -152,7 +152,7 @@ func (r resourceKey) Create(ctx context.Context, req tfsdk_resource.CreateReques
 }
 
 // Read resource
-func (r resourceKey) Read(ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
+func (r resourceKey) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var state AblyKey
 	found := false
@@ -215,7 +215,7 @@ func (r resourceKey) Read(ctx context.Context, req tfsdk_resource.ReadRequest, r
 }
 
 // Update resource
-func (r resourceKey) Update(ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
+func (r resourceKey) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
 	var plan AblyKey
 	diags := req.Plan.Get(ctx, &plan)
@@ -273,7 +273,7 @@ func (r resourceKey) Update(ctx context.Context, req tfsdk_resource.UpdateReques
 }
 
 // Delete resource
-func (r resourceKey) Delete(ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
+func (r resourceKey) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Get current state
 	var state AblyKey
 	diags := req.State.Get(ctx, &state)
@@ -307,6 +307,6 @@ func (r resourceKey) Delete(ctx context.Context, req tfsdk_resource.DeleteReques
 }
 
 // // Import resource
-func (r resourceKey) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
+func (r resourceKey) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }

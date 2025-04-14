@@ -7,7 +7,7 @@ import (
 
 	control "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -96,7 +96,7 @@ func GetIngressRuleSchema(target map[string]tfsdk.Attribute, markdown_descriptio
 				Computed:    true,
 				Description: "The rule ID.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.UseStateForUnknown(),
+					resource.UseStateForUnknown(),
 				},
 			},
 			"app_id": {
@@ -104,7 +104,7 @@ func GetIngressRuleSchema(target map[string]tfsdk.Attribute, markdown_descriptio
 				Required:    true,
 				Description: "The Ably application ID.",
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.RequiresReplace(),
+					resource.RequiresReplace(),
 				},
 			},
 			"status": {
@@ -127,7 +127,7 @@ type IngressRule interface {
 }
 
 // Create a new resource
-func CreateIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_resource.CreateRequest, resp *tfsdk_resource.CreateResponse) {
+func CreateIngressRule[T any](r IngressRule, ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Checks whether the provider and API Client are configured. If they are not, the provider responds with an error.
 	if !r.Provider().configured {
 		resp.Diagnostics.AddError(
@@ -170,7 +170,7 @@ func CreateIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_reso
 }
 
 // Read resource
-func ReadIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
+func ReadIngressRule[T any](r IngressRule, ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var s AblyIngressRuleDecoder[*T]
 	diags := req.State.Get(ctx, &s)
@@ -214,7 +214,7 @@ func ReadIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_resour
 }
 
 // // Update resource
-func UpdateIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
+func UpdateIngressRule[T any](r IngressRule, ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Gets plan values
 	var p AblyIngressRuleDecoder[*T]
 	diags := req.Plan.Get(ctx, &p)
@@ -255,7 +255,7 @@ func UpdateIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_reso
 }
 
 // Delete resource
-func DeleteIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
+func DeleteIngressRule[T any](r IngressRule, ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var s AblyIngressRuleDecoder[*T]
 	diags := req.State.Get(ctx, &s)
@@ -292,7 +292,7 @@ func DeleteIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_reso
 }
 
 // // Import resource
-func ImportIngressRuleResource(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse, fields ...string) {
+func ImportIngressRuleResource(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse, fields ...string) {
 	// Save the import identifier in the id attribute
 	// identifier should be in the format app_id,key_id
 	idParts := strings.Split(req.ID, ",")
