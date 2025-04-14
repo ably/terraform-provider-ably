@@ -135,7 +135,7 @@ func (p *AblyProvider) Resources(context.Context) []func() resource.Resource {
 		func() resource.Resource { return ResourceApp{p} },
 		func() resource.Resource { return resourceNamespace{p} },
 		func() resource.Resource { return ResourceKey{p} },
-		func() resource.Resource { return resourceQueue{p} },
+		func() resource.Resource { return ResourceQueue{p} },
 		func() resource.Resource { return resourceRuleKinesis{p} },
 		func() resource.Resource { return resourceRuleSqs{p} },
 		func() resource.Resource { return resourceRuleLambda{p} },

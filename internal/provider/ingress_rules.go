@@ -8,7 +8,9 @@ import (
 	control "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -87,35 +89,32 @@ func GetIngressRuleResponse(ably_ingress_rule *control.IngressRule, plan *AblyIn
 	return resp_rule
 }
 
-func GetIngressRuleSchema(target map[string]tfsdk.Attribute, markdown_description string) tfsdk.Schema {
-	return tfsdk.Schema{
+func GetIngressRuleSchema(target map[string]schema.Attribute, markdown_description string) schema.Schema {
+	return schema.Schema{
 		MarkdownDescription: markdown_description,
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:        types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "The rule ID.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					resource.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"app_id": {
-				Type:        types.StringType,
+			"app_id": schema.StringAttribute{
 				Required:    true,
 				Description: "The Ably application ID.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					resource.RequiresReplace(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"status": {
-				Type:        types.StringType,
+			"status": schema.StringAttribute{
 				Optional:    true,
 				Description: "The status of the rule. Rules can be enabled or disabled.",
 			},
-			"target": {
+			"target": schema.SingleNestedAttribute{
 				Required:    true,
 				Description: "object (rule_source)",
-				Attributes:  tfsdk.SingleNestedAttributes(target),
+				Attributes:  target,
 			},
 		},
 	}
@@ -311,7 +310,7 @@ func ImportIngressRuleResource(ctx context.Context, req resource.ImportStateRequ
 		)
 		return
 	}
-	// Recent PR in TF Plugin Framework for paths but Hashicorp examples not updated - https://github.com/hashicorp/terraform-plugin-framework/pull/390
+	
 	for i, v := range fields {
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root(v), idParts[i])...)
 	}
