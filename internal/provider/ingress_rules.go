@@ -310,7 +310,7 @@ func ImportIngressRuleResource(ctx context.Context, req resource.ImportStateRequ
 		)
 		return
 	}
-	
+
 	for i, v := range fields {
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root(v), idParts[i])...)
 	}

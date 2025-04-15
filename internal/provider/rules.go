@@ -8,7 +8,9 @@ import (
 	control "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -408,137 +410,125 @@ func GetRuleResponse(ably_rule *control.Rule, plan *AblyRule) AblyRule {
 	return resp_rule
 }
 
-func GetRuleSchema(target map[string]tfsdk.Attribute, markdown_description string) tfsdk.Schema {
-	return tfsdk.Schema{
+func GetRuleSchema(target map[string]schema.Attribute, markdown_description string) schema.Schema {
+	return schema.Schema{
 		MarkdownDescription: markdown_description,
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:        types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "The rule ID.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					resource.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"app_id": {
-				Type:        types.StringType,
+			"app_id": schema.StringAttribute{
 				Required:    true,
 				Description: "The Ably application ID.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					resource.RequiresReplace(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"status": {
-				Type:        types.StringType,
+			"status": schema.StringAttribute{
 				Optional:    true,
 				Description: "The status of the rule. Rules can be enabled or disabled.",
 			},
-			"request_mode": {
-				Type:        types.StringType,
+			"request_mode": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "This is Single Request mode or Batch Request mode. Single Request mode sends each event separately to the endpoint specified by the rule",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.StringValue("single")),
-					resource.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.String{
+					DefaultStringAttribute(types.StringValue("single")),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"source": {
+			"source": schema.SingleNestedAttribute{
 				Required:    true,
 				Description: "object (rule_source)",
-				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-					"channel_filter": {
-						Type:     types.StringType,
+				Attributes: map[string]schema.Attribute{
+					"channel_filter": schema.StringAttribute{
 						Optional: true,
 					},
-					"type": {
-						Type:     types.StringType,
+					"type": schema.StringAttribute{
 						Required: true,
 					},
-				}),
+				},
 			},
-			"target": {
+			"target": schema.SingleNestedAttribute{
 				Required:    true,
 				Description: "object (rule_source)",
-				Attributes:  tfsdk.SingleNestedAttributes(target),
+				Attributes:  target,
 			},
 		},
 	}
 }
 
-func GetAwsAuthSchema() tfsdk.Attribute {
-	return tfsdk.Attribute{
+func GetAwsAuthSchema() schema.Attribute {
+	return schema.SingleNestedAttribute{
 		Required:    true,
 		Description: "object (rule_source)",
-		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-			"mode": {
-				Type:     types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"mode": schema.StringAttribute{
 				Required: true,
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					resource.RequiresReplace(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 				Description: "Authentication method. Use 'credentials' or 'assumeRole'",
 			},
-			"role_arn": {
-				Type:        types.StringType,
+			"role_arn": schema.StringAttribute{
 				Optional:    true,
 				Description: "If you are using the 'ARN of an assumable role' authentication method, this is your Assume Role ARN",
 			},
-			"access_key_id": {
-				Type:        types.StringType,
+			"access_key_id": schema.StringAttribute{
 				Optional:    true,
 				Sensitive:   true,
 				Description: "The AWS key ID for the AWS IAM user",
 			},
-			"secret_access_key": {
-				Type:        types.StringType,
+			"secret_access_key": schema.StringAttribute{
 				Optional:    true,
 				Sensitive:   true,
 				Description: "The AWS secret key for the AWS IAM user",
 			},
-		}),
-	}
-}
-
-func GetHeaderSchema() tfsdk.Attribute {
-	return tfsdk.Attribute{
-		Optional:    true,
-		Description: "If you have additional information to send, you'll need to include the relevant headers",
-		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-			"name": {
-				Type:        types.StringType,
-				Required:    true,
-				Description: "The name of the header",
-			},
-			"value": {
-				Type:        types.StringType,
-				Required:    true,
-				Description: "The value of the header",
-			},
-		}),
-	}
-}
-
-func GetEnvelopedSchema() tfsdk.Attribute {
-	return tfsdk.Attribute{
-		Type:        types.BoolType,
-		Optional:    true,
-		Computed:    true,
-		Description: "Delivered messages are wrapped in an Ably envelope by default that contains metadata about the message and its payload. The form of the envelope depends on whether it is part of a Webhook/Function or a Queue/Firehose rule. For everything besides Webhooks, you can ensure you only get the raw payload by unchecking \"Enveloped\" when setting up the rule.",
-		PlanModifiers: []tfsdk.AttributePlanModifier{
-			DefaultAttribute(types.BoolValue(false)),
 		},
 	}
 }
 
-func GetFormatSchema() tfsdk.Attribute {
-	return tfsdk.Attribute{
-		Type:        types.StringType,
+func GetHeaderSchema() schema.Attribute {
+	return schema.ListNestedAttribute{
+		Optional:    true,
+		Description: "If you have additional information to send, you'll need to include the relevant headers",
+		NestedObject: schema.NestedAttributeObject{
+			Attributes: map[string]schema.Attribute{
+				"name": schema.StringAttribute{
+					Required:    true,
+					Description: "The name of the header",
+				},
+				"value": schema.StringAttribute{
+					Required:    true,
+					Description: "The value of the header",
+				},
+			},
+		},
+	}
+}
+
+func GetEnvelopedSchema() schema.Attribute {
+	return schema.BoolAttribute{
+		Optional:    true,
+		Computed:    true,
+		Description: "Delivered messages are wrapped in an Ably envelope by default that contains metadata about the message and its payload. The form of the envelope depends on whether it is part of a Webhook/Function or a Queue/Firehose rule. For everything besides Webhooks, you can ensure you only get the raw payload by unchecking \"Enveloped\" when setting up the rule.",
+		PlanModifiers: []planmodifier.Bool{
+			DefaultBoolAttribute(types.BoolValue(false)),
+		},
+	}
+}
+
+func GetFormatSchema() schema.Attribute {
+	return schema.StringAttribute{
 		Optional:    true,
 		Computed:    true,
 		Description: "JSON provides a text-based encoding, whereas MsgPack provides a more efficient binary encoding",
-		PlanModifiers: []tfsdk.AttributePlanModifier{
-			DefaultAttribute(types.StringValue("json")),
+		PlanModifiers: []planmodifier.String{
+			DefaultStringAttribute(types.StringValue("json")),
 		},
 	}
 }

@@ -4,39 +4,33 @@ import (
 	"os"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 )
 
-var testAccProviders map[string]*schema.Provider
-var testAccProvider *schema.Provider
+const providerConfig = `provider "ably" {}`
 
-func Provider() *schema.Provider {
-	// Ably Provider requires an API Token.
-	// The URL is optional and defaults to the prod control API endpoint
-	return &schema.Provider{
-		Schema: map[string]*schema.Schema{
-			"token": {
-				Type:      schema.TypeString,
-				Sensitive: true,
-				Optional:  true,
-			},
-			"url": {
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-		},
-	}
-}
-
-func init() {
-	testAccProvider = Provider()
-	testAccProviders = map[string]*schema.Provider{
-		"terraform-provider-ably": testAccProvider,
-	}
+// testAccProtoV6ProviderFactories are used to instantiate a provider during
+// acceptance testing. The factory function will be invoked for every Terraform
+// CLI command executed to create a provider server to which the CLI can
+// reattach.
+var testAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
+	"ably": providerserver.NewProtocol6WithError(New("test")()),
 }
 
 func testAccPreCheck(t *testing.T) {
 	if v := os.Getenv("ABLY_ACCOUNT_TOKEN"); v == "" {
 		t.Fatal("ABLY_ACCOUNT_TOKEN must be set for acceptance tests")
 	}
+}
+
+func TestProvider(t *testing.T) {
+	// Just test that the provider type exists
+	p := &AblyProvider{}
+	if p == nil {
+		t.Fatal("Provider is nil")
+	}
+	// Validate the provider satisfies the interface
+	var _ provider.Provider = &AblyProvider{}
 }

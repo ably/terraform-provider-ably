@@ -3,68 +3,67 @@ package ably_control
 import (
 	"context"
 
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 )
 
-type resourceRuleCloudflareWorker struct {
+type ResourceRuleCloudflareWorker struct {
 	p *AblyProvider
 }
 
-// Get Rule Resource schema
-func (r resourceRuleCloudflareWorker) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return GetRuleSchema(
-		map[string]tfsdk.Attribute{
-			"url": {
-				Type:        types.StringType,
+var _ resource.Resource = &ResourceRuleCloudflareWorker{}
+var _ resource.ResourceWithImportState = &ResourceRuleCloudflareWorker{}
+
+// Schema defines the schema for the resource.
+func (r ResourceRuleCloudflareWorker) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = GetRuleSchema(
+		map[string]schema.Attribute{
+			"url": schema.StringAttribute{
 				Required:    true,
 				Description: "The webhook URL that Ably will POST events to",
 			},
 			"headers": GetHeaderSchema(),
-			"signing_key_id": {
-				Type:        types.StringType,
+			"signing_key_id": schema.StringAttribute{
 				Optional:    true,
 				Description: "The signing key ID for use in batch mode. Ably will optionally sign the payload using an API key ensuring your servers can validate the payload using the private API key. See the [webhook security docs](https://ably.com/docs/general/webhooks#security) for more information",
 			},
 		},
-		"The `ably_rule_cloudflare_worker` resource allows you to create and manage an Ably integration rule for Cloudflare workers. Read more at https://ably.com/docs/general/webhooks/cloudflare"), nil
+		"The `ably_rule_cloudflare_worker` resource allows you to create and manage an Ably integration rule for Cloudflare workers. Read more at https://ably.com/docs/general/webhooks/cloudflare")
 }
 
-func (r resourceRuleCloudflareWorker) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r ResourceRuleCloudflareWorker) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "ably_rule_cloudflare_worker"
 }
 
-func (r *resourceRuleCloudflareWorker) Provider() *AblyProvider {
+func (r *ResourceRuleCloudflareWorker) Provider() *AblyProvider {
 	return r.p
 }
 
-func (r *resourceRuleCloudflareWorker) Name() string {
+func (r *ResourceRuleCloudflareWorker) Name() string {
 	return "Cloudflare Worker"
 }
 
 // Create a new resource
-func (r resourceRuleCloudflareWorker) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r ResourceRuleCloudflareWorker) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	CreateRule[AblyRuleTargetCloudflareWorker](&r, ctx, req, resp)
 }
 
 // Read resource
-func (r resourceRuleCloudflareWorker) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r ResourceRuleCloudflareWorker) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	ReadRule[AblyRuleTargetCloudflareWorker](&r, ctx, req, resp)
 }
 
 // // Update resource
-func (r resourceRuleCloudflareWorker) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r ResourceRuleCloudflareWorker) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	UpdateRule[AblyRuleTargetCloudflareWorker](&r, ctx, req, resp)
 }
 
 // Delete resource
-func (r resourceRuleCloudflareWorker) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r ResourceRuleCloudflareWorker) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	DeleteRule[AblyRuleTargetCloudflareWorker](&r, ctx, req, resp)
 }
 
 // Import resource
-func (r resourceRuleCloudflareWorker) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r ResourceRuleCloudflareWorker) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }

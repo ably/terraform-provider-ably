@@ -8,9 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/float64planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -333,7 +330,13 @@ func (r ResourceQueue) ImportState(ctx context.Context, req resource.ImportState
 }
 
 func (r ResourceQueue) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	for k := range req.Plan.Schema.Attributes {
-		resp.RequiresReplace.Append(path.Root(k))
+	// Make all attributes require replace
+	// Get all attributes from the schema using a temporary response
+	schemaResp := &resource.SchemaResponse{}
+	r.Schema(ctx, resource.SchemaRequest{}, schemaResp)
+	
+	// Mark all attributes as requiring replacement
+	for attrName := range schemaResp.Schema.Attributes {
+		resp.RequiresReplace.Append(path.Root(attrName))
 	}
 }

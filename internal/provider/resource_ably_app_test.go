@@ -5,8 +5,9 @@ import (
 	"testing"
 
 	control "github.com/ably/ably-control-go"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 var cert string = `-----BEGIN CERTIFICATE-----
@@ -53,9 +54,10 @@ var key string = "-----BEGIN PRIVATE KEY-----\naaa\n-----END PRIVATE KEY-----"
 func TestAccAblyApp(t *testing.T) {
 	app_name := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
 	update_app_name := "acc-test-" + app_name
+
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Create and Read testing of ably_app.app0
 			{
@@ -103,7 +105,7 @@ func TestAccAblyApp(t *testing.T) {
 // 	app_name := acctest.RandStringFromCharSet(5, acctest.CharSetAlphaNum)
 // 	resource.Test(t, resource.TestCase{
 // 		PreCheck:  func() { testAccPreCheck(t) },
-// 		Providers: testAccProviders,
+// 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 // 		Steps: []resource.TestStep{
 // 			// Create and Read testing of ably_app.app0
 // 			{
@@ -129,10 +131,10 @@ terraform {
 		}
 	}
 }
-	
+
 # You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 provider "ably" {}
-	  
+
 resource "ably_app" "app0" {
 	name                      = %[1]q
 	status                    = %[2]q
