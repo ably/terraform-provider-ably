@@ -13,7 +13,7 @@ func TestAccAblyQueue(t *testing.T) {
 	app_name := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
 	queue_name := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
+		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{

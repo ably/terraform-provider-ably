@@ -26,11 +26,11 @@ func DefaultBoolAttribute(value types.Bool) DefaultAttributePlanModifier {
 }
 
 func (m DefaultAttributePlanModifier) PlanModifyBool(ctx context.Context, req planmodifier.BoolRequest, resp *planmodifier.BoolResponse) {
-	if resp.PlanValue.IsNull() || req.ConfigValue.IsNull() {
+	if resp.PlanValue.IsUnknown() || req.ConfigValue.IsUnknown() {
 		return
 	}
 
-	if !req.ConfigValue.IsNull() {
+	if !req.ConfigValue.IsNull() || !req.PlanValue.IsNull() {
 		return
 	}
 
@@ -42,11 +42,11 @@ func DefaultInt64Attribute(value types.Int64) DefaultAttributePlanModifier {
 }
 
 func (m DefaultAttributePlanModifier) PlanModifyInt64(ctx context.Context, req planmodifier.Int64Request, resp *planmodifier.Int64Response) {
-	if resp.PlanValue.IsNull() || req.ConfigValue.IsNull() {
+	if resp.PlanValue.IsUnknown() || req.ConfigValue.IsUnknown() {
 		return
 	}
 
-	if !req.ConfigValue.IsNull() {
+	if !req.ConfigValue.IsNull() || !req.PlanValue.IsNull() {
 		return
 	}
 
@@ -58,11 +58,11 @@ func DefaultStringAttribute(value types.String) DefaultAttributePlanModifier {
 }
 
 func (m DefaultAttributePlanModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
-	if resp.PlanValue.IsNull() || req.ConfigValue.IsNull() {
+	if resp.PlanValue.IsUnknown() || req.ConfigValue.IsUnknown() {
 		return
 	}
 
-	if !req.ConfigValue.IsNull() {
+	if !req.ConfigValue.IsNull() || !req.PlanValue.IsNull() {
 		return
 	}
 

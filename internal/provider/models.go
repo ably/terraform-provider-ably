@@ -148,12 +148,12 @@ type AblyRuleDecoder[T any] struct {
 type AblyRule AblyRuleDecoder[any]
 
 type AblyRuleTargetKinesis struct {
-	Region       string         `tfsdk:"region"`
-	StreamName   string         `tfsdk:"stream_name"`
-	PartitionKey string         `tfsdk:"partition_key"`
-	AwsAuth      AwsAuth        `tfsdk:"authentication"`
-	Enveloped    bool           `tfsdk:"enveloped"`
-	Format       control.Format `tfsdk:"format"`
+	Region       string       `tfsdk:"region"`
+	StreamName   string       `tfsdk:"stream_name"`
+	PartitionKey string       `tfsdk:"partition_key"`
+	AwsAuth      AwsAuth      `tfsdk:"authentication"`
+	Enveloped    bool         `tfsdk:"enveloped"`
+	Format       types.String `tfsdk:"format"`
 }
 
 type AwsAuth struct {
@@ -164,12 +164,12 @@ type AwsAuth struct {
 }
 
 type AblyRuleTargetSqs struct {
-	Region       string         `tfsdk:"region"`
-	AwsAccountID string         `tfsdk:"aws_account_id"`
-	QueueName    string         `tfsdk:"queue_name"`
-	AwsAuth      AwsAuth        `tfsdk:"authentication"`
-	Enveloped    bool           `tfsdk:"enveloped"`
-	Format       control.Format `tfsdk:"format"`
+	Region       string       `tfsdk:"region"`
+	AwsAccountID string       `tfsdk:"aws_account_id"`
+	QueueName    string       `tfsdk:"queue_name"`
+	AwsAuth      AwsAuth      `tfsdk:"authentication"`
+	Enveloped    bool         `tfsdk:"enveloped"`
+	Format       types.String `tfsdk:"format"`
 }
 
 type AblyRuleTargetLambda struct {
@@ -185,8 +185,8 @@ type AblyRuleTargetGoogleFunction struct {
 	FunctionName string            `tfsdk:"function_name"`
 	Headers      []AblyRuleHeaders `tfsdk:"headers"`
 	SigningKeyId string            `tfsdk:"signing_key_id"`
-	Enveloped    bool              `tfsdk:"enveloped"`
-	Format       control.Format    `tfsdk:"format"`
+	Enveloped    types.Bool        `tfsdk:"enveloped"`
+	Format       types.String      `tfsdk:"format"`
 }
 
 type AblyRuleTargetCloudflareWorker struct {
@@ -199,7 +199,7 @@ type AblyRuleTargetHTTP struct {
 	Url          string            `tfsdk:"url"`
 	Headers      []AblyRuleHeaders `tfsdk:"headers"`
 	SigningKeyId string            `tfsdk:"signing_key_id"`
-	Format       control.Format    `tfsdk:"format"`
+	Format       types.String      `tfsdk:"format"`
 	Enveloped    bool              `tfsdk:"enveloped"`
 }
 
@@ -210,7 +210,7 @@ type AblyRuleTargetPulsar struct {
 	TlsTrustCerts  []string             `tfsdk:"tls_trust_certs"`
 	Authentication PulsarAuthentication `tfsdk:"authentication"`
 	Enveloped      bool                 `tfsdk:"enveloped"`
-	Format         control.Format       `tfsdk:"format"`
+	Format         types.String         `tfsdk:"format"`
 }
 
 type PulsarAuthentication struct {
@@ -234,7 +234,7 @@ type AblyRuleTargetAzureFunction struct {
 	AzureFunctionName string            `tfsdk:"function_name"`
 	Headers           []AblyRuleHeaders `tfsdk:"headers"`
 	SigningKeyID      string            `tfsdk:"signing_key_id"`
-	Format            control.Format    `tfsdk:"format"`
+	Format            types.String      `tfsdk:"format"`
 }
 
 type AblyRuleHeaders struct {
@@ -247,14 +247,14 @@ type AblyRuleTargetKafka struct {
 	Brokers             []string            `tfsdk:"brokers"`
 	KafkaAuthentication KafkaAuthentication `tfsdk:"auth"`
 	Enveloped           bool                `tfsdk:"enveloped"`
-	Format              control.Format      `tfsdk:"format"`
+	Format              types.String        `tfsdk:"format"`
 }
 
 type AblyRuleTargetAmqp struct {
 	QueueID   string            `tfsdk:"queue_id"`
 	Headers   []AblyRuleHeaders `tfsdk:"headers"`
 	Enveloped bool              `tfsdk:"enveloped"`
-	Format    control.Format    `tfsdk:"format"`
+	Format    types.String      `tfsdk:"format"`
 }
 
 type AblyRuleTargetAmqpExternal struct {
@@ -266,7 +266,7 @@ type AblyRuleTargetAmqpExternal struct {
 	MessageTtl         types.Int64       `tfsdk:"message_ttl"`
 	Headers            []AblyRuleHeaders `tfsdk:"headers"`
 	Enveloped          bool              `tfsdk:"enveloped"`
-	Format             control.Format    `tfsdk:"format"`
+	Format             types.String      `tfsdk:"format"`
 }
 
 type KafkaAuthentication struct {

@@ -57,7 +57,7 @@ func GetPlanRule(plan AblyRule) control.NewRule {
 			PartitionKey:   t.PartitionKey,
 			Authentication: GetPlanAwsAuth(plan),
 			Enveloped:      t.Enveloped,
-			Format:         t.Format,
+			Format:         control.Format(t.Format.ValueString()),
 		}
 	case *AblyRuleTargetSqs:
 		target = &control.AwsSqsTarget{
@@ -66,7 +66,7 @@ func GetPlanRule(plan AblyRule) control.NewRule {
 			QueueName:      t.QueueName,
 			Authentication: GetPlanAwsAuth(plan),
 			Enveloped:      t.Enveloped,
-			Format:         t.Format,
+			Format:         control.Format(t.Format.ValueString()),
 		}
 	case *AblyRuleTargetLambda:
 		target = &control.AwsLambdaTarget{
@@ -98,7 +98,7 @@ func GetPlanRule(plan AblyRule) control.NewRule {
 				Token:              t.Authentication.Token,
 			},
 			Enveloped: t.Enveloped,
-			Format:    t.Format,
+			Format:    control.Format(t.Format.ValueString()),
 		}
 	case *AblyRuleTargetHTTP:
 		var headers []control.Header
@@ -113,7 +113,7 @@ func GetPlanRule(plan AblyRule) control.NewRule {
 			Url:          t.Url,
 			Headers:      headers,
 			SigningKeyID: t.SigningKeyId,
-			Format:       t.Format,
+			Format:       control.Format(t.Format.ValueString()),
 			Enveloped:    t.Enveloped,
 		}
 	case *AblyRuleTargetIFTTT:
@@ -127,7 +127,7 @@ func GetPlanRule(plan AblyRule) control.NewRule {
 			AzureFunctionName: t.AzureFunctionName,
 			Headers:           GetHeaders(t.Headers),
 			SigningKeyID:      t.SigningKeyID,
-			Format:            t.Format,
+			Format:            control.Format(t.Format.ValueString()),
 		}
 	case *AblyRuleTargetGoogleFunction:
 		target = &control.HttpGoogleCloudFunctionTarget{
@@ -136,8 +136,8 @@ func GetPlanRule(plan AblyRule) control.NewRule {
 			FunctionName: t.FunctionName,
 			Headers:      GetHeaders(t.Headers),
 			SigningKeyID: t.SigningKeyId,
-			Enveloped:    t.Enveloped,
-			Format:       t.Format,
+			Enveloped:    t.Enveloped.ValueBool(),
+			Format:       control.Format(t.Format.ValueString()),
 		}
 
 	case *AblyRuleTargetKafka:
@@ -152,14 +152,14 @@ func GetPlanRule(plan AblyRule) control.NewRule {
 				},
 			},
 			Enveloped: t.Enveloped,
-			Format:    t.Format,
+			Format:    control.Format(t.Format.ValueString()),
 		}
 	case *AblyRuleTargetAmqp:
 		target = &control.AmqpTarget{
 			QueueID:   t.QueueID,
 			Headers:   GetHeaders(t.Headers),
 			Enveloped: t.Enveloped,
-			Format:    t.Format,
+			Format:    control.Format(t.Format.ValueString()),
 		}
 	case *AblyRuleTargetAmqpExternal:
 		target = &control.AmqpExternalTarget{
@@ -171,7 +171,7 @@ func GetPlanRule(plan AblyRule) control.NewRule {
 			MessageTTL:         int(t.MessageTtl.ValueInt64()),
 			Headers:            GetHeaders(t.Headers),
 			Enveloped:          t.Enveloped,
-			Format:             t.Format,
+			Format:             control.Format(t.Format.ValueString()),
 		}
 	}
 
@@ -249,7 +249,7 @@ func GetAwsAuth(auth *control.AwsAuthentication, plan *AblyRule) AwsAuth {
 // Maps response body to resource schema attributes.
 // Using plan to fill in values that the api does not return.
 func GetRuleResponse(ably_rule *control.Rule, plan *AblyRule) AblyRule {
-	var resp_target interface{}
+	var resp_target any
 
 	switch v := ably_rule.Target.(type) {
 	case *control.AwsKinesisTarget:
@@ -259,7 +259,7 @@ func GetRuleResponse(ably_rule *control.Rule, plan *AblyRule) AblyRule {
 			PartitionKey: v.PartitionKey,
 			AwsAuth:      GetAwsAuth(&v.Authentication, plan),
 			Enveloped:    v.Enveloped,
-			Format:       v.Format,
+			Format:       types.StringValue(string(v.Format)),
 		}
 	case *control.AwsSqsTarget:
 		resp_target = &AblyRuleTargetSqs{
@@ -268,7 +268,7 @@ func GetRuleResponse(ably_rule *control.Rule, plan *AblyRule) AblyRule {
 			QueueName:    v.QueueName,
 			AwsAuth:      GetAwsAuth(&v.Authentication, plan),
 			Enveloped:    v.Enveloped,
-			Format:       v.Format,
+			Format:       types.StringValue(string(v.Format)),
 		}
 	case *control.AwsLambdaTarget:
 		resp_target = &AblyRuleTargetLambda{
@@ -304,7 +304,7 @@ func GetRuleResponse(ably_rule *control.Rule, plan *AblyRule) AblyRule {
 				Token: v.Authentication.Token,
 			},
 			Enveloped: v.Enveloped,
-			Format:    v.Format,
+			Format:    types.StringValue(string(v.Format)),
 		}
 	case *control.HttpIftttTarget:
 		resp_target = &AblyRuleTargetIFTTT{
@@ -320,8 +320,8 @@ func GetRuleResponse(ably_rule *control.Rule, plan *AblyRule) AblyRule {
 			FunctionName: v.FunctionName,
 			Headers:      headers,
 			SigningKeyId: v.SigningKeyID,
-			Enveloped:    v.Enveloped,
-			Format:       v.Format,
+			Enveloped:    types.BoolValue(v.Enveloped),
+			Format:       types.StringValue(string(v.Format)),
 		}
 	case *control.HttpAzureFunctionTarget:
 		headers := ToHeaders(v)
@@ -331,7 +331,7 @@ func GetRuleResponse(ably_rule *control.Rule, plan *AblyRule) AblyRule {
 			AzureFunctionName: v.AzureFunctionName,
 			Headers:           headers,
 			SigningKeyID:      v.SigningKeyID,
-			Format:            v.Format,
+			Format:            types.StringValue(string(v.Format)),
 		}
 	case *control.HttpTarget:
 		headers := ToHeaders(v)
@@ -340,7 +340,7 @@ func GetRuleResponse(ably_rule *control.Rule, plan *AblyRule) AblyRule {
 			Url:          v.Url,
 			Headers:      headers,
 			SigningKeyId: v.SigningKeyID,
-			Format:       v.Format,
+			Format:       types.StringValue(string(v.Format)),
 			Enveloped:    v.Enveloped,
 		}
 	case *control.KafkaTarget:
@@ -355,7 +355,7 @@ func GetRuleResponse(ably_rule *control.Rule, plan *AblyRule) AblyRule {
 				},
 			},
 			Enveloped: v.Enveloped,
-			Format:    v.Format,
+			Format:    types.StringValue(string(v.Format)),
 		}
 	case *control.AmqpTarget:
 		headers := ToHeaders(v)
@@ -364,7 +364,7 @@ func GetRuleResponse(ably_rule *control.Rule, plan *AblyRule) AblyRule {
 			QueueID:   v.QueueID,
 			Headers:   headers,
 			Enveloped: v.Enveloped,
-			Format:    v.Format,
+			Format:    types.StringValue(string(v.Format)),
 		}
 	case *control.AmqpExternalTarget:
 		headers := ToHeaders(v)
@@ -382,7 +382,7 @@ func GetRuleResponse(ably_rule *control.Rule, plan *AblyRule) AblyRule {
 			MessageTtl:         ttl,
 			Headers:            headers,
 			Enveloped:          v.Enveloped,
-			Format:             v.Format,
+			Format:             types.StringValue(string(v.Format)),
 		}
 	}
 

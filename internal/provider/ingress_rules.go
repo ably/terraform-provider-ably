@@ -53,7 +53,7 @@ func GetPlanIngressRule(plan AblyIngressRule) control.NewIngressRule {
 // Maps response body to resource schema attributes.
 // Using plan to fill in values that the api does not return.
 func GetIngressRuleResponse(ably_ingress_rule *control.IngressRule, plan *AblyIngressRule) AblyIngressRule {
-	var resp_target interface{}
+	var resp_target any
 
 	switch v := ably_ingress_rule.Target.(type) {
 	case *control.IngressMongoTarget:

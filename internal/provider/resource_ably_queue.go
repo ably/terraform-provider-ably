@@ -334,7 +334,7 @@ func (r ResourceQueue) ModifyPlan(ctx context.Context, req resource.ModifyPlanRe
 	// Get all attributes from the schema using a temporary response
 	schemaResp := &resource.SchemaResponse{}
 	r.Schema(ctx, resource.SchemaRequest{}, schemaResp)
-	
+
 	// Mark all attributes as requiring replacement
 	for attrName := range schemaResp.Schema.Attributes {
 		resp.RequiresReplace.Append(path.Root(attrName))
