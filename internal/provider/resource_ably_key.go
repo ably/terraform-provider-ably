@@ -41,7 +41,9 @@ func (r *ResourceKey) Schema(ctx context.Context, req resource.SchemaRequest, re
 				Description: "The name for your API key. This is a friendly name for your reference.",
 			},
 			"capabilities": schema.MapAttribute{
-				ElementType: types.StringType,
+				ElementType: types.ListType{
+					ElemType: types.StringType,
+				},
 				Required:    true,
 				Description: "The capabilities that this key has. More information on capabilities can be found in the [Ably documentation](https://ably.com/docs/core-features/authentication#capabilities-explained)",
 			},
