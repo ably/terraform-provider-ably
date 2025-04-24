@@ -4,21 +4,21 @@ import (
 	"fmt"
 	"testing"
 
-	ably_control_go "github.com/ably/ably-control-go"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	control "github.com/ably/ably-control-go"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccAblyNamespace(t *testing.T) {
 	app_name := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
 	namespace_name := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Create and Read testing of ably_app.app0
 			{
-				Config: testAccAblyNamespaceConfig(app_name, ably_control_go.Namespace{
+				Config: testAccAblyNamespaceConfig(app_name, control.Namespace{
 					ID:               namespace_name,
 					Authenticated:    true,
 					Persisted:        true,
@@ -40,7 +40,7 @@ func TestAccAblyNamespace(t *testing.T) {
 			},
 			// Update and Read testing of ably_app.app0
 			{
-				Config: testAccAblyNamespaceConfig(app_name, ably_control_go.Namespace{
+				Config: testAccAblyNamespaceConfig(app_name, control.Namespace{
 					ID:               namespace_name,
 					Authenticated:    false,
 					Persisted:        false,
@@ -61,7 +61,7 @@ func TestAccAblyNamespace(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccAblyNamespaceConfig(app_name, ably_control_go.Namespace{
+				Config: testAccAblyNamespaceConfig(app_name, control.Namespace{
 					ID:               namespace_name + "new",
 					Authenticated:    false,
 					Persisted:        false,
@@ -82,7 +82,7 @@ func TestAccAblyNamespace(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccAblyNamespaceBatchingConfig(app_name, ably_control_go.Namespace{
+				Config: testAccAblyNamespaceBatchingConfig(app_name, control.Namespace{
 					ID:               namespace_name + "batching",
 					Authenticated:    false,
 					Persisted:        false,
@@ -91,7 +91,7 @@ func TestAccAblyNamespace(t *testing.T) {
 					TlsOnly:          false,
 					ExposeTimeserial: false,
 					BatchingEnabled:  true,
-					BatchingInterval: ably_control_go.Interval(100),
+					BatchingInterval: control.Interval(100),
 				}),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
@@ -107,7 +107,7 @@ func TestAccAblyNamespace(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccAblyNamespaceConflationConfig(app_name, ably_control_go.Namespace{
+				Config: testAccAblyNamespaceConflationConfig(app_name, control.Namespace{
 					ID:                 namespace_name + "conflation",
 					Authenticated:      false,
 					Persisted:          false,
@@ -116,7 +116,7 @@ func TestAccAblyNamespace(t *testing.T) {
 					TlsOnly:            false,
 					ExposeTimeserial:   false,
 					ConflationEnabled:  true,
-					ConflationInterval: ably_control_go.Interval(1000),
+					ConflationInterval: control.Interval(1000),
 					ConflationKey:      "test",
 				}),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -140,7 +140,7 @@ func TestAccAblyNamespace(t *testing.T) {
 
 // Function with inline HCL to provision an ably_app resource
 // Takes App name, status and tls_only status as function params.
-func testAccAblyNamespaceConfig(appName string, namespace ably_control_go.Namespace) string {
+func testAccAblyNamespaceConfig(appName string, namespace control.Namespace) string {
 	return fmt.Sprintf(`
 terraform {
 	required_providers {
@@ -182,7 +182,7 @@ resource "ably_namespace" "namespace0" {
 	)
 }
 
-func testAccAblyNamespaceBatchingConfig(appName string, namespace ably_control_go.Namespace) string {
+func testAccAblyNamespaceBatchingConfig(appName string, namespace control.Namespace) string {
 	return fmt.Sprintf(`
 terraform {
 	required_providers {
@@ -228,7 +228,7 @@ resource "ably_namespace" "namespace0" {
 	)
 }
 
-func testAccAblyNamespaceConflationConfig(appName string, namespace ably_control_go.Namespace) string {
+func testAccAblyNamespaceConflationConfig(appName string, namespace control.Namespace) string {
 	return fmt.Sprintf(`
 terraform {
 	required_providers {

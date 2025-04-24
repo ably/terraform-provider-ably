@@ -7,8 +7,6 @@ import (
 	"os"
 
 	ably_control "github.com/ably/terraform-provider-ably/internal/provider"
-
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
 
@@ -32,13 +30,9 @@ func main() {
 		Address: "registry.terraform.io/ably/terraform-provider-ably",
 	}
 
-	err := providerserver.Serve(context.Background(), newProvider, opts)
+	err := providerserver.Serve(context.Background(), ably_control.New(VERSION), opts)
 
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-}
-
-func newProvider() provider.Provider {
-	return ably_control.New(VERSION)
 }

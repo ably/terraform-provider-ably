@@ -4,55 +4,62 @@ import (
 	"context"
 	"os"
 
-	ably_control_go "github.com/ably/ably-control-go"
-	tfsdk_datasource "github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_provider "github.com/hashicorp/terraform-plugin-framework/provider"
-	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	control "github.com/ably/ably-control-go"
 )
 
 const CONTROL_API_DEFAULT_URL = "https://control.ably.net/v1"
 
-func New(version string) tfsdk_provider.Provider {
-	return &provider{
-		version: version,
-	}
-}
+// Ensure AblyProvider satisfies various provider interfaces.
+var _ provider.Provider = &AblyProvider{}
 
-type provider struct {
+type AblyProvider struct {
 	configured bool
-	client     *ably_control_go.Client
+	client     *control.Client
 	version    string
 }
 
-// GetSchema
-func (p *provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
-		Attributes: map[string]tfsdk.Attribute{
-			"token": {
-				Type:      types.StringType,
+func (p *AblyProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
+	resp.TypeName = "ably"
+	resp.Version = p.version
+}
+
+func New(version string) func() provider.Provider {
+	return func() provider.Provider {
+		return &AblyProvider{
+			version: version,
+		}
+	}
+}
+
+func (p *AblyProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Attributes: map[string]schema.Attribute{
+			"token": schema.StringAttribute{
 				Sensitive: true,
 				Optional:  true,
 			},
-			"url": {
-				Type:     types.StringType,
+			"url": schema.StringAttribute{
 				Optional: true,
 			},
 		},
-	}, nil
+	}
 }
 
 // Provider schema struct
-type providerData struct {
+type AblyProviderData struct {
 	Token types.String `tfsdk:"token"`
 	Url   types.String `tfsdk:"url"`
 }
 
-func (p *provider) Configure(ctx context.Context, req tfsdk_provider.ConfigureRequest, resp *tfsdk_provider.ConfigureResponse) {
-	// Retrieve provider data from configuration
-	var config providerData
+func (p *AblyProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	// Retrieve AblyProvider data from configuration
+	var config AblyProviderData
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -107,7 +114,7 @@ func (p *provider) Configure(ctx context.Context, req tfsdk_provider.ConfigureRe
 	if url == "" {
 		url = CONTROL_API_DEFAULT_URL
 	}
-	c, _, err := ably_control_go.NewClientWithURL(token, url)
+	c, _, err := control.NewClientWithURL(token, url)
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -123,33 +130,32 @@ func (p *provider) Configure(ctx context.Context, req tfsdk_provider.ConfigureRe
 }
 
 // Resources - Gets the resources that this provider provides
-func (p *provider) Resources(context.Context) []func() tfsdk_resource.Resource {
-	return []func() tfsdk_resource.Resource{
-		func() tfsdk_resource.Resource { return resourceApp{p} },
-		func() tfsdk_resource.Resource { return resourceNamespace{p} },
-		func() tfsdk_resource.Resource { return resourceKey{p} },
-		func() tfsdk_resource.Resource { return resourceQueue{p} },
-		func() tfsdk_resource.Resource { return resourceRuleKinesis{p} },
-		func() tfsdk_resource.Resource { return resourceRuleSqs{p} },
-		func() tfsdk_resource.Resource { return resourceRuleLambda{p} },
-		func() tfsdk_resource.Resource { return resourceRulePulsar{p} },
-		func() tfsdk_resource.Resource { return resourceRuleZapier{p} },
-		func() tfsdk_resource.Resource { return resourceRuleGoogleFunction{p} },
-		func() tfsdk_resource.Resource { return resourceRuleIFTTT{p} },
-		func() tfsdk_resource.Resource { return resourceRuleCloudflareWorker{p} },
-		func() tfsdk_resource.Resource { return resourceRuleAzureFunction{p} },
-		func() tfsdk_resource.Resource { return resourceRuleHTTP{p} },
-		func() tfsdk_resource.Resource { return resourceRuleKafka{p} },
-		func() tfsdk_resource.Resource { return resourceRuleAmqp{p} },
-		func() tfsdk_resource.Resource { return resourceRuleAmqpExternal{p} },
-		func() tfsdk_resource.Resource { return resourceIngressRuleMongo{p} },
-		func() tfsdk_resource.Resource { return resourceIngressRulePostgresOutbox{p} },
+func (p *AblyProvider) Resources(context.Context) []func() resource.Resource {
+	return []func() resource.Resource{
+		func() resource.Resource { return ResourceApp{p} },
+		func() resource.Resource { return ResourceNamespace{p} },
+		func() resource.Resource { return &ResourceKey{p} },
+		func() resource.Resource { return ResourceQueue{p} },
+		func() resource.Resource { return ResourceRuleKinesis{p} },
+		func() resource.Resource { return ResourceRuleSqs{p} },
+		func() resource.Resource { return ResourceRuleLambda{p} },
+		func() resource.Resource { return ResourceRulePulsar{p} },
+		func() resource.Resource { return ResourceRuleZapier{p} },
+		func() resource.Resource { return ResourceRuleGoogleFunction{p} },
+		func() resource.Resource { return ResourceRuleIFTTT{p} },
+		func() resource.Resource { return ResourceRuleCloudflareWorker{p} },
+		func() resource.Resource { return ResourceRuleAzureFunction{p} },
+		func() resource.Resource { return ResourceRuleHTTP{p} },
+		func() resource.Resource { return ResourceRuleKafka{p} },
+		func() resource.Resource { return ResourceRuleAmqp{p} },
+		func() resource.Resource { return ResourceRuleAmqpExternal{p} },
+		func() resource.Resource { return ResourceIngressRuleMongo{p} },
+		func() resource.Resource { return ResourceIngressRulePostgresOutbox{p} },
 	}
 
 }
 
 // DataSources - Gets the data sources this provider provides
-func (p *provider) DataSources(context.Context) []func() tfsdk_datasource.DataSource {
-	return []func() tfsdk_datasource.DataSource{}
-
+func (p *AblyProvider) DataSources(context.Context) []func() datasource.DataSource {
+	return []func() datasource.DataSource{}
 }

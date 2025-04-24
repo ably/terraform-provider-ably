@@ -5,20 +5,22 @@ import (
 	"fmt"
 	"strings"
 
-	ably_control_go "github.com/ably/ably-control-go"
+	control "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // converts ingress rule from terraform format to control sdk format
-func GetPlanIngressRule(plan AblyIngressRule) ably_control_go.NewIngressRule {
-	var target ably_control_go.IngressTarget
+func GetPlanIngressRule(plan AblyIngressRule) control.NewIngressRule {
+	var target control.IngressTarget
 
 	switch t := plan.Target.(type) {
 	case *AblyIngressRuleTargetMongo:
-		target = &ably_control_go.IngressMongoTarget{
+		target = &control.IngressMongoTarget{
 			Url:                      t.Url,
 			Database:                 t.Database,
 			Collection:               t.Collection,
@@ -28,7 +30,7 @@ func GetPlanIngressRule(plan AblyIngressRule) ably_control_go.NewIngressRule {
 			PrimarySite:              t.PrimarySite,
 		}
 	case *AblyIngressRuleTargetPostgresOutbox:
-		target = &ably_control_go.IngressPostgresOutboxTarget{
+		target = &control.IngressPostgresOutboxTarget{
 			Url:               t.Url,
 			OutboxTableSchema: t.OutboxTableSchema,
 			OutboxTableName:   t.OutboxTableName,
@@ -40,7 +42,7 @@ func GetPlanIngressRule(plan AblyIngressRule) ably_control_go.NewIngressRule {
 		}
 	}
 
-	rule_values := ably_control_go.NewIngressRule{
+	rule_values := control.NewIngressRule{
 		Status: plan.Status.ValueString(),
 		Target: target,
 	}
@@ -50,11 +52,11 @@ func GetPlanIngressRule(plan AblyIngressRule) ably_control_go.NewIngressRule {
 
 // Maps response body to resource schema attributes.
 // Using plan to fill in values that the api does not return.
-func GetIngressRuleResponse(ably_ingress_rule *ably_control_go.IngressRule, plan *AblyIngressRule) AblyIngressRule {
-	var resp_target interface{}
+func GetIngressRuleResponse(ably_ingress_rule *control.IngressRule, plan *AblyIngressRule) AblyIngressRule {
+	var resp_target any
 
 	switch v := ably_ingress_rule.Target.(type) {
-	case *ably_control_go.IngressMongoTarget:
+	case *control.IngressMongoTarget:
 		resp_target = &AblyIngressRuleTargetMongo{
 			Url:                      v.Url,
 			Database:                 v.Database,
@@ -64,7 +66,7 @@ func GetIngressRuleResponse(ably_ingress_rule *ably_control_go.IngressRule, plan
 			FullDocumentBeforeChange: v.FullDocumentBeforeChange,
 			PrimarySite:              v.PrimarySite,
 		}
-	case *ably_control_go.IngressPostgresOutboxTarget:
+	case *control.IngressPostgresOutboxTarget:
 		resp_target = &AblyIngressRuleTargetPostgresOutbox{
 			Url:               v.Url,
 			OutboxTableSchema: v.OutboxTableSchema,
@@ -87,47 +89,44 @@ func GetIngressRuleResponse(ably_ingress_rule *ably_control_go.IngressRule, plan
 	return resp_rule
 }
 
-func GetIngressRuleSchema(target map[string]tfsdk.Attribute, markdown_description string) tfsdk.Schema {
-	return tfsdk.Schema{
+func GetIngressRuleSchema(target map[string]schema.Attribute, markdown_description string) schema.Schema {
+	return schema.Schema{
 		MarkdownDescription: markdown_description,
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:        types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "The rule ID.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"app_id": {
-				Type:        types.StringType,
+			"app_id": schema.StringAttribute{
 				Required:    true,
 				Description: "The Ably application ID.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.RequiresReplace(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"status": {
-				Type:        types.StringType,
+			"status": schema.StringAttribute{
 				Optional:    true,
 				Description: "The status of the rule. Rules can be enabled or disabled.",
 			},
-			"target": {
+			"target": schema.SingleNestedAttribute{
 				Required:    true,
 				Description: "object (rule_source)",
-				Attributes:  tfsdk.SingleNestedAttributes(target),
+				Attributes:  target,
 			},
 		},
 	}
 }
 
 type IngressRule interface {
-	Provider() *provider
+	Provider() *AblyProvider
 	Name() string
 }
 
 // Create a new resource
-func CreateIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_resource.CreateRequest, resp *tfsdk_resource.CreateResponse) {
+func CreateIngressRule[T any](r IngressRule, ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Checks whether the provider and API Client are configured. If they are not, the provider responds with an error.
 	if !r.Provider().configured {
 		resp.Diagnostics.AddError(
@@ -170,7 +169,7 @@ func CreateIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_reso
 }
 
 // Read resource
-func ReadIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
+func ReadIngressRule[T any](r IngressRule, ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var s AblyIngressRuleDecoder[*T]
 	diags := req.State.Get(ctx, &s)
@@ -214,7 +213,7 @@ func ReadIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_resour
 }
 
 // // Update resource
-func UpdateIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
+func UpdateIngressRule[T any](r IngressRule, ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Gets plan values
 	var p AblyIngressRuleDecoder[*T]
 	diags := req.Plan.Get(ctx, &p)
@@ -255,7 +254,7 @@ func UpdateIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_reso
 }
 
 // Delete resource
-func DeleteIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
+func DeleteIngressRule[T any](r IngressRule, ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var s AblyIngressRuleDecoder[*T]
 	diags := req.State.Get(ctx, &s)
@@ -292,7 +291,7 @@ func DeleteIngressRule[T any](r IngressRule, ctx context.Context, req tfsdk_reso
 }
 
 // // Import resource
-func ImportIngressRuleResource(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse, fields ...string) {
+func ImportIngressRuleResource(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse, fields ...string) {
 	// Save the import identifier in the id attribute
 	// identifier should be in the format app_id,key_id
 	idParts := strings.Split(req.ID, ",")
@@ -311,7 +310,7 @@ func ImportIngressRuleResource(ctx context.Context, req tfsdk_resource.ImportSta
 		)
 		return
 	}
-	// Recent PR in TF Plugin Framework for paths but Hashicorp examples not updated - https://github.com/hashicorp/terraform-plugin-framework/pull/390
+
 	for i, v := range fields {
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root(v), idParts[i])...)
 	}

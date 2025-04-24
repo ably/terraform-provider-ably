@@ -4,141 +4,126 @@ import (
 	"context"
 	"fmt"
 
-	ably_control_go "github.com/ably/ably-control-go"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
+	control "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-
-	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceQueue struct {
-	p *provider
+// Ensure the implementation satisfies the expected interfaces
+var _ resource.Resource = &ResourceQueue{}
+var _ resource.ResourceWithImportState = &ResourceQueue{}
+var _ resource.ResourceWithModifyPlan = &ResourceQueue{}
+
+type ResourceQueue struct {
+	p *AblyProvider
 }
 
 // Get Queue Resource schema
-func (r resourceQueue) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
-		Attributes: map[string]tfsdk.Attribute{
-			"app_id": {
-				Type:        types.StringType,
+func (r ResourceQueue) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Attributes: map[string]schema.Attribute{
+			"app_id": schema.StringAttribute{
 				Required:    true,
 				Description: "The application ID.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.RequiresReplace(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"id": {
-				Type:        types.StringType,
+			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "The ID of the queue",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"name": {
-				Type:        types.StringType,
+			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "The name of the queue.",
 			},
-			"ttl": {
-				Type:        types.Int64Type,
+			"ttl": schema.Int64Attribute{
 				Required:    true,
 				Description: "Time to live in minutes.",
 			},
-			"max_length": {
-				Type:        types.Int64Type,
+			"max_length": schema.Int64Attribute{
 				Required:    true,
 				Description: "Message limit in number of messages.",
 			},
-			"region": {
-				Type:        types.StringType,
+			"region": schema.StringAttribute{
 				Required:    true,
 				Description: "The data center region. US East (Virginia) or EU West (Ireland). Values are us-east-1-a or eu-west-1-a.",
 			},
 
-			"amqp_uri": {
-				Type:        types.StringType,
+			"amqp_uri": schema.StringAttribute{
 				Computed:    true,
 				Description: "URI for the AMQP queue interface.",
 			},
-			"amqp_queue_name": {
-				Type:        types.StringType,
+			"amqp_queue_name": schema.StringAttribute{
 				Computed:    true,
 				Description: "Name of the Ably queue.",
 			},
-			"stomp_uri": {
-				Type:        types.StringType,
+			"stomp_uri": schema.StringAttribute{
 				Computed:    true,
 				Description: "URI for the STOMP queue interface.",
 			},
-			"stomp_host": {
-				Type:        types.StringType,
+			"stomp_host": schema.StringAttribute{
 				Computed:    true,
 				Description: "The host type for the queue.",
 			},
-			"stomp_destination": {
-				Type:        types.StringType,
+			"stomp_destination": schema.StringAttribute{
 				Computed:    true,
 				Description: "Destination queue.",
 			},
-			"state": {
-				Type:        types.StringType,
+			"state": schema.StringAttribute{
 				Computed:    true,
 				Description: "The current state of the queue.",
 			},
-			"messages_ready": {
-				Type:        types.Int64Type,
+			"messages_ready": schema.Int64Attribute{
 				Computed:    true,
 				Description: "The number of ready messages in the queue.",
 			},
-			"messages_unacknowledged": {
-				Type:        types.Int64Type,
+			"messages_unacknowledged": schema.Int64Attribute{
 				Computed:    true,
 				Description: "The number of unacknowledged messages in the queue.",
 			},
-			"messages_total": {
-				Type:        types.Int64Type,
+			"messages_total": schema.Int64Attribute{
 				Computed:    true,
 				Description: "The total number of messages in the queue.",
 			},
-			"stats_publish_rate": {
-				Type:        types.Float64Type,
+			"stats_publish_rate": schema.Float64Attribute{
 				Computed:    true,
 				Description: "The rate at which messages are published to the queue. Rate is messages per minute.",
 			},
-			"stats_delivery_rate": {
-				Type:        types.Float64Type,
+			"stats_delivery_rate": schema.Float64Attribute{
 				Computed:    true,
 				Description: "The rate at which messages are delivered from the queue. Rate is messages per minute.",
 			},
-			"stats_acknowledgement_rate": {
-				Type:        types.Float64Type,
+			"stats_acknowledgement_rate": schema.Float64Attribute{
 				Computed:    true,
 				Description: "The rate at which messages are acknowledged. Rate is messages per minute.",
 			},
-			"deadletter": {
-				Type:        types.BoolType,
+			"deadletter": schema.BoolAttribute{
 				Computed:    true,
 				Description: "A boolean that indicates whether this is a dead letter queue or not.",
 			},
-			"deadletter_id": {
-				Type:        types.StringType,
+			"deadletter_id": schema.StringAttribute{
 				Computed:    true,
 				Description: "The ID of the dead letter queue.",
 			},
 		},
 		MarkdownDescription: "The ably_queue resource allows you to create and manage Ably queues. Read more about Ably queues in Ably documentation: https://ably.com/docs/general/queues.",
-	}, nil
+	}
 }
 
-func (r resourceQueue) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+func (r ResourceQueue) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "ably_queue"
 }
 
 // Create a new resource
-func (r resourceQueue) Create(ctx context.Context, req tfsdk_resource.CreateRequest, resp *tfsdk_resource.CreateResponse) {
+func (r ResourceQueue) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Checks whether the provider and API Client are configured. If they are not, the provider responds with an error.
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
@@ -156,12 +141,12 @@ func (r resourceQueue) Create(ctx context.Context, req tfsdk_resource.CreateRequ
 		return
 	}
 
-	var region ably_control_go.Region
+	var region control.Region
 	switch plan.Region.ValueString() {
-	case string(ably_control_go.UsEast1A):
-		region = ably_control_go.UsEast1A
-	case string(ably_control_go.EuWest1A):
-		region = ably_control_go.EuWest1A
+	case string(control.UsEast1A):
+		region = control.UsEast1A
+	case string(control.EuWest1A):
+		region = control.EuWest1A
 	default:
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -171,7 +156,7 @@ func (r resourceQueue) Create(ctx context.Context, req tfsdk_resource.CreateRequ
 	}
 
 	// Generates an API request body from the plan values
-	queue_values := ably_control_go.NewQueue{
+	queue_values := control.NewQueue{
 		Name:      plan.Name.ValueString(),
 		Ttl:       int(plan.Ttl.ValueInt64()),
 		MaxLength: int(plan.MaxLength.ValueInt64()),
@@ -222,7 +207,7 @@ func (r resourceQueue) Create(ctx context.Context, req tfsdk_resource.CreateRequ
 }
 
 // Read resource
-func (r resourceQueue) Read(ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
+func (r ResourceQueue) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var state AblyQueue
 	found := false
@@ -296,7 +281,7 @@ func (r resourceQueue) Read(ctx context.Context, req tfsdk_resource.ReadRequest,
 }
 
 // Update resource
-func (r resourceQueue) Update(ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
+func (r ResourceQueue) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// This function should never end up being run but needs to exist to satisfy the interface
 	// this error is just in case terraform decides to call it.
 	resp.Diagnostics.AddError(
@@ -306,7 +291,7 @@ func (r resourceQueue) Update(ctx context.Context, req tfsdk_resource.UpdateRequ
 }
 
 // Delete resource
-func (r resourceQueue) Delete(ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
+func (r ResourceQueue) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Get current state
 	var state AblyQueue
 	diags := req.State.Get(ctx, &state)
@@ -340,14 +325,18 @@ func (r resourceQueue) Delete(ctx context.Context, req tfsdk_resource.DeleteRequ
 }
 
 // Import resource
-func (r resourceQueue) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
+func (r ResourceQueue) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "id")
 }
 
-var _ tfsdk_resource.ResourceWithModifyPlan = resourceQueue{}
+func (r ResourceQueue) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	// Make all attributes require replace
+	// Get all attributes from the schema using a temporary response
+	schemaResp := &resource.SchemaResponse{}
+	r.Schema(ctx, resource.SchemaRequest{}, schemaResp)
 
-func (r resourceQueue) ModifyPlan(ctx context.Context, req tfsdk_resource.ModifyPlanRequest, resp *tfsdk_resource.ModifyPlanResponse) {
-	for k := range req.Plan.Schema.Attributes {
-		resp.RequiresReplace.Append(path.Root(k))
+	// Mark all attributes as requiring replacement
+	for attrName := range schemaResp.Schema.Attributes {
+		resp.RequiresReplace.Append(path.Root(attrName))
 	}
 }

@@ -3,143 +3,134 @@ package ably_control
 import (
 	"context"
 
-	ably_control_go "github.com/ably/ably-control-go"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfsdk_resource "github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	control "github.com/ably/ably-control-go"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceNamespace struct {
-	p *provider
+type ResourceNamespace struct {
+	p *AblyProvider
 }
 
-// Get Namespace Resource schema
-func (r resourceNamespace) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
-		Attributes: map[string]tfsdk.Attribute{
-			"app_id": {
-				Type:        types.StringType,
+var _ resource.Resource = &ResourceNamespace{}
+var _ resource.ResourceWithImportState = &ResourceNamespace{}
+
+// Schema defines the schema for the resource.
+func (r ResourceNamespace) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Attributes: map[string]schema.Attribute{
+			"app_id": schema.StringAttribute{
 				Required:    true,
 				Description: "The application ID.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.RequiresReplace(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"id": {
-				Type:        types.StringType,
+			"id": schema.StringAttribute{
 				Required:    true,
 				Description: "The namespace or channel name that the channel rule will apply to.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					tfsdk_resource.RequiresReplace(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"authenticated": {
-				Type:        types.BoolType,
+			"authenticated": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "Require clients to be authenticated to use channels in this namespace.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.BoolValue(false)),
+				PlanModifiers: []planmodifier.Bool{
+					DefaultBoolAttribute(types.BoolValue(false)),
 				},
 			},
-			"persisted": {
-				Type:        types.BoolType,
+			"persisted": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "If true, messages will be stored for 24 hours.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.BoolValue(false)),
+				PlanModifiers: []planmodifier.Bool{
+					DefaultBoolAttribute(types.BoolValue(false)),
 				},
 			},
-			"persist_last": {
-				Type:        types.BoolType,
+			"persist_last": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "If true, the last message on each channel will persist for 365 days.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.BoolValue(false)),
+				PlanModifiers: []planmodifier.Bool{
+					DefaultBoolAttribute(types.BoolValue(false)),
 				},
 			},
-			"push_enabled": {
-				Type:        types.BoolType,
+			"push_enabled": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "If true, publishing messages with a push payload in the extras field is permitted.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.BoolValue(false)),
+				PlanModifiers: []planmodifier.Bool{
+					DefaultBoolAttribute(types.BoolValue(false)),
 				},
 			},
-			"tls_only": {
-				Type:        types.BoolType,
+			"tls_only": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "If true, only clients that are connected using TLS will be permitted to subscribe.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.BoolValue(false)),
+				PlanModifiers: []planmodifier.Bool{
+					DefaultBoolAttribute(types.BoolValue(false)),
 				},
 			},
-			"expose_timeserial": {
-				Type:        types.BoolType,
+			"expose_timeserial": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "If true, messages received on a channel will contain a unique timeserial that can be referenced by later messages for use with message interactions.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.BoolValue(false)),
+				PlanModifiers: []planmodifier.Bool{
+					DefaultBoolAttribute(types.BoolValue(false)),
 				},
 			},
-			"batching_enabled": {
-				Type:        types.BoolType,
+			"batching_enabled": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "If true, channels within this namespace will start batching inbound messages instead of sending them out immediately to subscribers as per the configured policy.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.BoolValue(false)),
+				PlanModifiers: []planmodifier.Bool{
+					DefaultBoolAttribute(types.BoolValue(false)),
 				},
 			},
-			"batching_interval": {
-				Type:        types.Int64Type,
+			"batching_interval": schema.Int64Attribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "When configured, sets the maximium batching interval in the channel.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.Int64Null()),
+				PlanModifiers: []planmodifier.Int64{
+					DefaultInt64Attribute(types.Int64Null()),
 				},
 			},
-			"conflation_enabled": {
-				Type:        types.BoolType,
+			"conflation_enabled": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "If true, enables conflation for channels within this namespace. Conflation reduces the number of messages sent to subscribers by combining multiple messages into a single message.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.BoolValue(false)),
+				PlanModifiers: []planmodifier.Bool{
+					DefaultBoolAttribute(types.BoolValue(false)),
 				},
 			},
-			"conflation_interval": {
-				Type:        types.Int64Type,
+			"conflation_interval": schema.Int64Attribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "The interval in milliseconds at which messages are conflated. This determines how frequently messages are combined into a single message.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.Int64Null()),
+				PlanModifiers: []planmodifier.Int64{
+					DefaultInt64Attribute(types.Int64Null()),
 				},
 			},
-			"conflation_key": {
-				Type:        types.StringType,
+			"conflation_key": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "The key used to determine which messages should be conflated. Messages with the same conflation key will be combined into a single message.",
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					DefaultAttribute(types.StringNull()),
+				PlanModifiers: []planmodifier.String{
+					DefaultStringAttribute(types.StringNull()),
 				},
 			},
 		},
 		MarkdownDescription: "The ably_namespace resource allows you to manage namespaces for channel rules in Ably. Read more in the Ably documentation: https://ably.com/docs/general/channel-rules-namespaces.",
-	}, nil
+	}
 }
 
 // Create a new resource
-func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.CreateRequest, resp *tfsdk_resource.CreateResponse) {
+func (r ResourceNamespace) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Checks whether the provider and API Client are configured. If they are not, the provider responds with an error.
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
@@ -158,7 +149,7 @@ func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.Create
 	}
 
 	// Generates an API request body from the plan values
-	namespace_values := ably_control_go.Namespace{
+	namespace_values := control.Namespace{
 		ID:               plan.ID.ValueString(),
 		Authenticated:    plan.Authenticated.ValueBool(),
 		Persisted:        plan.Persisted.ValueBool(),
@@ -170,12 +161,12 @@ func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.Create
 
 	if plan.BatchingEnabled.ValueBool() {
 		namespace_values.BatchingEnabled = true
-		namespace_values.BatchingInterval = ably_control_go.Interval(int(plan.BatchingInterval.ValueInt64()))
+		namespace_values.BatchingInterval = control.Interval(int(plan.BatchingInterval.ValueInt64()))
 	}
 
 	if plan.ConflationEnabled.ValueBool() {
 		namespace_values.ConflationEnabled = true
-		namespace_values.ConflationInterval = ably_control_go.Interval(int(plan.ConflationInterval.ValueInt64()))
+		namespace_values.ConflationInterval = control.Interval(int(plan.ConflationInterval.ValueInt64()))
 		namespace_values.ConflationKey = plan.ConflationKey.ValueString()
 	}
 
@@ -220,12 +211,12 @@ func (r resourceNamespace) Create(ctx context.Context, req tfsdk_resource.Create
 	}
 }
 
-func (r resourceNamespace) Metadata(ctx context.Context, req tfsdk_resource.MetadataRequest, resp *tfsdk_resource.MetadataResponse) {
+func (r ResourceNamespace) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "ably_namespace"
 }
 
 // Read resource
-func (r resourceNamespace) Read(ctx context.Context, req tfsdk_resource.ReadRequest, resp *tfsdk_resource.ReadResponse) {
+func (r ResourceNamespace) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var state AblyNamespace
 	found := false
@@ -298,7 +289,7 @@ func (r resourceNamespace) Read(ctx context.Context, req tfsdk_resource.ReadRequ
 }
 
 // Update resource
-func (r resourceNamespace) Update(ctx context.Context, req tfsdk_resource.UpdateRequest, resp *tfsdk_resource.UpdateResponse) {
+func (r ResourceNamespace) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
 	var plan AblyNamespace
 	diags := req.Plan.Get(ctx, &plan)
@@ -311,8 +302,8 @@ func (r resourceNamespace) Update(ctx context.Context, req tfsdk_resource.Update
 	app_id := plan.AppID.ValueString()
 	namespace_id := plan.ID.ValueString()
 
-	// Instantiates struct of type ably_control_go.Namespace and sets values to output of plan
-	namespace_values := ably_control_go.Namespace{
+	// Instantiates struct of type control.Namespace and sets values to output of plan
+	namespace_values := control.Namespace{
 		ID:               namespace_id,
 		Authenticated:    plan.Authenticated.ValueBool(),
 		Persisted:        plan.Persisted.ValueBool(),
@@ -324,12 +315,12 @@ func (r resourceNamespace) Update(ctx context.Context, req tfsdk_resource.Update
 
 	if plan.BatchingEnabled.ValueBool() {
 		namespace_values.BatchingEnabled = true
-		namespace_values.BatchingInterval = ably_control_go.Interval(int(plan.BatchingInterval.ValueInt64()))
+		namespace_values.BatchingInterval = control.Interval(int(plan.BatchingInterval.ValueInt64()))
 	}
 
 	if plan.ConflationEnabled.ValueBool() {
 		namespace_values.ConflationEnabled = true
-		namespace_values.ConflationInterval = ably_control_go.Interval(int(plan.ConflationInterval.ValueInt64()))
+		namespace_values.ConflationInterval = control.Interval(int(plan.ConflationInterval.ValueInt64()))
 		namespace_values.ConflationKey = plan.ConflationKey.ValueString()
 	}
 
@@ -374,7 +365,7 @@ func (r resourceNamespace) Update(ctx context.Context, req tfsdk_resource.Update
 }
 
 // Delete resource
-func (r resourceNamespace) Delete(ctx context.Context, req tfsdk_resource.DeleteRequest, resp *tfsdk_resource.DeleteResponse) {
+func (r ResourceNamespace) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Get current state
 	var state AblyNamespace
 	diags := req.State.Get(ctx, &state)
@@ -408,7 +399,7 @@ func (r resourceNamespace) Delete(ctx context.Context, req tfsdk_resource.Delete
 }
 
 // Import resource
-func (r resourceNamespace) ImportState(ctx context.Context, req tfsdk_resource.ImportStateRequest, resp *tfsdk_resource.ImportStateResponse) {
+func (r ResourceNamespace) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }
 

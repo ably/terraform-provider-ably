@@ -1,7 +1,7 @@
 package ably_control
 
 import (
-	ably_control_go "github.com/ably/ably-control-go"
+	control "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -121,8 +121,8 @@ type AblyIngressRuleTargetPostgresOutbox struct {
 
 // Ably Rule
 type AblyRuleSource struct {
-	ChannelFilter types.String               `tfsdk:"channel_filter"`
-	Type          ably_control_go.SourceType `tfsdk:"type"`
+	ChannelFilter types.String       `tfsdk:"channel_filter"`
+	Type          control.SourceType `tfsdk:"type"`
 }
 
 func (r *AblyRuleDecoder[_]) Rule() AblyRule {
@@ -148,12 +148,12 @@ type AblyRuleDecoder[T any] struct {
 type AblyRule AblyRuleDecoder[any]
 
 type AblyRuleTargetKinesis struct {
-	Region       string                 `tfsdk:"region"`
-	StreamName   string                 `tfsdk:"stream_name"`
-	PartitionKey string                 `tfsdk:"partition_key"`
-	AwsAuth      AwsAuth                `tfsdk:"authentication"`
-	Enveloped    bool                   `tfsdk:"enveloped"`
-	Format       ably_control_go.Format `tfsdk:"format"`
+	Region       string       `tfsdk:"region"`
+	StreamName   string       `tfsdk:"stream_name"`
+	PartitionKey string       `tfsdk:"partition_key"`
+	AwsAuth      AwsAuth      `tfsdk:"authentication"`
+	Enveloped    bool         `tfsdk:"enveloped"`
+	Format       types.String `tfsdk:"format"`
 }
 
 type AwsAuth struct {
@@ -164,12 +164,12 @@ type AwsAuth struct {
 }
 
 type AblyRuleTargetSqs struct {
-	Region       string                 `tfsdk:"region"`
-	AwsAccountID string                 `tfsdk:"aws_account_id"`
-	QueueName    string                 `tfsdk:"queue_name"`
-	AwsAuth      AwsAuth                `tfsdk:"authentication"`
-	Enveloped    bool                   `tfsdk:"enveloped"`
-	Format       ably_control_go.Format `tfsdk:"format"`
+	Region       string       `tfsdk:"region"`
+	AwsAccountID string       `tfsdk:"aws_account_id"`
+	QueueName    string       `tfsdk:"queue_name"`
+	AwsAuth      AwsAuth      `tfsdk:"authentication"`
+	Enveloped    bool         `tfsdk:"enveloped"`
+	Format       types.String `tfsdk:"format"`
 }
 
 type AblyRuleTargetLambda struct {
@@ -180,13 +180,13 @@ type AblyRuleTargetLambda struct {
 }
 
 type AblyRuleTargetGoogleFunction struct {
-	Region       string                 `tfsdk:"region"`
-	ProjectID    string                 `tfsdk:"project_id"`
-	FunctionName string                 `tfsdk:"function_name"`
-	Headers      []AblyRuleHeaders      `tfsdk:"headers"`
-	SigningKeyId string                 `tfsdk:"signing_key_id"`
-	Enveloped    bool                   `tfsdk:"enveloped"`
-	Format       ably_control_go.Format `tfsdk:"format"`
+	Region       string            `tfsdk:"region"`
+	ProjectID    string            `tfsdk:"project_id"`
+	FunctionName string            `tfsdk:"function_name"`
+	Headers      []AblyRuleHeaders `tfsdk:"headers"`
+	SigningKeyId string            `tfsdk:"signing_key_id"`
+	Enveloped    types.Bool        `tfsdk:"enveloped"`
+	Format       types.String      `tfsdk:"format"`
 }
 
 type AblyRuleTargetCloudflareWorker struct {
@@ -196,21 +196,21 @@ type AblyRuleTargetCloudflareWorker struct {
 }
 
 type AblyRuleTargetHTTP struct {
-	Url          string                 `tfsdk:"url"`
-	Headers      []AblyRuleHeaders      `tfsdk:"headers"`
-	SigningKeyId string                 `tfsdk:"signing_key_id"`
-	Format       ably_control_go.Format `tfsdk:"format"`
-	Enveloped    bool                   `tfsdk:"enveloped"`
+	Url          string            `tfsdk:"url"`
+	Headers      []AblyRuleHeaders `tfsdk:"headers"`
+	SigningKeyId string            `tfsdk:"signing_key_id"`
+	Format       types.String      `tfsdk:"format"`
+	Enveloped    bool              `tfsdk:"enveloped"`
 }
 
 type AblyRuleTargetPulsar struct {
-	RoutingKey     string                 `tfsdk:"routing_key"`
-	Topic          string                 `tfsdk:"topic"`
-	ServiceURL     string                 `tfsdk:"service_url"`
-	TlsTrustCerts  []string               `tfsdk:"tls_trust_certs"`
-	Authentication PulsarAuthentication   `tfsdk:"authentication"`
-	Enveloped      bool                   `tfsdk:"enveloped"`
-	Format         ably_control_go.Format `tfsdk:"format"`
+	RoutingKey     string               `tfsdk:"routing_key"`
+	Topic          string               `tfsdk:"topic"`
+	ServiceURL     string               `tfsdk:"service_url"`
+	TlsTrustCerts  []string             `tfsdk:"tls_trust_certs"`
+	Authentication PulsarAuthentication `tfsdk:"authentication"`
+	Enveloped      bool                 `tfsdk:"enveloped"`
+	Format         types.String         `tfsdk:"format"`
 }
 
 type PulsarAuthentication struct {
@@ -230,11 +230,11 @@ type AblyRuleTargetIFTTT struct {
 }
 
 type AblyRuleTargetAzureFunction struct {
-	AzureAppID        string                 `tfsdk:"azure_app_id"`
-	AzureFunctionName string                 `tfsdk:"function_name"`
-	Headers           []AblyRuleHeaders      `tfsdk:"headers"`
-	SigningKeyID      string                 `tfsdk:"signing_key_id"`
-	Format            ably_control_go.Format `tfsdk:"format"`
+	AzureAppID        string            `tfsdk:"azure_app_id"`
+	AzureFunctionName string            `tfsdk:"function_name"`
+	Headers           []AblyRuleHeaders `tfsdk:"headers"`
+	SigningKeyID      string            `tfsdk:"signing_key_id"`
+	Format            types.String      `tfsdk:"format"`
 }
 
 type AblyRuleHeaders struct {
@@ -243,30 +243,30 @@ type AblyRuleHeaders struct {
 }
 
 type AblyRuleTargetKafka struct {
-	RoutingKey          string                 `tfsdk:"routing_key"`
-	Brokers             []string               `tfsdk:"brokers"`
-	KafkaAuthentication KafkaAuthentication    `tfsdk:"auth"`
-	Enveloped           bool                   `tfsdk:"enveloped"`
-	Format              ably_control_go.Format `tfsdk:"format"`
+	RoutingKey          string              `tfsdk:"routing_key"`
+	Brokers             []string            `tfsdk:"brokers"`
+	KafkaAuthentication KafkaAuthentication `tfsdk:"auth"`
+	Enveloped           bool                `tfsdk:"enveloped"`
+	Format              types.String        `tfsdk:"format"`
 }
 
 type AblyRuleTargetAmqp struct {
-	QueueID   string                 `tfsdk:"queue_id"`
-	Headers   []AblyRuleHeaders      `tfsdk:"headers"`
-	Enveloped bool                   `tfsdk:"enveloped"`
-	Format    ably_control_go.Format `tfsdk:"format"`
+	QueueID   string            `tfsdk:"queue_id"`
+	Headers   []AblyRuleHeaders `tfsdk:"headers"`
+	Enveloped bool              `tfsdk:"enveloped"`
+	Format    types.String      `tfsdk:"format"`
 }
 
 type AblyRuleTargetAmqpExternal struct {
-	Url                string                 `tfsdk:"url"`
-	RoutingKey         string                 `tfsdk:"routing_key"`
-	Exchange           string                 `tfsdk:"exchange"`
-	MandatoryRoute     bool                   `tfsdk:"mandatory_route"`
-	PersistentMessages bool                   `tfsdk:"persistent_messages"`
-	MessageTtl         types.Int64            `tfsdk:"message_ttl"`
-	Headers            []AblyRuleHeaders      `tfsdk:"headers"`
-	Enveloped          bool                   `tfsdk:"enveloped"`
-	Format             ably_control_go.Format `tfsdk:"format"`
+	Url                string            `tfsdk:"url"`
+	RoutingKey         string            `tfsdk:"routing_key"`
+	Exchange           string            `tfsdk:"exchange"`
+	MandatoryRoute     bool              `tfsdk:"mandatory_route"`
+	PersistentMessages bool              `tfsdk:"persistent_messages"`
+	MessageTtl         types.Int64       `tfsdk:"message_ttl"`
+	Headers            []AblyRuleHeaders `tfsdk:"headers"`
+	Enveloped          bool              `tfsdk:"enveloped"`
+	Format             types.String      `tfsdk:"format"`
 }
 
 type KafkaAuthentication struct {
