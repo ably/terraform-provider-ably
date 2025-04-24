@@ -22,24 +22,24 @@ func GetPlanIngressRule(plan AblyIngressRule) control.NewIngressRule {
 	switch t := plan.Target.(type) {
 	case *AblyIngressRuleTargetMongo:
 		target = &control.IngressMongoTarget{
-			Url:                      t.Url,
-			Database:                 t.Database,
-			Collection:               t.Collection,
-			Pipeline:                 t.Pipeline,
-			FullDocument:             t.FullDocument,
-			FullDocumentBeforeChange: t.FullDocumentBeforeChange,
-			PrimarySite:              t.PrimarySite,
+			Url:                      t.Url.ValueString(),
+			Database:                 t.Database.ValueString(),
+			Collection:               t.Collection.ValueString(),
+			Pipeline:                 t.Pipeline.ValueString(),
+			FullDocument:             t.FullDocument.ValueString(),
+			FullDocumentBeforeChange: t.FullDocumentBeforeChange.ValueString(),
+			PrimarySite:              t.PrimarySite.ValueString(),
 		}
 	case *AblyIngressRuleTargetPostgresOutbox:
 		target = &control.IngressPostgresOutboxTarget{
-			Url:               t.Url,
-			OutboxTableSchema: t.OutboxTableSchema,
-			OutboxTableName:   t.OutboxTableName,
-			NodesTableSchema:  t.NodesTableSchema,
-			NodesTableName:    t.NodesTableName,
-			SslMode:           t.SslMode,
-			SslRootCert:       t.SslRootCert,
-			PrimarySite:       t.PrimarySite,
+			Url:               t.Url.ValueString(),
+			OutboxTableSchema: t.OutboxTableSchema.ValueString(),
+			OutboxTableName:   t.OutboxTableName.ValueString(),
+			NodesTableSchema:  t.NodesTableSchema.ValueString(),
+			NodesTableName:    t.NodesTableName.ValueString(),
+			SslMode:           t.SslMode.ValueString(),
+			SslRootCert:       t.SslRootCert.ValueString(),
+			PrimarySite:       t.PrimarySite.ValueString(),
 		}
 	}
 
@@ -59,24 +59,24 @@ func GetIngressRuleResponse(ablyIngressRule *control.IngressRule, plan *AblyIngr
 	switch v := ablyIngressRule.Target.(type) {
 	case *control.IngressMongoTarget:
 		respTarget = &AblyIngressRuleTargetMongo{
-			Url:                      v.Url,
-			Database:                 v.Database,
-			Collection:               v.Collection,
-			Pipeline:                 v.Pipeline,
-			FullDocument:             v.FullDocument,
-			FullDocumentBeforeChange: v.FullDocumentBeforeChange,
-			PrimarySite:              v.PrimarySite,
+			Url:                      types.StringValue(v.Url),
+			Database:                 types.StringValue(v.Database),
+			Collection:               types.StringValue(v.Collection),
+			Pipeline:                 types.StringValue(v.Pipeline),
+			FullDocument:             types.StringValue(v.FullDocument),
+			FullDocumentBeforeChange: types.StringValue(v.FullDocumentBeforeChange),
+			PrimarySite:              types.StringValue(v.PrimarySite),
 		}
 	case *control.IngressPostgresOutboxTarget:
 		respTarget = &AblyIngressRuleTargetPostgresOutbox{
-			Url:               v.Url,
-			OutboxTableSchema: v.OutboxTableSchema,
-			OutboxTableName:   v.OutboxTableName,
-			NodesTableSchema:  v.NodesTableSchema,
-			NodesTableName:    v.NodesTableName,
-			SslMode:           v.SslMode,
-			SslRootCert:       v.SslRootCert,
-			PrimarySite:       v.PrimarySite,
+			Url:               types.StringValue(v.Url),
+			OutboxTableSchema: types.StringValue(v.OutboxTableSchema),
+			OutboxTableName:   types.StringValue(v.OutboxTableName),
+			NodesTableSchema:  types.StringValue(v.NodesTableSchema),
+			NodesTableName:    types.StringValue(v.NodesTableName),
+			SslMode:           types.StringValue(v.SslMode),
+			SslRootCert:       types.StringValue(v.SslRootCert),
+			PrimarySite:       types.StringValue(v.PrimarySite),
 		}
 	}
 
