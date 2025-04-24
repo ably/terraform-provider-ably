@@ -168,7 +168,10 @@ func (r ResourceNamespace) Create(ctx context.Context, req resource.CreateReques
 	if plan.ConflationEnabled.ValueBool() {
 		namespaceValues.ConflationEnabled = true
 		namespaceValues.ConflationInterval = control.Interval(int(plan.ConflationInterval.ValueInt64()))
-		namespaceValues.ConflationKey = plan.ConflationKey.ValueString()
+
+		if !plan.ConflationKey.IsNull() {
+			namespaceValues.ConflationKey = plan.ConflationKey.ValueString()
+		}
 	}
 
 	// Creates a new Ably namespace by invoking the CreateNamespace function from the Client Library
@@ -201,7 +204,10 @@ func (r ResourceNamespace) Create(ctx context.Context, req resource.CreateReques
 
 	if ablyNamespace.ConflationEnabled {
 		respApps.ConflationInterval = ptrValueInt(ablyNamespace.ConflationInterval)
-		respApps.ConflationKey = types.StringValue(ablyNamespace.ConflationKey)
+
+		if !respApps.ConflationInterval.IsNull() {
+			respApps.ConflationKey = types.StringValue(ablyNamespace.ConflationKey)
+		}
 	}
 
 	// Sets state for the new Ably App.
@@ -269,7 +275,10 @@ func (r ResourceNamespace) Read(ctx context.Context, req resource.ReadRequest, r
 
 			if v.ConflationEnabled {
 				respNamespaces.ConflationInterval = ptrValueInt(v.ConflationInterval)
-				respNamespaces.ConflationKey = types.StringValue(v.ConflationKey)
+
+				if !respNamespaces.ConflationInterval.IsNull() {
+					respNamespaces.ConflationKey = types.StringValue(v.ConflationKey)
+				}
 			}
 
 			// Sets state to namespace values.
@@ -322,7 +331,10 @@ func (r ResourceNamespace) Update(ctx context.Context, req resource.UpdateReques
 	if plan.ConflationEnabled.ValueBool() {
 		namespaceValues.ConflationEnabled = true
 		namespaceValues.ConflationInterval = control.Interval(int(plan.ConflationInterval.ValueInt64()))
-		namespaceValues.ConflationKey = plan.ConflationKey.ValueString()
+
+		if !plan.ConflationKey.IsNull() {
+			namespaceValues.ConflationKey = plan.ConflationKey.ValueString()
+		}
 	}
 
 	// Updates an Ably Namespace. The function invokes the Client Library UpdateNamespace method.
@@ -354,7 +366,10 @@ func (r ResourceNamespace) Update(ctx context.Context, req resource.UpdateReques
 
 	if ablyNamespace.ConflationEnabled {
 		respNamespaces.ConflationInterval = ptrValueInt(ablyNamespace.ConflationInterval)
-		respNamespaces.ConflationKey = types.StringValue(ablyNamespace.ConflationKey)
+
+		if !respNamespaces.ConflationInterval.IsNull() {
+			respNamespaces.ConflationKey = types.StringValue(ablyNamespace.ConflationKey)
+		}
 	}
 
 	// Sets state to new namespace.

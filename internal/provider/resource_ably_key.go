@@ -109,9 +109,12 @@ func (r ResourceKey) Create(ctx context.Context, req resource.CreateRequest, res
 		return
 	}
 
+	// Convert capability map from Terraform types to Go strings
+	capability := mapFromStringSlice(plan.Capability)
+
 	newKey := control.NewKey{
 		Name:            plan.Name.ValueString(),
-		Capability:      plan.Capability,
+		Capability:      capability,
 		RevocableTokens: plan.RevocableTokens.ValueBool(),
 	}
 
@@ -126,13 +129,16 @@ func (r ResourceKey) Create(ctx context.Context, req resource.CreateRequest, res
 	}
 
 	// Maps response body to resource schema attributes.
+	// Convert capability map from Go strings to Terraform types
+	tfCapability := mapToTypedStringSlice(ablyKey.Capability)
+
 	respKey := AblyKey{
 		ID:              types.StringValue(ablyKey.ID),
 		AppID:           types.StringValue(ablyKey.AppID),
 		Name:            types.StringValue(ablyKey.Name),
 		Key:             types.StringValue(ablyKey.Key),
 		RevocableTokens: types.BoolValue(ablyKey.RevocableTokens),
-		Capability:      ablyKey.Capability,
+		Capability:      tfCapability,
 		Status:          types.Int64Value(int64(ablyKey.Status)),
 		Created:         types.Int64Value(int64(ablyKey.Created)),
 		Modified:        types.Int64Value(int64(ablyKey.Modified)),
@@ -180,12 +186,15 @@ func (r ResourceKey) Read(ctx context.Context, req resource.ReadRequest, resp *r
 	// Loops through apps and if account id and key id match, sets state.
 	for _, v := range keys {
 		if v.AppID == appID && v.ID == keyID && v.Status == 0 {
+			// Convert capability map from Go strings to Terraform types
+			tfCapability := mapToTypedStringSlice(v.Capability)
+
 			respKey := AblyKey{
 				ID:              types.StringValue(v.ID),
 				AppID:           types.StringValue(v.AppID),
 				Name:            types.StringValue(v.Name),
 				RevocableTokens: types.BoolValue(v.RevocableTokens),
-				Capability:      v.Capability,
+				Capability:      tfCapability,
 				Status:          types.Int64Value(int64(v.Status)),
 				Key:             types.StringValue(v.Key),
 				Created:         types.Int64Value(int64(v.Created)),
@@ -233,7 +242,7 @@ func (r ResourceKey) Update(ctx context.Context, req resource.UpdateRequest, res
 	// Instantiates struct of type control.NewKey and sets values to output of plan
 	keyValues := control.NewKey{
 		Name:            plan.Name.ValueString(),
-		Capability:      plan.Capability,
+		Capability:      mapFromStringSlice(plan.Capability),
 		RevocableTokens: plan.RevocableTokens.ValueBool(),
 	}
 
@@ -247,12 +256,15 @@ func (r ResourceKey) Update(ctx context.Context, req resource.UpdateRequest, res
 		return
 	}
 
+	// Convert capability map from Go strings to Terraform types
+	tfCapability := mapToTypedStringSlice(ablyKey.Capability)
+
 	respKey := AblyKey{
 		ID:              types.StringValue(ablyKey.ID),
 		AppID:           types.StringValue(ablyKey.AppID),
 		Name:            types.StringValue(ablyKey.Name),
 		RevocableTokens: types.BoolValue(ablyKey.RevocableTokens),
-		Capability:      ablyKey.Capability,
+		Capability:      tfCapability,
 		Status:          types.Int64Value(int64(ablyKey.Status)),
 		Key:             types.StringValue(ablyKey.Key),
 		Created:         types.Int64Value(int64(ablyKey.Created)),

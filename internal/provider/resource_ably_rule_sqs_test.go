@@ -100,10 +100,10 @@ terraform {
 		}
 	}
 }
-	
+
 # You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 provider "ably" {}
-	  
+
 resource "ably_app" "app0" {
 	name     = %[1]q
 	status   = "enabled"
@@ -119,13 +119,13 @@ resource "ably_rule_sqs" "rule0" {
 	}
 
 	target = {
-	  region        = %[6]q,
-	  aws_account_id   = %[7]q,
-	  queueName = %[8]q,
-	  enveloped = %[9]s,
-	  format    = %[10]q
+	  region         = %[6]q,
+	  aws_account_id = %[7]q,
+	  queue_name     = %[8]q,
+	  enveloped      = %[9]s,
+	  format         = %[10]q
 	  %[5]s
 	}
-  }  
+  }
 `, appName, ruleStatus, channelFilter, sourceType, awsAuthBlock, targetRegion, awsAccountID, queueName, enveloped, format)
 }

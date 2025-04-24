@@ -53,52 +53,52 @@ func GetPlanRule(plan AblyRule) control.NewRule {
 	switch t := plan.Target.(type) {
 	case *AblyRuleTargetKinesis:
 		target = &control.AwsKinesisTarget{
-			Region:         t.Region,
-			StreamName:     t.StreamName,
-			PartitionKey:   t.PartitionKey,
+			Region:         t.Region.ValueString(),
+			StreamName:     t.StreamName.ValueString(),
+			PartitionKey:   t.PartitionKey.ValueString(),
 			Authentication: GetPlanAwsAuth(plan),
-			Enveloped:      t.Enveloped,
+			Enveloped:      t.Enveloped.ValueBool(),
 			Format:         control.Format(t.Format.ValueString()),
 		}
 	case *AblyRuleTargetSqs:
 		target = &control.AwsSqsTarget{
-			Region:         t.Region,
-			AwsAccountID:   t.AwsAccountID,
-			QueueName:      t.QueueName,
+			Region:         t.Region.ValueString(),
+			AwsAccountID:   t.AwsAccountID.ValueString(),
+			QueueName:      t.QueueName.ValueString(),
 			Authentication: GetPlanAwsAuth(plan),
-			Enveloped:      t.Enveloped,
+			Enveloped:      t.Enveloped.ValueBool(),
 			Format:         control.Format(t.Format.ValueString()),
 		}
 	case *AblyRuleTargetLambda:
 		target = &control.AwsLambdaTarget{
-			Region:         t.Region,
-			FunctionName:   t.FunctionName,
+			Region:         t.Region.ValueString(),
+			FunctionName:   t.FunctionName.ValueString(),
 			Authentication: GetPlanAwsAuth(plan),
-			Enveloped:      t.Enveloped,
+			Enveloped:      t.Enveloped.ValueBool(),
 		}
 	case *AblyRuleTargetZapier:
 		target = &control.HttpZapierTarget{
-			Url:          t.Url,
+			Url:          t.Url.ValueString(),
 			Headers:      GetHeaders(t.Headers),
-			SigningKeyID: t.SigningKeyId,
+			SigningKeyID: t.SigningKeyId.ValueString(),
 		}
 	case *AblyRuleTargetCloudflareWorker:
 		target = &control.HttpCloudfareWorkerTarget{
-			Url:          t.Url,
+			Url:          t.Url.ValueString(),
 			Headers:      GetHeaders(t.Headers),
-			SigningKeyID: t.SigningKeyId,
+			SigningKeyID: t.SigningKeyId.ValueString(),
 		}
 	case *AblyRuleTargetPulsar:
 		target = &control.PulsarTarget{
-			RoutingKey:    t.RoutingKey,
-			Topic:         t.Topic,
-			ServiceURL:    t.ServiceURL,
-			TlsTrustCerts: t.TlsTrustCerts,
+			RoutingKey:    t.RoutingKey.ValueString(),
+			Topic:         t.Topic.ValueString(),
+			ServiceURL:    t.ServiceURL.ValueString(),
+			TlsTrustCerts: sliceString(t.TlsTrustCerts),
 			Authentication: control.PulsarAuthentication{
-				AuthenticationMode: control.PularAuthenticationMode(t.Authentication.Mode),
-				Token:              t.Authentication.Token,
+				AuthenticationMode: control.PularAuthenticationMode(t.Authentication.Mode.ValueString()),
+				Token:              t.Authentication.Token.ValueString(),
 			},
-			Enveloped: t.Enveloped,
+			Enveloped: t.Enveloped.ValueBool(),
 			Format:    control.Format(t.Format.ValueString()),
 		}
 	case *AblyRuleTargetHTTP:
@@ -111,67 +111,67 @@ func GetPlanRule(plan AblyRule) control.NewRule {
 		}
 
 		target = &control.HttpTarget{
-			Url:          t.Url,
+			Url:          t.Url.ValueString(),
 			Headers:      headers,
-			SigningKeyID: t.SigningKeyId,
+			SigningKeyID: t.SigningKeyId.ValueString(),
 			Format:       control.Format(t.Format.ValueString()),
-			Enveloped:    t.Enveloped,
+			Enveloped:    t.Enveloped.ValueBool(),
 		}
 	case *AblyRuleTargetIFTTT:
 		target = &control.HttpIftttTarget{
-			WebhookKey: t.WebhookKey,
-			EventName:  t.EventName,
+			WebhookKey: t.WebhookKey.ValueString(),
+			EventName:  t.EventName.ValueString(),
 		}
 	case *AblyRuleTargetAzureFunction:
 		target = &control.HttpAzureFunctionTarget{
-			AzureAppID:        t.AzureAppID,
-			AzureFunctionName: t.AzureFunctionName,
+			AzureAppID:        t.AzureAppID.ValueString(),
+			AzureFunctionName: t.AzureFunctionName.ValueString(),
 			Headers:           GetHeaders(t.Headers),
-			SigningKeyID:      t.SigningKeyID,
+			SigningKeyID:      t.SigningKeyID.ValueString(),
 			Format:            control.Format(t.Format.ValueString()),
 		}
 	case *AblyRuleTargetGoogleFunction:
 		target = &control.HttpGoogleCloudFunctionTarget{
-			Region:       t.Region,
-			ProjectID:    t.ProjectID,
-			FunctionName: t.FunctionName,
+			Region:       t.Region.ValueString(),
+			ProjectID:    t.ProjectID.ValueString(),
+			FunctionName: t.FunctionName.ValueString(),
 			Headers:      GetHeaders(t.Headers),
-			SigningKeyID: t.SigningKeyId,
+			SigningKeyID: t.SigningKeyId.ValueString(),
 			Enveloped:    t.Enveloped.ValueBool(),
 			Format:       control.Format(t.Format.ValueString()),
 		}
 
 	case *AblyRuleTargetKafka:
 		target = &control.KafkaTarget{
-			RoutingKey: t.RoutingKey,
-			Brokers:    t.Brokers,
+			RoutingKey: t.RoutingKey.ValueString(),
+			Brokers:    sliceString(t.Brokers),
 			Authentication: control.KafkaAuthentication{
 				Sasl: control.Sasl{
-					Mechanism: control.SaslMechanism(t.KafkaAuthentication.Sasl.Mechanism),
-					Username:  t.KafkaAuthentication.Sasl.Username,
-					Password:  t.KafkaAuthentication.Sasl.Password,
+					Mechanism: control.SaslMechanism(t.KafkaAuthentication.Sasl.Mechanism.ValueString()),
+					Username:  t.KafkaAuthentication.Sasl.Username.ValueString(),
+					Password:  t.KafkaAuthentication.Sasl.Password.ValueString(),
 				},
 			},
-			Enveloped: t.Enveloped,
+			Enveloped: t.Enveloped.ValueBool(),
 			Format:    control.Format(t.Format.ValueString()),
 		}
 	case *AblyRuleTargetAMQP:
 		target = &control.AmqpTarget{
-			QueueID:   t.QueueID,
+			QueueID:   t.QueueID.ValueString(),
 			Headers:   GetHeaders(t.Headers),
-			Enveloped: t.Enveloped,
+			Enveloped: t.Enveloped.ValueBool(),
 			Format:    control.Format(t.Format.ValueString()),
 		}
 	case *AblyRuleTargetAMQPExternal:
 		target = &control.AmqpExternalTarget{
-			Url:                t.Url,
-			RoutingKey:         t.RoutingKey,
-			Exchange:           t.Exchange,
-			MandatoryRoute:     t.MandatoryRoute,
-			PersistentMessages: t.PersistentMessages,
+			Url:                t.Url.ValueString(),
+			RoutingKey:         t.RoutingKey.ValueString(),
+			Exchange:           t.Exchange.ValueString(),
+			MandatoryRoute:     t.MandatoryRoute.ValueBool(),
+			PersistentMessages: t.PersistentMessages.ValueBool(),
 			MessageTTL:         int(t.MessageTtl.ValueInt64()),
 			Headers:            GetHeaders(t.Headers),
-			Enveloped:          t.Enveloped,
+			Enveloped:          t.Enveloped.ValueBool(),
 			Format:             control.Format(t.Format.ValueString()),
 		}
 	}
@@ -255,72 +255,72 @@ func GetRuleResponse(ablyRule *control.Rule, plan *AblyRule) AblyRule {
 	switch v := ablyRule.Target.(type) {
 	case *control.AwsKinesisTarget:
 		respTarget = &AblyRuleTargetKinesis{
-			Region:       v.Region,
-			StreamName:   v.StreamName,
-			PartitionKey: v.PartitionKey,
+			Region:       types.StringValue(v.Region),
+			StreamName:   types.StringValue(v.StreamName),
+			PartitionKey: types.StringValue(v.PartitionKey),
 			AwsAuth:      GetAwsAuth(&v.Authentication, plan),
-			Enveloped:    v.Enveloped,
+			Enveloped:    types.BoolValue(v.Enveloped),
 			Format:       types.StringValue(string(v.Format)),
 		}
 	case *control.AwsSqsTarget:
 		respTarget = &AblyRuleTargetSqs{
-			Region:       v.Region,
-			AwsAccountID: v.AwsAccountID,
-			QueueName:    v.QueueName,
+			Region:       types.StringValue(v.Region),
+			AwsAccountID: types.StringValue(v.AwsAccountID),
+			QueueName:    types.StringValue(v.QueueName),
 			AwsAuth:      GetAwsAuth(&v.Authentication, plan),
-			Enveloped:    v.Enveloped,
+			Enveloped:    types.BoolValue(v.Enveloped),
 			Format:       types.StringValue(string(v.Format)),
 		}
 	case *control.AwsLambdaTarget:
 		respTarget = &AblyRuleTargetLambda{
-			Region:       v.Region,
-			FunctionName: v.FunctionName,
+			Region:       types.StringValue(v.Region),
+			FunctionName: types.StringValue(v.FunctionName),
 			AwsAuth:      GetAwsAuth(&v.Authentication, plan),
-			Enveloped:    v.Enveloped,
+			Enveloped:    types.BoolValue(v.Enveloped),
 		}
 	case *control.HttpZapierTarget:
 		headers := ToHeaders(v)
 
 		respTarget = &AblyRuleTargetZapier{
-			Url:          v.Url,
-			SigningKeyId: v.SigningKeyID,
+			Url:          types.StringValue(v.Url),
+			SigningKeyId: types.StringValue(v.SigningKeyID),
 			Headers:      headers,
 		}
 	case *control.HttpCloudfareWorkerTarget:
 		headers := ToHeaders(v)
 
 		respTarget = &AblyRuleTargetCloudflareWorker{
-			Url:          v.Url,
-			SigningKeyId: v.SigningKeyID,
+			Url:          types.StringValue(v.Url),
+			SigningKeyId: types.StringValue(v.SigningKeyID),
 			Headers:      headers,
 		}
 	case *control.PulsarTarget:
 		respTarget = &AblyRuleTargetPulsar{
-			RoutingKey:    v.RoutingKey,
-			Topic:         v.Topic,
-			ServiceURL:    v.ServiceURL,
-			TlsTrustCerts: v.TlsTrustCerts,
+			RoutingKey:    types.StringValue(v.RoutingKey),
+			Topic:         types.StringValue(v.Topic),
+			ServiceURL:    types.StringValue(v.ServiceURL),
+			TlsTrustCerts: toTypedStringSlice(v.TlsTrustCerts),
 			Authentication: PulsarAuthentication{
-				Mode:  string(v.Authentication.AuthenticationMode),
-				Token: v.Authentication.Token,
+				Mode:  types.StringValue(string(v.Authentication.AuthenticationMode)),
+				Token: types.StringValue(v.Authentication.Token),
 			},
-			Enveloped: v.Enveloped,
+			Enveloped: types.BoolValue(v.Enveloped),
 			Format:    types.StringValue(string(v.Format)),
 		}
 	case *control.HttpIftttTarget:
 		respTarget = &AblyRuleTargetIFTTT{
-			EventName:  v.EventName,
-			WebhookKey: v.WebhookKey,
+			EventName:  types.StringValue(v.EventName),
+			WebhookKey: types.StringValue(v.WebhookKey),
 		}
 	case *control.HttpGoogleCloudFunctionTarget:
 		headers := ToHeaders(v)
 
 		respTarget = &AblyRuleTargetGoogleFunction{
-			Region:       v.Region,
-			ProjectID:    v.ProjectID,
-			FunctionName: v.FunctionName,
+			Region:       types.StringValue(v.Region),
+			ProjectID:    types.StringValue(v.ProjectID),
+			FunctionName: types.StringValue(v.FunctionName),
 			Headers:      headers,
-			SigningKeyId: v.SigningKeyID,
+			SigningKeyId: types.StringValue(v.SigningKeyID),
 			Enveloped:    types.BoolValue(v.Enveloped),
 			Format:       types.StringValue(string(v.Format)),
 		}
@@ -328,43 +328,43 @@ func GetRuleResponse(ablyRule *control.Rule, plan *AblyRule) AblyRule {
 		headers := ToHeaders(v)
 
 		respTarget = &AblyRuleTargetAzureFunction{
-			AzureAppID:        v.AzureAppID,
-			AzureFunctionName: v.AzureFunctionName,
+			AzureAppID:        types.StringValue(v.AzureAppID),
+			AzureFunctionName: types.StringValue(v.AzureFunctionName),
 			Headers:           headers,
-			SigningKeyID:      v.SigningKeyID,
+			SigningKeyID:      types.StringValue(v.SigningKeyID),
 			Format:            types.StringValue(string(v.Format)),
 		}
 	case *control.HttpTarget:
 		headers := ToHeaders(v)
 
 		respTarget = &AblyRuleTargetHTTP{
-			Url:          v.Url,
+			Url:          types.StringValue(v.Url),
 			Headers:      headers,
-			SigningKeyId: v.SigningKeyID,
+			SigningKeyId: types.StringValue(v.SigningKeyID),
 			Format:       types.StringValue(string(v.Format)),
-			Enveloped:    v.Enveloped,
+			Enveloped:    types.BoolValue(v.Enveloped),
 		}
 	case *control.KafkaTarget:
 		respTarget = &AblyRuleTargetKafka{
-			RoutingKey: v.RoutingKey,
-			Brokers:    v.Brokers,
+			RoutingKey: types.StringValue(v.RoutingKey),
+			Brokers:    toTypedStringSlice(v.Brokers),
 			KafkaAuthentication: KafkaAuthentication{
 				Sasl{
-					Mechanism: string(v.Authentication.Sasl.Mechanism),
-					Username:  v.Authentication.Sasl.Username,
-					Password:  v.Authentication.Sasl.Password,
+					Mechanism: types.StringValue(string(v.Authentication.Sasl.Mechanism)),
+					Username:  types.StringValue(v.Authentication.Sasl.Username),
+					Password:  types.StringValue(v.Authentication.Sasl.Password),
 				},
 			},
-			Enveloped: v.Enveloped,
+			Enveloped: types.BoolValue(v.Enveloped),
 			Format:    types.StringValue(string(v.Format)),
 		}
 	case *control.AmqpTarget:
 		headers := ToHeaders(v)
 
 		respTarget = &AblyRuleTargetAMQP{
-			QueueID:   v.QueueID,
+			QueueID:   types.StringValue(v.QueueID),
 			Headers:   headers,
-			Enveloped: v.Enveloped,
+			Enveloped: types.BoolValue(v.Enveloped),
 			Format:    types.StringValue(string(v.Format)),
 		}
 	case *control.AmqpExternalTarget:
@@ -375,14 +375,14 @@ func GetRuleResponse(ablyRule *control.Rule, plan *AblyRule) AblyRule {
 		}
 
 		respTarget = &AblyRuleTargetAMQPExternal{
-			Url:                v.Url,
-			RoutingKey:         v.RoutingKey,
-			Exchange:           v.Exchange,
-			MandatoryRoute:     v.MandatoryRoute,
-			PersistentMessages: v.PersistentMessages,
+			Url:                types.StringValue(v.Url),
+			RoutingKey:         types.StringValue(v.RoutingKey),
+			Exchange:           types.StringValue(v.Exchange),
+			MandatoryRoute:     types.BoolValue(v.MandatoryRoute),
+			PersistentMessages: types.BoolValue(v.PersistentMessages),
 			MessageTtl:         ttl,
 			Headers:            headers,
-			Enveloped:          v.Enveloped,
+			Enveloped:          types.BoolValue(v.Enveloped),
 			Format:             types.StringValue(string(v.Format)),
 		}
 	}
@@ -396,7 +396,7 @@ func GetRuleResponse(ablyRule *control.Rule, plan *AblyRule) AblyRule {
 
 	respSource := AblyRuleSource{
 		ChannelFilter: channelFilter,
-		Type:          ablyRule.Source.Type,
+		Type:          types.StringValue(string(ablyRule.Source.Type)),
 	}
 
 	respRule := AblyRule{
@@ -535,15 +535,15 @@ func GetFormatSchema() schema.Attribute {
 	}
 }
 
-func GetSourceType(mode control.SourceType) control.SourceType {
+func GetSourceType(mode types.String) control.SourceType {
 	switch mode {
-	case "channel.message":
+	case types.StringValue("channel.message"):
 		return control.ChannelMessage
-	case "channel.presence":
+	case types.StringValue("channel.presence"):
 		return control.ChannelPresence
-	case "channel.lifecycle":
+	case types.StringValue("channel.lifecycle"):
 		return control.ChannelLifeCycle
-	case "channel.occupancy":
+	case types.StringValue("channel.occupancy"):
 		return control.ChannelOccupancy
 	default:
 		return control.ChannelMessage
@@ -580,18 +580,6 @@ func ToHeaders(plan control.Target) []AblyRuleHeaders {
 	}
 
 	return respHeaders
-}
-
-func GetKafkaAuthSchema(headers []AblyRuleHeaders) []control.Header {
-	var retHeaders []control.Header
-	for _, h := range headers {
-		retHeaders = append(retHeaders, control.Header{
-			Name:  h.Name.ValueString(),
-			Value: h.Value.ValueString(),
-		})
-	}
-
-	return retHeaders
 }
 
 type Rule interface {

@@ -2,7 +2,6 @@
 package provider
 
 import (
-	control "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -38,15 +37,15 @@ type AblyNamespace struct {
 
 // AblyKey represents an Ably API key.
 type AblyKey struct {
-	ID              types.String        `tfsdk:"id"`
-	AppID           types.String        `tfsdk:"app_id"`
-	Name            types.String        `tfsdk:"name"`
-	RevocableTokens types.Bool          `tfsdk:"revocable_tokens"`
-	Capability      map[string][]string `tfsdk:"capabilities"`
-	Status          types.Int64         `tfsdk:"status"`
-	Key             types.String        `tfsdk:"key"`
-	Created         types.Int64         `tfsdk:"created"`
-	Modified        types.Int64         `tfsdk:"modified"`
+	ID              types.String              `tfsdk:"id"`
+	AppID           types.String              `tfsdk:"app_id"`
+	Name            types.String              `tfsdk:"name"`
+	RevocableTokens types.Bool                `tfsdk:"revocable_tokens"`
+	Capability      map[string][]types.String `tfsdk:"capabilities"`
+	Status          types.Int64               `tfsdk:"status"`
+	Key             types.String              `tfsdk:"key"`
+	Created         types.Int64               `tfsdk:"created"`
+	Modified        types.Int64               `tfsdk:"modified"`
 }
 
 // AblyQueue represents an Ably queue.
@@ -80,6 +79,45 @@ func emptyStringToNull(v *types.String) {
 	}
 }
 
+func sliceString(v []types.String) []string {
+	s := make([]string, len(v))
+	for i, v := range v {
+		s[i] = v.ValueString()
+	}
+	return s
+}
+
+// mapFromStringSlice converts a map of strings to string slices (Terraform types) to a map of Go strings to Go string slices
+func mapFromStringSlice(m map[string][]types.String) map[string][]string {
+	result := make(map[string][]string, len(m))
+	for k, v := range m {
+		result[k] = sliceString(v)
+	}
+	return result
+}
+
+// mapToTypedStringSlice converts a map of Go strings to Go string slices to a map of Terraform types
+func mapToTypedStringSlice(m map[string][]string) map[string][]types.String {
+	result := make(map[string][]types.String, len(m))
+	for k, v := range m {
+		typedSlice := make([]types.String, len(v))
+		for i, s := range v {
+			typedSlice[i] = types.StringValue(s)
+		}
+		result[k] = typedSlice
+	}
+	return result
+}
+
+// toTypedStringSlice converts a slice of Go strings to a slice of Terraform types.String
+func toTypedStringSlice(slice []string) []types.String {
+	typedSlice := make([]types.String, len(slice))
+	for i, s := range slice {
+		typedSlice[i] = types.StringValue(s)
+	}
+	return typedSlice
+}
+
 // IngressRule returns the ingress rule from the decoder.
 func (r *AblyIngressRuleDecoder[_]) IngressRule() AblyIngressRule {
 	return AblyIngressRule{
@@ -100,30 +138,30 @@ type AblyIngressRuleDecoder[T any] struct {
 type AblyIngressRule AblyIngressRuleDecoder[any]
 
 type AblyIngressRuleTargetMongo struct {
-	Url                      string `tfsdk:"url"`
-	Database                 string `tfsdk:"database"`
-	Collection               string `tfsdk:"collection"`
-	Pipeline                 string `tfsdk:"pipeline"`
-	FullDocument             string `tfsdk:"full_document"`
-	FullDocumentBeforeChange string `tfsdk:"full_document_before_change"`
-	PrimarySite              string `tfsdk:"primary_site"`
+	Url                      types.String `tfsdk:"url"`
+	Database                 types.String `tfsdk:"database"`
+	Collection               types.String `tfsdk:"collection"`
+	Pipeline                 types.String `tfsdk:"pipeline"`
+	FullDocument             types.String `tfsdk:"full_document"`
+	FullDocumentBeforeChange types.String `tfsdk:"full_document_before_change"`
+	PrimarySite              types.String `tfsdk:"primary_site"`
 }
 
 type AblyIngressRuleTargetPostgresOutbox struct {
-	Url               string `tfsdk:"url"`
-	OutboxTableSchema string `tfsdk:"outbox_table_schema"`
-	OutboxTableName   string `tfsdk:"outbox_table_name"`
-	NodesTableSchema  string `tfsdk:"nodes_table_schema"`
-	NodesTableName    string `tfsdk:"nodes_table_name"`
-	SslMode           string `tfsdk:"ssl_mode"`
-	SslRootCert       string `tfsdk:"ssl_root_cert"`
-	PrimarySite       string `tfsdk:"primary_site"`
+	Url               types.String `tfsdk:"url"`
+	OutboxTableSchema types.String `tfsdk:"outbox_table_schema"`
+	OutboxTableName   types.String `tfsdk:"outbox_table_name"`
+	NodesTableSchema  types.String `tfsdk:"nodes_table_schema"`
+	NodesTableName    types.String `tfsdk:"nodes_table_name"`
+	SslMode           types.String `tfsdk:"ssl_mode"`
+	SslRootCert       types.String `tfsdk:"ssl_root_cert"`
+	PrimarySite       types.String `tfsdk:"primary_site"`
 }
 
 // AblyRuleSource represents a source for Ably rules.
 type AblyRuleSource struct {
-	ChannelFilter types.String       `tfsdk:"channel_filter"`
-	Type          control.SourceType `tfsdk:"type"`
+	ChannelFilter types.String `tfsdk:"channel_filter"`
+	Type          types.String `tfsdk:"type"`
 }
 
 // Rule returns the rule from the decoder.
@@ -150,11 +188,11 @@ type AblyRuleDecoder[T any] struct {
 type AblyRule AblyRuleDecoder[any]
 
 type AblyRuleTargetKinesis struct {
-	Region       string       `tfsdk:"region"`
-	StreamName   string       `tfsdk:"stream_name"`
-	PartitionKey string       `tfsdk:"partition_key"`
+	Region       types.String `tfsdk:"region"`
+	StreamName   types.String `tfsdk:"stream_name"`
+	PartitionKey types.String `tfsdk:"partition_key"`
 	AwsAuth      AwsAuth      `tfsdk:"authentication"`
-	Enveloped    bool         `tfsdk:"enveloped"`
+	Enveloped    types.Bool   `tfsdk:"enveloped"`
 	Format       types.String `tfsdk:"format"`
 }
 
@@ -166,76 +204,76 @@ type AwsAuth struct {
 }
 
 type AblyRuleTargetSqs struct {
-	Region       string       `tfsdk:"region"`
-	AwsAccountID string       `tfsdk:"aws_account_id"`
-	QueueName    string       `tfsdk:"queue_name"`
+	Region       types.String `tfsdk:"region"`
+	AwsAccountID types.String `tfsdk:"aws_account_id"`
+	QueueName    types.String `tfsdk:"queue_name"`
 	AwsAuth      AwsAuth      `tfsdk:"authentication"`
-	Enveloped    bool         `tfsdk:"enveloped"`
+	Enveloped    types.Bool   `tfsdk:"enveloped"`
 	Format       types.String `tfsdk:"format"`
 }
 
 type AblyRuleTargetLambda struct {
-	Region       string  `tfsdk:"region"`
-	FunctionName string  `tfsdk:"function_name"`
-	AwsAuth      AwsAuth `tfsdk:"authentication"`
-	Enveloped    bool    `tfsdk:"enveloped"`
+	Region       types.String `tfsdk:"region"`
+	FunctionName types.String `tfsdk:"function_name"`
+	AwsAuth      AwsAuth      `tfsdk:"authentication"`
+	Enveloped    types.Bool   `tfsdk:"enveloped"`
 }
 
 type AblyRuleTargetGoogleFunction struct {
-	Region       string            `tfsdk:"region"`
-	ProjectID    string            `tfsdk:"project_id"`
-	FunctionName string            `tfsdk:"function_name"`
+	Region       types.String      `tfsdk:"region"`
+	ProjectID    types.String      `tfsdk:"project_id"`
+	FunctionName types.String      `tfsdk:"function_name"`
 	Headers      []AblyRuleHeaders `tfsdk:"headers"`
-	SigningKeyId string            `tfsdk:"signing_key_id"`
+	SigningKeyId types.String      `tfsdk:"signing_key_id"`
 	Enveloped    types.Bool        `tfsdk:"enveloped"`
 	Format       types.String      `tfsdk:"format"`
 }
 
 type AblyRuleTargetCloudflareWorker struct {
-	Url          string            `tfsdk:"url"`
+	Url          types.String      `tfsdk:"url"`
 	Headers      []AblyRuleHeaders `tfsdk:"headers"`
-	SigningKeyId string            `tfsdk:"signing_key_id"`
+	SigningKeyId types.String      `tfsdk:"signing_key_id"`
 }
 
 type AblyRuleTargetHTTP struct {
-	Url          string            `tfsdk:"url"`
+	Url          types.String      `tfsdk:"url"`
 	Headers      []AblyRuleHeaders `tfsdk:"headers"`
-	SigningKeyId string            `tfsdk:"signing_key_id"`
+	SigningKeyId types.String      `tfsdk:"signing_key_id"`
 	Format       types.String      `tfsdk:"format"`
-	Enveloped    bool              `tfsdk:"enveloped"`
+	Enveloped    types.Bool        `tfsdk:"enveloped"`
 }
 
 type AblyRuleTargetPulsar struct {
-	RoutingKey     string               `tfsdk:"routing_key"`
-	Topic          string               `tfsdk:"topic"`
-	ServiceURL     string               `tfsdk:"service_url"`
-	TlsTrustCerts  []string             `tfsdk:"tls_trust_certs"`
+	RoutingKey     types.String         `tfsdk:"routing_key"`
+	Topic          types.String         `tfsdk:"topic"`
+	ServiceURL     types.String         `tfsdk:"service_url"`
+	TlsTrustCerts  []types.String       `tfsdk:"tls_trust_certs"`
 	Authentication PulsarAuthentication `tfsdk:"authentication"`
-	Enveloped      bool                 `tfsdk:"enveloped"`
+	Enveloped      types.Bool           `tfsdk:"enveloped"`
 	Format         types.String         `tfsdk:"format"`
 }
 
 type PulsarAuthentication struct {
-	Mode  string `tfsdk:"mode"`
-	Token string `tfsdk:"token"`
+	Mode  types.String `tfsdk:"mode"`
+	Token types.String `tfsdk:"token"`
 }
 
 type AblyRuleTargetZapier struct {
-	Url          string            `tfsdk:"url"`
+	Url          types.String      `tfsdk:"url"`
 	Headers      []AblyRuleHeaders `tfsdk:"headers"`
-	SigningKeyId string            `tfsdk:"signing_key_id"`
+	SigningKeyId types.String      `tfsdk:"signing_key_id"`
 }
 
 type AblyRuleTargetIFTTT struct {
-	WebhookKey string `tfsdk:"webhook_key"`
-	EventName  string `tfsdk:"event_name"`
+	WebhookKey types.String `tfsdk:"webhook_key"`
+	EventName  types.String `tfsdk:"event_name"`
 }
 
 type AblyRuleTargetAzureFunction struct {
-	AzureAppID        string            `tfsdk:"azure_app_id"`
-	AzureFunctionName string            `tfsdk:"function_name"`
+	AzureAppID        types.String      `tfsdk:"azure_app_id"`
+	AzureFunctionName types.String      `tfsdk:"function_name"`
 	Headers           []AblyRuleHeaders `tfsdk:"headers"`
-	SigningKeyID      string            `tfsdk:"signing_key_id"`
+	SigningKeyID      types.String      `tfsdk:"signing_key_id"`
 	Format            types.String      `tfsdk:"format"`
 }
 
@@ -245,29 +283,29 @@ type AblyRuleHeaders struct {
 }
 
 type AblyRuleTargetKafka struct {
-	RoutingKey          string              `tfsdk:"routing_key"`
-	Brokers             []string            `tfsdk:"brokers"`
+	RoutingKey          types.String        `tfsdk:"routing_key"`
+	Brokers             []types.String      `tfsdk:"brokers"`
 	KafkaAuthentication KafkaAuthentication `tfsdk:"auth"`
-	Enveloped           bool                `tfsdk:"enveloped"`
+	Enveloped           types.Bool          `tfsdk:"enveloped"`
 	Format              types.String        `tfsdk:"format"`
 }
 
 type AblyRuleTargetAMQP struct {
-	QueueID   string            `tfsdk:"queue_id"`
+	QueueID   types.String      `tfsdk:"queue_id"`
 	Headers   []AblyRuleHeaders `tfsdk:"headers"`
-	Enveloped bool              `tfsdk:"enveloped"`
+	Enveloped types.Bool        `tfsdk:"enveloped"`
 	Format    types.String      `tfsdk:"format"`
 }
 
 type AblyRuleTargetAMQPExternal struct {
-	Url                string            `tfsdk:"url"`
-	RoutingKey         string            `tfsdk:"routing_key"`
-	Exchange           string            `tfsdk:"exchange"`
-	MandatoryRoute     bool              `tfsdk:"mandatory_route"`
-	PersistentMessages bool              `tfsdk:"persistent_messages"`
+	Url                types.String      `tfsdk:"url"`
+	RoutingKey         types.String      `tfsdk:"routing_key"`
+	Exchange           types.String      `tfsdk:"exchange"`
+	MandatoryRoute     types.Bool        `tfsdk:"mandatory_route"`
+	PersistentMessages types.Bool        `tfsdk:"persistent_messages"`
 	MessageTtl         types.Int64       `tfsdk:"message_ttl"`
 	Headers            []AblyRuleHeaders `tfsdk:"headers"`
-	Enveloped          bool              `tfsdk:"enveloped"`
+	Enveloped          types.Bool        `tfsdk:"enveloped"`
 	Format             types.String      `tfsdk:"format"`
 }
 
@@ -276,7 +314,7 @@ type KafkaAuthentication struct {
 }
 
 type Sasl struct {
-	Mechanism string `tfsdk:"mechanism"`
-	Username  string `tfsdk:"username"`
-	Password  string `tfsdk:"password"`
+	Mechanism types.String `tfsdk:"mechanism"`
+	Username  types.String `tfsdk:"username"`
+	Password  types.String `tfsdk:"password"`
 }
