@@ -1,4 +1,5 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	"context"
@@ -14,7 +15,7 @@ type ResourceRuleGoogleFunction struct {
 var _ resource.Resource = &ResourceRuleGoogleFunction{}
 var _ resource.ResourceWithImportState = &ResourceRuleGoogleFunction{}
 
-// Get Rule Resource schema
+// Schema defines the schema for the resource.
 func (r ResourceRuleGoogleFunction) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = GetRuleSchema(
 		map[string]schema.Attribute{
@@ -54,7 +55,7 @@ func (r *ResourceRuleGoogleFunction) Name() string {
 	return "Google Cloud Function"
 }
 
-// Create a new resource
+// Create creates a new resource.
 func (r ResourceRuleGoogleFunction) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	CreateRule[AblyRuleTargetGoogleFunction](&r, ctx, req, resp)
 }
@@ -64,17 +65,17 @@ func (r ResourceRuleGoogleFunction) Read(ctx context.Context, req resource.ReadR
 	ReadRule[AblyRuleTargetGoogleFunction](&r, ctx, req, resp)
 }
 
-// // Update resource
+// Update updates an existing resource.
 func (r ResourceRuleGoogleFunction) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	UpdateRule[AblyRuleTargetGoogleFunction](&r, ctx, req, resp)
 }
 
-// Delete resource
+// Delete deletes the resource.
 func (r ResourceRuleGoogleFunction) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	DeleteRule[AblyRuleTargetGoogleFunction](&r, ctx, req, resp)
 }
 
-// Import resource
+// ImportState handles the import state functionality.
 func (r ResourceRuleGoogleFunction) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }

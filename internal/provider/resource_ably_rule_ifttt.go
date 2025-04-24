@@ -1,4 +1,5 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	"context"
@@ -14,7 +15,7 @@ type ResourceRuleIFTTT struct {
 var _ resource.Resource = &ResourceRuleIFTTT{}
 var _ resource.ResourceWithImportState = &ResourceRuleIFTTT{}
 
-// Get Rule Resource schema
+// Schema defines the schema for the resource.
 func (r ResourceRuleIFTTT) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = GetRuleSchema(
 		map[string]schema.Attribute{
@@ -43,7 +44,7 @@ func (r *ResourceRuleIFTTT) Name() string {
 	return "IFTTT"
 }
 
-// Create a new resource
+// Create creates a new resource.
 func (r ResourceRuleIFTTT) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	CreateRule[AblyRuleTargetIFTTT](&r, ctx, req, resp)
 }
@@ -53,17 +54,17 @@ func (r ResourceRuleIFTTT) Read(ctx context.Context, req resource.ReadRequest, r
 	ReadRule[AblyRuleTargetIFTTT](&r, ctx, req, resp)
 }
 
-// // Update resource
+// Update updates an existing resource.
 func (r ResourceRuleIFTTT) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	UpdateRule[AblyRuleTargetIFTTT](&r, ctx, req, resp)
 }
 
-// Delete resource
+// Delete deletes the resource.
 func (r ResourceRuleIFTTT) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	DeleteRule[AblyRuleTargetIFTTT](&r, ctx, req, resp)
 }
 
-// Import resource
+// ImportState handles the import state functionality.
 func (r ResourceRuleIFTTT) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }

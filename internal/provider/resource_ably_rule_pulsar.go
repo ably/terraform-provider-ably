@@ -1,4 +1,5 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	"context"
@@ -15,7 +16,7 @@ type ResourceRulePulsar struct {
 var _ resource.Resource = &ResourceRulePulsar{}
 var _ resource.ResourceWithImportState = &ResourceRulePulsar{}
 
-// Get Rule Resource schema
+// Schema defines the schema for the resource.
 func (r ResourceRulePulsar) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = GetRuleSchema(
 		map[string]schema.Attribute{
@@ -70,7 +71,7 @@ func (r *ResourceRulePulsar) Name() string {
 	return "Pulsar"
 }
 
-// Create a new resource
+// Create creates a new resource.
 func (r ResourceRulePulsar) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	CreateRule[AblyRuleTargetPulsar](&r, ctx, req, resp)
 }
@@ -80,17 +81,17 @@ func (r ResourceRulePulsar) Read(ctx context.Context, req resource.ReadRequest, 
 	ReadRule[AblyRuleTargetPulsar](&r, ctx, req, resp)
 }
 
-// // Update resource
+// Update updates an existing resource.
 func (r ResourceRulePulsar) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	UpdateRule[AblyRuleTargetPulsar](&r, ctx, req, resp)
 }
 
-// Delete resource
+// Delete deletes the resource.
 func (r ResourceRulePulsar) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	DeleteRule[AblyRuleTargetPulsar](&r, ctx, req, resp)
 }
 
-// Import resource
+// ImportState handles the import state functionality.
 func (r ResourceRulePulsar) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }

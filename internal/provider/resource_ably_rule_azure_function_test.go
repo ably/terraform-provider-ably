@@ -1,4 +1,5 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	"fmt"
@@ -9,15 +10,15 @@ import (
 )
 
 func TestAccAblyRuleAzureFunction(t *testing.T) {
-	app_name := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
-	update_app_name := "acc-test-" + app_name
-	original_headers_block := `[
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	updateAppName := "acc-test-" + appName
+	originalHeadersBlock := `[
 	{
 		name : "User-Agent-Conf",
 		value : "user-agent-string",
 	},
 	]`
-	update_headers_block := `[
+	updateHeadersBlock := `[
 	{
 		name : "User-Agent-Conf-Update",
 		value : "user-agent-string-update",
@@ -34,18 +35,18 @@ func TestAccAblyRuleAzureFunction(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccAblyRuleAzureFunctionConfig(
-					app_name,
+					appName,
 					"enabled",
 					"channel.message",
 					"batch",
 					"demo",
 					"function0",
-					original_headers_block,
+					originalHeadersBlock,
 					"ably_api_key.api_key_0.id",
 					"json",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
 					resource.TestCheckResourceAttr("ably_rule_azure_function.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_azure_function.rule0", "source.type", "channel.message"),
 					resource.TestCheckResourceAttr("ably_rule_azure_function.rule0", "request_mode", "batch"),
@@ -57,18 +58,18 @@ func TestAccAblyRuleAzureFunction(t *testing.T) {
 			},
 			{
 				Config: testAccAblyRuleAzureFunctionConfig(
-					update_app_name,
+					updateAppName,
 					"disabled",
 					"channel.presence",
 					"batch",
 					"demo",
 					"function1",
-					update_headers_block,
+					updateHeadersBlock,
 					"ably_api_key.api_key_1.id",
 					"msgpack",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", update_app_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", updateAppName),
 					resource.TestCheckResourceAttr("ably_rule_azure_function.rule0", "status", "disabled"),
 					resource.TestCheckResourceAttr("ably_rule_azure_function.rule0", "source.type", "channel.presence"),
 					resource.TestCheckResourceAttr("ably_rule_azure_function.rule0", "request_mode", "batch"),
@@ -91,10 +92,10 @@ func testAccAblyRuleAzureFunctionConfig(
 	ruleStatus string,
 	sourceType string,
 	requestMode string,
-	targetAzureAppId string,
+	targetAzureAppID string,
 	targetAzureFunctionName string,
 	targetHeaders string,
-	targetSigningKeyId string,
+	targetSigningKeyID string,
 	targetFormat string,
 ) string {
 	return fmt.Sprintf(`
@@ -150,5 +151,5 @@ resource "ably_rule_azure_function" "rule0" {
 	  format = %[9]q
 	}
   }
-`, appName, ruleStatus, sourceType, requestMode, targetAzureAppId, targetAzureFunctionName, targetHeaders, targetSigningKeyId, targetFormat)
+`, appName, ruleStatus, sourceType, requestMode, targetAzureAppID, targetAzureFunctionName, targetHeaders, targetSigningKeyID, targetFormat)
 }

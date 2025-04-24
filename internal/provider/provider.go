@@ -1,4 +1,5 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	"context"
@@ -13,7 +14,7 @@ import (
 	control "github.com/ably/ably-control-go"
 )
 
-const CONTROL_API_DEFAULT_URL = "https://control.ably.net/v1"
+const controlAPIDefaultURL = "https://control.ably.net/v1"
 
 // Ensure AblyProvider satisfies various provider interfaces.
 var _ provider.Provider = &AblyProvider{}
@@ -51,7 +52,7 @@ func (p *AblyProvider) Schema(ctx context.Context, req provider.SchemaRequest, r
 	}
 }
 
-// Provider schema struct
+// AblyProviderData contains configuration data for the Ably provider.
 type AblyProviderData struct {
 	Token types.String `tfsdk:"token"`
 	Url   types.String `tfsdk:"url"`
@@ -110,9 +111,9 @@ func (p *AblyProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 	}
 
 	// Create a new Ably client and set it to the provider client
-	// Use const CONTROL_API_DEFAULT_URL if url is empty
+	// Use const controlAPIDefaultURL if url is empty
 	if url == "" {
-		url = CONTROL_API_DEFAULT_URL
+		url = controlAPIDefaultURL
 	}
 	c, _, err := control.NewClientWithURL(token, url)
 
@@ -147,8 +148,8 @@ func (p *AblyProvider) Resources(context.Context) []func() resource.Resource {
 		func() resource.Resource { return ResourceRuleAzureFunction{p} },
 		func() resource.Resource { return ResourceRuleHTTP{p} },
 		func() resource.Resource { return ResourceRuleKafka{p} },
-		func() resource.Resource { return ResourceRuleAmqp{p} },
-		func() resource.Resource { return ResourceRuleAmqpExternal{p} },
+		func() resource.Resource { return ResourceRuleAMQP{p} },
+		func() resource.Resource { return ResourceRuleAMQPExternal{p} },
 		func() resource.Resource { return ResourceIngressRuleMongo{p} },
 		func() resource.Resource { return ResourceIngressRulePostgresOutbox{p} },
 	}

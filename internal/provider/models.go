@@ -1,11 +1,12 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	control "github.com/ably/ably-control-go"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// Ably App
+// AblyApp represents an Ably application.
 type AblyApp struct {
 	AccountID              types.String `tfsdk:"account_id"`
 	ID                     types.String `tfsdk:"id"`
@@ -18,7 +19,7 @@ type AblyApp struct {
 	ApnsUseSandboxEndpoint types.Bool   `tfsdk:"apns_use_sandbox_endpoint"`
 }
 
-// Ably Namespace
+// AblyNamespace represents an Ably namespace.
 type AblyNamespace struct {
 	AppID              types.String `tfsdk:"app_id"`
 	ID                 types.String `tfsdk:"id"`
@@ -35,7 +36,7 @@ type AblyNamespace struct {
 	ConflationKey      types.String `tfsdk:"conflation_key"`
 }
 
-// Ably Key
+// AblyKey represents an Ably API key.
 type AblyKey struct {
 	ID              types.String        `tfsdk:"id"`
 	AppID           types.String        `tfsdk:"app_id"`
@@ -48,7 +49,7 @@ type AblyKey struct {
 	Modified        types.Int64         `tfsdk:"modified"`
 }
 
-// Ably Queue
+// AblyQueue represents an Ably queue.
 type AblyQueue struct {
 	AppID     types.String `tfsdk:"app_id"`
 	ID        types.String `tfsdk:"id"`
@@ -79,7 +80,7 @@ func emptyStringToNull(v *types.String) {
 	}
 }
 
-// Ably Ingress Rule
+// IngressRule returns the ingress rule from the decoder.
 func (r *AblyIngressRuleDecoder[_]) IngressRule() AblyIngressRule {
 	return AblyIngressRule{
 		ID:     r.ID,
@@ -119,12 +120,13 @@ type AblyIngressRuleTargetPostgresOutbox struct {
 	PrimarySite       string `tfsdk:"primary_site"`
 }
 
-// Ably Rule
+// AblyRuleSource represents a source for Ably rules.
 type AblyRuleSource struct {
 	ChannelFilter types.String       `tfsdk:"channel_filter"`
 	Type          control.SourceType `tfsdk:"type"`
 }
 
+// Rule returns the rule from the decoder.
 func (r *AblyRuleDecoder[_]) Rule() AblyRule {
 	return AblyRule{
 		ID:          r.ID,
@@ -250,14 +252,14 @@ type AblyRuleTargetKafka struct {
 	Format              types.String        `tfsdk:"format"`
 }
 
-type AblyRuleTargetAmqp struct {
+type AblyRuleTargetAMQP struct {
 	QueueID   string            `tfsdk:"queue_id"`
 	Headers   []AblyRuleHeaders `tfsdk:"headers"`
 	Enveloped bool              `tfsdk:"enveloped"`
 	Format    types.String      `tfsdk:"format"`
 }
 
-type AblyRuleTargetAmqpExternal struct {
+type AblyRuleTargetAMQPExternal struct {
 	Url                string            `tfsdk:"url"`
 	RoutingKey         string            `tfsdk:"routing_key"`
 	Exchange           string            `tfsdk:"exchange"`

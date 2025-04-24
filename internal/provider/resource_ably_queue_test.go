@@ -1,4 +1,5 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	"fmt"
@@ -10,37 +11,37 @@ import (
 )
 
 func TestAccAblyQueue(t *testing.T) {
-	app_name := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
-	queue_name := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	queueName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccAblyQueueConfig(app_name, control.NewQueue{
-					Name:      queue_name,
+				Config: testAccAblyQueueConfig(appName, control.NewQueue{
+					Name:      queueName,
 					Ttl:       44,
 					MaxLength: 83,
 					Region:    control.EuWest1A,
 				}),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
-					resource.TestCheckResourceAttr("ably_queue.queue0", "name", queue_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
+					resource.TestCheckResourceAttr("ably_queue.queue0", "name", queueName),
 					resource.TestCheckResourceAttr("ably_queue.queue0", "ttl", "44"),
 					resource.TestCheckResourceAttr("ably_queue.queue0", "max_length", "83"),
 				),
 			},
 			{
 
-				Config: testAccAblyQueueConfig(app_name, control.NewQueue{
-					Name:      queue_name + "new",
+				Config: testAccAblyQueueConfig(appName, control.NewQueue{
+					Name:      queueName + "new",
 					Ttl:       30,
 					MaxLength: 83,
 					Region:    control.UsEast1A,
 				}),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
-					resource.TestCheckResourceAttr("ably_queue.queue0", "name", queue_name+"new"),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
+					resource.TestCheckResourceAttr("ably_queue.queue0", "name", queueName+"new"),
 					resource.TestCheckResourceAttr("ably_queue.queue0", "ttl", "30"),
 					resource.TestCheckResourceAttr("ably_queue.queue0", "max_length", "83"),
 				),

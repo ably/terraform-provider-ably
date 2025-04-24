@@ -1,4 +1,5 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	"fmt"
@@ -9,15 +10,15 @@ import (
 )
 
 func TestAccAblyRuleKinesis(t *testing.T) {
-	app_name := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
-	update_app_name := "acc-test-" + app_name
-	aws_credentials_auth_block := `authentication = {
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	updateAppName := "acc-test-" + appName
+	awsCredentialsAuthBlock := `authentication = {
 		mode = "credentials",
 		access_key_id = "gggg"
 		secret_access_key = "ffff"
 	}`
 
-	aws_assume_role_auth_block := `authentication = {
+	awsAssumeRoleAuthBlock := `authentication = {
 		mode = "assumeRole",
 		role_arn = "cccc"
 	}`
@@ -29,11 +30,11 @@ func TestAccAblyRuleKinesis(t *testing.T) {
 			// Create and Read testing of ably_app.app0
 			{
 				Config: testAccAblyRuleKinesisConfig(
-					app_name,
+					appName,
 					"enabled",
 					"^my-channel.*",
 					"channel.message",
-					aws_credentials_auth_block,
+					awsCredentialsAuthBlock,
 					"us-west-1",
 					"rule0-testing",
 					"message name: #{message.name},	clientId: #{message.clientId}",
@@ -41,7 +42,7 @@ func TestAccAblyRuleKinesis(t *testing.T) {
 					"json",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
 					resource.TestCheckResourceAttr("ably_rule_kinesis.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_kinesis.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_kinesis.rule0", "source.type", "channel.message"),
@@ -53,11 +54,11 @@ func TestAccAblyRuleKinesis(t *testing.T) {
 			// Update and Read testing of ably_app.app0
 			{
 				Config: testAccAblyRuleKinesisConfig(
-					update_app_name,
+					updateAppName,
 					"enabled",
 					"^my-channel.*",
 					"channel.message",
-					aws_assume_role_auth_block,
+					awsAssumeRoleAuthBlock,
 					"us-east-1",
 					"rule0-testing",
 					"message name: #{message.name}, clientId: #{message.clientId}",
@@ -65,7 +66,7 @@ func TestAccAblyRuleKinesis(t *testing.T) {
 					"json",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", update_app_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", updateAppName),
 					resource.TestCheckResourceAttr("ably_rule_kinesis.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_kinesis.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_kinesis.rule0", "source.type", "channel.message"),
