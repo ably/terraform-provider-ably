@@ -1,4 +1,5 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	"context"
@@ -14,7 +15,7 @@ type ResourceRuleZapier struct {
 var _ resource.Resource = &ResourceRuleZapier{}
 var _ resource.ResourceWithImportState = &ResourceRuleZapier{}
 
-// Get Rule Resource schema
+// Schema defines the schema for the resource.
 func (r ResourceRuleZapier) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = GetRuleSchema(
 		map[string]schema.Attribute{
@@ -44,7 +45,7 @@ func (r *ResourceRuleZapier) Name() string {
 	return "Zapier"
 }
 
-// Create a new resource
+// Create creates a new resource.
 func (r ResourceRuleZapier) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	CreateRule[AblyRuleTargetZapier](&r, ctx, req, resp)
 }
@@ -54,17 +55,17 @@ func (r ResourceRuleZapier) Read(ctx context.Context, req resource.ReadRequest, 
 	ReadRule[AblyRuleTargetZapier](&r, ctx, req, resp)
 }
 
-// // Update resource
+// Update updates an existing resource.
 func (r ResourceRuleZapier) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	UpdateRule[AblyRuleTargetZapier](&r, ctx, req, resp)
 }
 
-// Delete resource
+// Delete deletes the resource.
 func (r ResourceRuleZapier) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	DeleteRule[AblyRuleTargetZapier](&r, ctx, req, resp)
 }
 
-// Import resource
+// ImportState handles the import state functionality.
 func (r ResourceRuleZapier) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }

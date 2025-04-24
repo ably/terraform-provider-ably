@@ -1,4 +1,5 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	"context"
@@ -14,7 +15,7 @@ type ResourceRuleLambda struct {
 var _ resource.Resource = &ResourceRuleLambda{}
 var _ resource.ResourceWithImportState = &ResourceRuleLambda{}
 
-// Get Rule Resource schema
+// Schema defines the schema for the resource.
 func (r ResourceRuleLambda) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = GetRuleSchema(
 		map[string]schema.Attribute{
@@ -43,7 +44,7 @@ func (r *ResourceRuleLambda) Name() string {
 	return "AWS Lambda"
 }
 
-// Create a new resource
+// Create creates a new resource.
 func (r ResourceRuleLambda) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	CreateRule[AblyRuleTargetLambda](&r, ctx, req, resp)
 }
@@ -53,17 +54,17 @@ func (r ResourceRuleLambda) Read(ctx context.Context, req resource.ReadRequest, 
 	ReadRule[AblyRuleTargetLambda](&r, ctx, req, resp)
 }
 
-// // Update resource
+// Update updates an existing resource.
 func (r ResourceRuleLambda) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	UpdateRule[AblyRuleTargetLambda](&r, ctx, req, resp)
 }
 
-// Delete resource
+// Delete deletes the resource.
 func (r ResourceRuleLambda) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	DeleteRule[AblyRuleTargetLambda](&r, ctx, req, resp)
 }
 
-// Import resource
+// ImportState handles the import state functionality.
 func (r ResourceRuleLambda) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }

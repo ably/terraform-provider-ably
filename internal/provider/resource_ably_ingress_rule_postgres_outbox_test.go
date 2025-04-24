@@ -1,4 +1,5 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	"fmt"
@@ -9,10 +10,10 @@ import (
 )
 
 func TestAccAblyIngressRulePostgresOutbox(t *testing.T) {
-	app_name := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
-	update_app_name := "acc-test-" + app_name
-	test_postgres_url := "postgres://test:test@test.com:5432/your-database-name"
-	test_update_postgres_url := "postgres://test:test@example.com:5432/your-database-name"
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	updateAppName := "acc-test-" + appName
+	testPostgresURL := "postgres://test:test@test.com:5432/your-database-name"
+	testUpdatePostgresURL := "postgres://test:test@example.com:5432/your-database-name"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -21,9 +22,9 @@ func TestAccAblyIngressRulePostgresOutbox(t *testing.T) {
 			// Create and Read testing of ably_app.app0
 			{
 				Config: testAccAblyIngressRulePostgresOutboxConfig(
-					app_name,
+					appName,
 					"enabled",
-					test_postgres_url,
+					testPostgresURL,
 					"public",
 					"outbox",
 					"public",
@@ -33,9 +34,9 @@ func TestAccAblyIngressRulePostgresOutbox(t *testing.T) {
 					"us-east-1-A",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
 					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "status", "enabled"),
-					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "target.url", test_postgres_url),
+					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "target.url", testPostgresURL),
 					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "target.outbox_table_schema", "public"),
 					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "target.outbox_table_name", "outbox"),
 					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "target.nodes_table_schema", "public"),
@@ -48,9 +49,9 @@ func TestAccAblyIngressRulePostgresOutbox(t *testing.T) {
 			// Update and Read testing of ably_app.app0
 			{
 				Config: testAccAblyIngressRulePostgresOutboxConfig(
-					update_app_name,
+					updateAppName,
 					"enabled",
-					test_update_postgres_url,
+					testUpdatePostgresURL,
 					"public1",
 					"outbox1",
 					"public1",
@@ -60,9 +61,9 @@ func TestAccAblyIngressRulePostgresOutbox(t *testing.T) {
 					"us-east-1-A",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", update_app_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", updateAppName),
 					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "status", "enabled"),
-					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "target.url", test_update_postgres_url),
+					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "target.url", testUpdatePostgresURL),
 					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "target.outbox_table_schema", "public1"),
 					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "target.outbox_table_name", "outbox1"),
 					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "target.nodes_table_schema", "public1"),

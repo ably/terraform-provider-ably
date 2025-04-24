@@ -1,4 +1,5 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	"fmt"
@@ -9,15 +10,15 @@ import (
 )
 
 func TestAccAblyRuleZapier(t *testing.T) {
-	app_name := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
-	update_app_name := "acc-test-" + app_name
-	original_headers_block := `[
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	updateAppName := "acc-test-" + appName
+	originalHeadersBlock := `[
 	{
 		name : "User-Agent-Conf",
 		value : "user-agent-string",
 	},
 	]`
-	update_headers_block := `[
+	updateHeadersBlock := `[
 	{
 		name : "User-Agent-Conf",
 		value : "user-agent-string",
@@ -35,17 +36,17 @@ func TestAccAblyRuleZapier(t *testing.T) {
 			// Create and Read testing of ably_app.app0
 			{
 				Config: testAccAblyRuleZapierConfig(
-					app_name,
+					appName,
 					"enabled",
 					"^my-channel.*",
 					"channel.message",
 					"single",
 					"https://example.com/webhooks",
-					original_headers_block,
+					originalHeadersBlock,
 					"ably_api_key.api_key_0.id",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
 					resource.TestCheckResourceAttr("ably_rule_zapier.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_zapier.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_zapier.rule0", "source.type", "channel.message"),
@@ -56,18 +57,18 @@ func TestAccAblyRuleZapier(t *testing.T) {
 			// Update and Read testing of ably_app.app0
 			{
 				Config: testAccAblyRuleZapierConfig(
-					update_app_name,
+					updateAppName,
 					"enabled",
 					"^my-channel.*",
 					"channel.message",
 					// TODO: change to batch when control api not broken #147
 					"single",
 					"https://example1.com/webhooks",
-					update_headers_block,
+					updateHeadersBlock,
 					"ably_api_key.api_key_1.id",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", update_app_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", updateAppName),
 					resource.TestCheckResourceAttr("ably_rule_zapier.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_zapier.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_zapier.rule0", "source.type", "channel.message"),
@@ -87,9 +88,9 @@ func testAccAblyRuleZapierConfig(
 	channelFilter string,
 	sourceType string,
 	requestMode string,
-	targetUrl string,
+	targetURL string,
 	targetHeaders string,
-	targetSigningKeyId string,
+	targetSigningKeyID string,
 ) string {
 	return fmt.Sprintf(`
 terraform {
@@ -143,5 +144,5 @@ resource "ably_rule_zapier" "rule0" {
 	  signing_key_id = %[8]s
 	}
   }
-`, appName, ruleStatus, channelFilter, sourceType, requestMode, targetUrl, targetHeaders, targetSigningKeyId)
+`, appName, ruleStatus, channelFilter, sourceType, requestMode, targetURL, targetHeaders, targetSigningKeyID)
 }

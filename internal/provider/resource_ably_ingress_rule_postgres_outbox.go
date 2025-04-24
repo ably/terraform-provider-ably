@@ -1,4 +1,5 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	"context"
@@ -72,27 +73,27 @@ func (r *ResourceIngressRulePostgresOutbox) Name() string {
 	return "PostgresOutbox"
 }
 
-// Create a new resource
+// Create creates a new resource.
 func (r ResourceIngressRulePostgresOutbox) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	CreateIngressRule[AblyIngressRuleTargetPostgresOutbox](&r, ctx, req, resp)
 }
 
-// Read resource
+// Read reads the resource.
 func (r ResourceIngressRulePostgresOutbox) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	ReadIngressRule[AblyIngressRuleTargetPostgresOutbox](&r, ctx, req, resp)
 }
 
-// Update resource
+// Update updates an existing resource.
 func (r ResourceIngressRulePostgresOutbox) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	UpdateIngressRule[AblyIngressRuleTargetPostgresOutbox](&r, ctx, req, resp)
 }
 
-// Delete resource
+// Delete deletes the resource.
 func (r ResourceIngressRulePostgresOutbox) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	DeleteIngressRule[AblyIngressRuleTargetPostgresOutbox](&r, ctx, req, resp)
 }
 
-// Import resource
+// ImportState handles the import state functionality.
 func (r ResourceIngressRulePostgresOutbox) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }

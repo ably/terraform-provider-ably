@@ -1,4 +1,5 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	"context"
@@ -45,7 +46,7 @@ func (r *ResourceRuleHTTP) Name() string {
 	return "HTTP"
 }
 
-// Create a new resource
+// Create creates a new resource.
 func (r ResourceRuleHTTP) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	CreateRule[AblyRuleTargetHTTP](&r, ctx, req, resp)
 }
@@ -55,17 +56,17 @@ func (r ResourceRuleHTTP) Read(ctx context.Context, req resource.ReadRequest, re
 	ReadRule[AblyRuleTargetHTTP](&r, ctx, req, resp)
 }
 
-// // Update resource
+// Update updates an existing resource.
 func (r ResourceRuleHTTP) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	UpdateRule[AblyRuleTargetHTTP](&r, ctx, req, resp)
 }
 
-// Delete resource
+// Delete deletes the resource.
 func (r ResourceRuleHTTP) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	DeleteRule[AblyRuleTargetHTTP](&r, ctx, req, resp)
 }
 
-// Import resource
+// ImportState handles the import state functionality.
 func (r ResourceRuleHTTP) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }

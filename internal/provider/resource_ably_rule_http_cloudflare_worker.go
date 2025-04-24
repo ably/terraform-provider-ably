@@ -1,4 +1,5 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	"context"
@@ -43,7 +44,7 @@ func (r *ResourceRuleCloudflareWorker) Name() string {
 	return "Cloudflare Worker"
 }
 
-// Create a new resource
+// Create creates a new resource.
 func (r ResourceRuleCloudflareWorker) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	CreateRule[AblyRuleTargetCloudflareWorker](&r, ctx, req, resp)
 }
@@ -53,17 +54,17 @@ func (r ResourceRuleCloudflareWorker) Read(ctx context.Context, req resource.Rea
 	ReadRule[AblyRuleTargetCloudflareWorker](&r, ctx, req, resp)
 }
 
-// // Update resource
+// Update updates an existing resource.
 func (r ResourceRuleCloudflareWorker) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	UpdateRule[AblyRuleTargetCloudflareWorker](&r, ctx, req, resp)
 }
 
-// Delete resource
+// Delete deletes the resource.
 func (r ResourceRuleCloudflareWorker) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	DeleteRule[AblyRuleTargetCloudflareWorker](&r, ctx, req, resp)
 }
 
-// Import resource
+// ImportState handles the import state functionality.
 func (r ResourceRuleCloudflareWorker) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }

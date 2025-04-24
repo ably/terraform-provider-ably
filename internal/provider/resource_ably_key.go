@@ -1,4 +1,5 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	"context"
@@ -18,7 +19,7 @@ type ResourceKey struct {
 	p *AblyProvider
 }
 
-// Get Resource schema
+// Schema defines the schema for the resource.
 func (r *ResourceKey) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
@@ -89,7 +90,7 @@ func (r ResourceKey) Metadata(ctx context.Context, req resource.MetadataRequest,
 	resp.TypeName = "ably_api_key"
 }
 
-// Create a new resource
+// Create creates a new resource.
 func (r ResourceKey) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Checks whether the provider and API Client are configured. If they are not, the provider responds with an error.
 	if !r.p.configured {
@@ -108,14 +109,14 @@ func (r ResourceKey) Create(ctx context.Context, req resource.CreateRequest, res
 		return
 	}
 
-	new_key := control.NewKey{
+	newKey := control.NewKey{
 		Name:            plan.Name.ValueString(),
 		Capability:      plan.Capability,
 		RevocableTokens: plan.RevocableTokens.ValueBool(),
 	}
 
 	// Creates a new Ably Key by invoking the CreateKey function from the Client Library
-	ably_key, err := r.p.client.CreateKey(plan.AppID.ValueString(), &new_key)
+	ablyKey, err := r.p.client.CreateKey(plan.AppID.ValueString(), &newKey)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating Resource",
@@ -125,27 +126,27 @@ func (r ResourceKey) Create(ctx context.Context, req resource.CreateRequest, res
 	}
 
 	// Maps response body to resource schema attributes.
-	resp_key := AblyKey{
-		ID:              types.StringValue(ably_key.ID),
-		AppID:           types.StringValue(ably_key.AppID),
-		Name:            types.StringValue(ably_key.Name),
-		Key:             types.StringValue(ably_key.Key),
-		RevocableTokens: types.BoolValue(ably_key.RevocableTokens),
-		Capability:      ably_key.Capability,
-		Status:          types.Int64Value(int64(ably_key.Status)),
-		Created:         types.Int64Value(int64(ably_key.Created)),
-		Modified:        types.Int64Value(int64(ably_key.Modified)),
+	respKey := AblyKey{
+		ID:              types.StringValue(ablyKey.ID),
+		AppID:           types.StringValue(ablyKey.AppID),
+		Name:            types.StringValue(ablyKey.Name),
+		Key:             types.StringValue(ablyKey.Key),
+		RevocableTokens: types.BoolValue(ablyKey.RevocableTokens),
+		Capability:      ablyKey.Capability,
+		Status:          types.Int64Value(int64(ablyKey.Status)),
+		Created:         types.Int64Value(int64(ablyKey.Created)),
+		Modified:        types.Int64Value(int64(ablyKey.Modified)),
 	}
 
 	// Sets state for the new Ably App.
-	diags = resp.State.Set(ctx, resp_key)
+	diags = resp.State.Set(ctx, respKey)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 }
 
-// Read resource
+// Read reads the resource.
 func (r ResourceKey) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var state AblyKey
@@ -158,13 +159,13 @@ func (r ResourceKey) Read(ctx context.Context, req resource.ReadRequest, resp *r
 	}
 
 	// Gets the Ably App ID and Ably API Key ID value for the resource
-	app_id := state.AppID.ValueString()
-	key_id := state.ID.ValueString()
+	appID := state.AppID.ValueString()
+	keyID := state.ID.ValueString()
 
 	// Fetches all Ably Keys for the Ably App. The function invokes the Client Library Keys() method.
-	keys, err := r.p.client.Keys(app_id)
+	keys, err := r.p.client.Keys(appID)
 	if err != nil {
-		if is_404(err) {
+		if is404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -178,8 +179,8 @@ func (r ResourceKey) Read(ctx context.Context, req resource.ReadRequest, resp *r
 
 	// Loops through apps and if account id and key id match, sets state.
 	for _, v := range keys {
-		if v.AppID == app_id && v.ID == key_id && v.Status == 0 {
-			resp_key := AblyKey{
+		if v.AppID == appID && v.ID == keyID && v.Status == 0 {
+			respKey := AblyKey{
 				ID:              types.StringValue(v.ID),
 				AppID:           types.StringValue(v.AppID),
 				Name:            types.StringValue(v.Name),
@@ -191,7 +192,7 @@ func (r ResourceKey) Read(ctx context.Context, req resource.ReadRequest, resp *r
 				Modified:        types.Int64Value(int64(v.Modified)),
 			}
 			// Sets state to app values.
-			diags = resp.State.Set(ctx, &resp_key)
+			diags = resp.State.Set(ctx, &respKey)
 			found = true
 
 			resp.Diagnostics.Append(diags...)
@@ -208,7 +209,7 @@ func (r ResourceKey) Read(ctx context.Context, req resource.ReadRequest, resp *r
 
 }
 
-// Update resource
+// Update updates an existing resource.
 func (r ResourceKey) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
 	var plan AblyKey
@@ -226,18 +227,18 @@ func (r ResourceKey) Update(ctx context.Context, req resource.UpdateRequest, res
 	}
 
 	// Gets the app ID and Key ID
-	app_id := plan.AppID.ValueString()
-	key_id := state.ID.ValueString()
+	appID := plan.AppID.ValueString()
+	keyID := state.ID.ValueString()
 
 	// Instantiates struct of type control.NewKey and sets values to output of plan
-	key_values := control.NewKey{
+	keyValues := control.NewKey{
 		Name:            plan.Name.ValueString(),
 		Capability:      plan.Capability,
 		RevocableTokens: plan.RevocableTokens.ValueBool(),
 	}
 
 	// Updates an Ably API Key. The function invokes the Client Library UpdateKey method.
-	ably_key, err := r.p.client.UpdateKey(app_id, key_id, &key_values)
+	ablyKey, err := r.p.client.UpdateKey(appID, keyID, &keyValues)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating Resource",
@@ -246,27 +247,27 @@ func (r ResourceKey) Update(ctx context.Context, req resource.UpdateRequest, res
 		return
 	}
 
-	resp_key := AblyKey{
-		ID:              types.StringValue(ably_key.ID),
-		AppID:           types.StringValue(ably_key.AppID),
-		Name:            types.StringValue(ably_key.Name),
-		RevocableTokens: types.BoolValue(ably_key.RevocableTokens),
-		Capability:      ably_key.Capability,
-		Status:          types.Int64Value(int64(ably_key.Status)),
-		Key:             types.StringValue(ably_key.Key),
-		Created:         types.Int64Value(int64(ably_key.Created)),
-		Modified:        types.Int64Value(int64(ably_key.Modified)),
+	respKey := AblyKey{
+		ID:              types.StringValue(ablyKey.ID),
+		AppID:           types.StringValue(ablyKey.AppID),
+		Name:            types.StringValue(ablyKey.Name),
+		RevocableTokens: types.BoolValue(ablyKey.RevocableTokens),
+		Capability:      ablyKey.Capability,
+		Status:          types.Int64Value(int64(ablyKey.Status)),
+		Key:             types.StringValue(ablyKey.Key),
+		Created:         types.Int64Value(int64(ablyKey.Created)),
+		Modified:        types.Int64Value(int64(ablyKey.Modified)),
 	}
 
 	// Sets state.
-	diags = resp.State.Set(ctx, resp_key)
+	diags = resp.State.Set(ctx, respKey)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 }
 
-// Delete resource
+// Delete deletes the resource.
 func (r ResourceKey) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Get current state
 	var state AblyKey
@@ -277,12 +278,12 @@ func (r ResourceKey) Delete(ctx context.Context, req resource.DeleteRequest, res
 	}
 
 	// Gets the current state. If it is unable to, the provider responds with an error.
-	app_id := state.AppID.ValueString()
-	key_id := state.ID.ValueString()
+	appID := state.AppID.ValueString()
+	keyID := state.ID.ValueString()
 
-	err := r.p.client.RevokeKey(app_id, key_id)
+	err := r.p.client.RevokeKey(appID, keyID)
 	if err != nil {
-		if is_404(err) {
+		if is404(err) {
 			resp.Diagnostics.AddWarning(
 				"Resource does not exist",
 				"Resource does not exist, it may have already been deleted: "+err.Error(),
@@ -300,7 +301,7 @@ func (r ResourceKey) Delete(ctx context.Context, req resource.DeleteRequest, res
 	resp.State.RemoveResource(ctx)
 }
 
-// // Import resource
+// ImportState handles the import state functionality.
 func (r ResourceKey) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }

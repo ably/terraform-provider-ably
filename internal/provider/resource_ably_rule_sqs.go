@@ -1,4 +1,5 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	"context"
@@ -14,7 +15,7 @@ type ResourceRuleSqs struct {
 var _ resource.Resource = &ResourceRuleSqs{}
 var _ resource.ResourceWithImportState = &ResourceRuleSqs{}
 
-// Get Rule Resource schema
+// Schema defines the schema for the resource.
 func (r ResourceRuleSqs) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = GetRuleSchema(
 		map[string]schema.Attribute{
@@ -50,7 +51,7 @@ func (r *ResourceRuleSqs) Name() string {
 	return "AWS Sqs"
 }
 
-// Create a new resource
+// Create creates a new resource.
 func (r ResourceRuleSqs) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	CreateRule[AblyRuleTargetSqs](&r, ctx, req, resp)
 }
@@ -60,17 +61,17 @@ func (r ResourceRuleSqs) Read(ctx context.Context, req resource.ReadRequest, res
 	ReadRule[AblyRuleTargetSqs](&r, ctx, req, resp)
 }
 
-// // Update resource
+// Update updates an existing resource.
 func (r ResourceRuleSqs) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	UpdateRule[AblyRuleTargetSqs](&r, ctx, req, resp)
 }
 
-// Delete resource
+// Delete deletes the resource.
 func (r ResourceRuleSqs) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	DeleteRule[AblyRuleTargetSqs](&r, ctx, req, resp)
 }
 
-// Import resource
+// ImportState handles the import state functionality.
 func (r ResourceRuleSqs) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }

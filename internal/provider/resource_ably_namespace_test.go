@@ -1,4 +1,5 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	"fmt"
@@ -10,16 +11,16 @@ import (
 )
 
 func TestAccAblyNamespace(t *testing.T) {
-	app_name := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
-	namespace_name := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	namespaceName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Create and Read testing of ably_app.app0
 			{
-				Config: testAccAblyNamespaceConfig(app_name, control.Namespace{
-					ID:               namespace_name,
+				Config: testAccAblyNamespaceConfig(appName, control.Namespace{
+					ID:               namespaceName,
 					Authenticated:    true,
 					Persisted:        true,
 					PersistLast:      true,
@@ -28,8 +29,8 @@ func TestAccAblyNamespace(t *testing.T) {
 					ExposeTimeserial: true,
 				}),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
-					resource.TestCheckResourceAttr("ably_namespace.namespace0", "id", namespace_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "id", namespaceName),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "authenticated", "true"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "persisted", "true"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "persist_last", "true"),
@@ -40,8 +41,8 @@ func TestAccAblyNamespace(t *testing.T) {
 			},
 			// Update and Read testing of ably_app.app0
 			{
-				Config: testAccAblyNamespaceConfig(app_name, control.Namespace{
-					ID:               namespace_name,
+				Config: testAccAblyNamespaceConfig(appName, control.Namespace{
+					ID:               namespaceName,
 					Authenticated:    false,
 					Persisted:        false,
 					PersistLast:      false,
@@ -50,8 +51,8 @@ func TestAccAblyNamespace(t *testing.T) {
 					ExposeTimeserial: false,
 				}),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
-					resource.TestCheckResourceAttr("ably_namespace.namespace0", "id", namespace_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "id", namespaceName),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "authenticated", "false"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "persisted", "false"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "persist_last", "false"),
@@ -61,8 +62,8 @@ func TestAccAblyNamespace(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccAblyNamespaceConfig(app_name, control.Namespace{
-					ID:               namespace_name + "new",
+				Config: testAccAblyNamespaceConfig(appName, control.Namespace{
+					ID:               namespaceName + "new",
 					Authenticated:    false,
 					Persisted:        false,
 					PersistLast:      false,
@@ -71,8 +72,8 @@ func TestAccAblyNamespace(t *testing.T) {
 					ExposeTimeserial: false,
 				}),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
-					resource.TestCheckResourceAttr("ably_namespace.namespace0", "id", namespace_name+"new"),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "id", namespaceName+"new"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "authenticated", "false"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "persisted", "false"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "persist_last", "false"),
@@ -82,8 +83,8 @@ func TestAccAblyNamespace(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccAblyNamespaceBatchingConfig(app_name, control.Namespace{
-					ID:               namespace_name + "batching",
+				Config: testAccAblyNamespaceBatchingConfig(appName, control.Namespace{
+					ID:               namespaceName + "batching",
 					Authenticated:    false,
 					Persisted:        false,
 					PersistLast:      false,
@@ -94,8 +95,8 @@ func TestAccAblyNamespace(t *testing.T) {
 					BatchingInterval: control.Interval(100),
 				}),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
-					resource.TestCheckResourceAttr("ably_namespace.namespace0", "id", namespace_name+"batching"),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "id", namespaceName+"batching"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "authenticated", "false"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "persisted", "false"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "persist_last", "false"),
@@ -107,8 +108,8 @@ func TestAccAblyNamespace(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccAblyNamespaceConflationConfig(app_name, control.Namespace{
-					ID:                 namespace_name + "conflation",
+				Config: testAccAblyNamespaceConflationConfig(appName, control.Namespace{
+					ID:                 namespaceName + "conflation",
 					Authenticated:      false,
 					Persisted:          false,
 					PersistLast:        false,
@@ -120,8 +121,8 @@ func TestAccAblyNamespace(t *testing.T) {
 					ConflationKey:      "test",
 				}),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
-					resource.TestCheckResourceAttr("ably_namespace.namespace0", "id", namespace_name+"conflation"),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "id", namespaceName+"conflation"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "authenticated", "false"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "persisted", "false"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "persist_last", "false"),

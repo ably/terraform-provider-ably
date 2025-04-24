@@ -1,4 +1,5 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	"context"
@@ -15,7 +16,7 @@ type ResourceRuleKafka struct {
 var _ resource.Resource = &ResourceRuleKafka{}
 var _ resource.ResourceWithImportState = &ResourceRuleKafka{}
 
-// Get Rule Resource schema
+// Schema defines the schema for the resource.
 func (r ResourceRuleKafka) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = GetRuleSchema(
 		map[string]schema.Attribute{
@@ -73,7 +74,7 @@ func (r *ResourceRuleKafka) Name() string {
 	return "Kafka"
 }
 
-// Create a new resource
+// Create creates a new resource.
 func (r ResourceRuleKafka) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	CreateRule[AblyRuleTargetKafka](&r, ctx, req, resp)
 }
@@ -83,17 +84,17 @@ func (r ResourceRuleKafka) Read(ctx context.Context, req resource.ReadRequest, r
 	ReadRule[AblyRuleTargetKafka](&r, ctx, req, resp)
 }
 
-// // Update resource
+// Update updates an existing resource.
 func (r ResourceRuleKafka) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	UpdateRule[AblyRuleTargetKafka](&r, ctx, req, resp)
 }
 
-// Delete resource
+// Delete deletes the resource.
 func (r ResourceRuleKafka) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	DeleteRule[AblyRuleTargetKafka](&r, ctx, req, resp)
 }
 
-// Import resource
+// ImportState handles the import state functionality.
 func (r ResourceRuleKafka) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }

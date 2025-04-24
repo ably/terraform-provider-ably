@@ -1,4 +1,5 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	"fmt"
@@ -8,17 +9,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-func TestAccAblyRuleAmqpExternal(t *testing.T) {
-	app_name := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
-	update_app_name := "acc-test-" + app_name
+func TestAccAblyRuleAMQPExternal(t *testing.T) {
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	updateAppName := "acc-test-" + appName
 
-	original_headers_block := `[
+	originalHeadersBlock := `[
 	{
 		name : "User-Agent-Conf",
 		value : "user-agent-string",
 	},
 	]`
-	update_headers_block := `[
+	updateHeadersBlock := `[
 	{
 		name : "User-Agent-Conf",
 		value : "user-agent-string",
@@ -35,8 +36,8 @@ func TestAccAblyRuleAmqpExternal(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing of ably_app.app0
 			{
-				Config: testAccAblyRuleAmqpExternalConfig(
-					app_name,
+				Config: testAccAblyRuleAMQPExternalConfig(
+					appName,
 					"enabled",
 					"^my-channel.*",
 					"channel.message",
@@ -46,12 +47,12 @@ func TestAccAblyRuleAmqpExternal(t *testing.T) {
 					true,
 					true,
 					44,
-					original_headers_block,
+					originalHeadersBlock,
 					"true",
 					"json",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", app_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "source.type", "channel.message"),
@@ -63,8 +64,8 @@ func TestAccAblyRuleAmqpExternal(t *testing.T) {
 			},
 			// Update and Read testing of ably_app.app0
 			{
-				Config: testAccAblyRuleAmqpExternalConfig(
-					update_app_name,
+				Config: testAccAblyRuleAMQPExternalConfig(
+					updateAppName,
 					"enabled",
 					"^my-channel.*",
 					"channel.message",
@@ -74,12 +75,12 @@ func TestAccAblyRuleAmqpExternal(t *testing.T) {
 					false,
 					false,
 					23,
-					update_headers_block,
+					updateHeadersBlock,
 					"false",
 					"msgpack",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ably_app.app0", "name", update_app_name),
+					resource.TestCheckResourceAttr("ably_app.app0", "name", updateAppName),
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "source.type", "channel.message"),
@@ -95,17 +96,17 @@ func TestAccAblyRuleAmqpExternal(t *testing.T) {
 }
 
 // Function with inline HCL to provision an ably_app resource
-func testAccAblyRuleAmqpExternalConfig(
+func testAccAblyRuleAMQPExternalConfig(
 	appName string,
 	ruleStatus string,
 	channelFilter string,
 	sourceType string,
-	targetUrl string,
+	targetURL string,
 	targetRoutingKey string,
 	targetExchange string,
 	targetMandatoryRoute bool,
 	targetPersistentMessages bool,
-	targetMessageTtl int,
+	targetMessageTTL int,
 	targetHeaders string,
 	targetEnveloped string,
 	targetFormat string,
@@ -148,5 +149,5 @@ resource "ably_rule_amqp_external" "rule0" {
 	  
 	}
   }
-`, appName, ruleStatus, channelFilter, sourceType, targetUrl, targetRoutingKey, targetExchange, targetMandatoryRoute, targetPersistentMessages, targetMessageTtl, targetHeaders, targetEnveloped, targetFormat)
+`, appName, ruleStatus, channelFilter, sourceType, targetURL, targetRoutingKey, targetExchange, targetMandatoryRoute, targetPersistentMessages, targetMessageTTL, targetHeaders, targetEnveloped, targetFormat)
 }

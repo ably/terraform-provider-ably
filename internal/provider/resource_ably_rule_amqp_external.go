@@ -1,4 +1,5 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	"context"
@@ -7,15 +8,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 )
 
-type ResourceRuleAmqpExternal struct {
+type ResourceRuleAMQPExternal struct {
 	p *AblyProvider
 }
 
-var _ resource.Resource = &ResourceRuleAmqpExternal{}
-var _ resource.ResourceWithImportState = &ResourceRuleAmqpExternal{}
+var _ resource.Resource = &ResourceRuleAMQPExternal{}
+var _ resource.ResourceWithImportState = &ResourceRuleAMQPExternal{}
 
 // Schema defines the schema for the resource.
-func (r ResourceRuleAmqpExternal) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r ResourceRuleAMQPExternal) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = GetRuleSchema(
 		map[string]schema.Attribute{
 			"url": schema.StringAttribute{
@@ -49,40 +50,39 @@ func (r ResourceRuleAmqpExternal) Schema(_ context.Context, _ resource.SchemaReq
 		"The `ably_rule_amqp_external` resource allows you to create and manage an Ably integration rule for Firehose. Read more at https://ably.com/docs/general/firehose")
 }
 
-func (r ResourceRuleAmqpExternal) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r ResourceRuleAMQPExternal) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "ably_rule_amqp_external"
 }
 
-func (r *ResourceRuleAmqpExternal) Provider() *AblyProvider {
+func (r *ResourceRuleAMQPExternal) Provider() *AblyProvider {
 	return r.p
 }
 
-func (r *ResourceRuleAmqpExternal) Name() string {
+func (r *ResourceRuleAMQPExternal) Name() string {
 	return "AMQP External"
 }
 
-// Create a new resource
-func (r ResourceRuleAmqpExternal) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	CreateRule[AblyRuleTargetAmqpExternal](&r, ctx, req, resp)
+// Create creates a new resource.
+func (r ResourceRuleAMQPExternal) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	CreateRule[AblyRuleTargetAMQPExternal](&r, ctx, req, resp)
 }
 
 // Read resource
-func (r ResourceRuleAmqpExternal) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	ReadRule[AblyRuleTargetAmqpExternal](&r, ctx, req, resp)
+func (r ResourceRuleAMQPExternal) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	ReadRule[AblyRuleTargetAMQPExternal](&r, ctx, req, resp)
 }
 
-// // Update resource
-func (r ResourceRuleAmqpExternal) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	UpdateRule[AblyRuleTargetAmqpExternal](&r, ctx, req, resp)
+// Update updates an existing resource.
+func (r ResourceRuleAMQPExternal) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	UpdateRule[AblyRuleTargetAMQPExternal](&r, ctx, req, resp)
 }
 
-// Delete resource
-func (r ResourceRuleAmqpExternal) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	DeleteRule[AblyRuleTargetAmqpExternal](&r, ctx, req, resp)
+// Delete deletes the resource.
+func (r ResourceRuleAMQPExternal) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	DeleteRule[AblyRuleTargetAMQPExternal](&r, ctx, req, resp)
 }
 
-// Import resource
-func (r ResourceRuleAmqpExternal) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+// ImportState handles the import state functionality.
+func (r ResourceRuleAMQPExternal) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
-
 }

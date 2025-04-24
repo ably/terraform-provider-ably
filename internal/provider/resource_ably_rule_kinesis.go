@@ -1,4 +1,5 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	"context"
@@ -14,7 +15,7 @@ type ResourceRuleKinesis struct {
 var _ resource.Resource = &ResourceRuleKinesis{}
 var _ resource.ResourceWithImportState = &ResourceRuleKinesis{}
 
-// Get Rule Resource schema
+// Schema defines the schema for the resource.
 func (r ResourceRuleKinesis) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = GetRuleSchema(
 		map[string]schema.Attribute{
@@ -47,7 +48,7 @@ func (r *ResourceRuleKinesis) Name() string {
 	return "AWS Kinesis"
 }
 
-// Create a new resource
+// Create creates a new resource.
 func (r ResourceRuleKinesis) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	CreateRule[AblyRuleTargetKinesis](&r, ctx, req, resp)
 }
@@ -57,17 +58,17 @@ func (r ResourceRuleKinesis) Read(ctx context.Context, req resource.ReadRequest,
 	ReadRule[AblyRuleTargetKinesis](&r, ctx, req, resp)
 }
 
-// // Update resource
+// Update updates an existing resource.
 func (r ResourceRuleKinesis) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	UpdateRule[AblyRuleTargetKinesis](&r, ctx, req, resp)
 }
 
-// Delete resource
+// Delete deletes the resource.
 func (r ResourceRuleKinesis) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	DeleteRule[AblyRuleTargetKinesis](&r, ctx, req, resp)
 }
 
-// Import resource
+// ImportState handles the import state functionality.
 func (r ResourceRuleKinesis) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }

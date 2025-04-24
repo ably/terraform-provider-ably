@@ -1,4 +1,5 @@
-package ably_control
+// Package provider implements the Ably provider for Terraform
+package provider
 
 import (
 	"context"
@@ -62,27 +63,27 @@ func (r *ResourceIngressRuleMongo) Name() string {
 	return "MongoDB"
 }
 
-// Create a new resource
+// Create creates a new resource.
 func (r ResourceIngressRuleMongo) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	CreateIngressRule[AblyIngressRuleTargetMongo](&r, ctx, req, resp)
 }
 
-// Read resource
+// Read reads the resource.
 func (r ResourceIngressRuleMongo) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	ReadIngressRule[AblyIngressRuleTargetMongo](&r, ctx, req, resp)
 }
 
-// Update resource
+// Update updates an existing resource.
 func (r ResourceIngressRuleMongo) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	UpdateIngressRule[AblyIngressRuleTargetMongo](&r, ctx, req, resp)
 }
 
-// Delete resource
+// Delete deletes the resource.
 func (r ResourceIngressRuleMongo) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	DeleteIngressRule[AblyIngressRuleTargetMongo](&r, ctx, req, resp)
 }
 
-// Import resource
+// ImportState handles the import state functionality.
 func (r ResourceIngressRuleMongo) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
 }
