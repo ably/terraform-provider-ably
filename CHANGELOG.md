@@ -1,5 +1,21 @@
 # Changelog
 
+## [v0.10.0](https://github.com/ably/terraform-provider-ably/tree/v0.10.0)
+
+[Full Changelog](https://github.com/ably/terraform-provider-ably/compare/v0.9.0...v0.10.0)
+
+**Closed issues:**
+
+- Upgrade to latest terraform-plugin-framework [\#195](https://github.com/ably/terraform-provider-ably/issues/195)
+- Error Creating Namespace: batchingPolicy Property Not Defined \(40000\) [\#194](https://github.com/ably/terraform-provider-ably/issues/194)
+- Replace use of snake\_case with camelCase [\#183](https://github.com/ably/terraform-provider-ably/issues/183)
+
+**Merged pull requests:**
+
+- Various syntax changes [\#200](https://github.com/ably/terraform-provider-ably/pull/200) ([surminus](https://github.com/surminus))
+- Bump golang.org/x/net from 0.36.0 to 0.38.0 [\#199](https://github.com/ably/terraform-provider-ably/pull/199) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Upgrade terraform-plugin-framework  [\#198](https://github.com/ably/terraform-provider-ably/pull/198) ([surminus](https://github.com/surminus))
+
 ## [0.9.0](https://github.com/ably/terraform-provider-ably/tree/v0.9.0)
 
 [Full Changelog](https://github.com/ably/terraform-provider-ably/compare/v0.8.0..v0.9.0)
