@@ -67,6 +67,8 @@ func TestAccAblyApp(t *testing.T) {
 					Status:                 "enabled",
 					TLSOnly:                true,
 					FcmKey:                 "a",
+					FcmServiceAccount:      "{\"account\":\"foo\"}",
+					FcmProjectId:           "project-a",
 					ApnsCertificate:        cert,
 					ApnsPrivateKey:         key,
 					ApnsUseSandboxEndpoint: true,
@@ -75,6 +77,12 @@ func TestAccAblyApp(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
 					resource.TestCheckResourceAttr("ably_app.app0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_app.app0", "tls_only", "true"),
+					resource.TestCheckResourceAttr("ably_app.app0", "fcm_key", "a"),
+					resource.TestCheckResourceAttr("ably_app.app0", "fcm_service_account", "{\"account\":\"foo\"}"),
+					resource.TestCheckResourceAttr("ably_app.app0", "fcm_project_id", "project-a"),
+					resource.TestCheckResourceAttr("ably_app.app0", "apns_certificate", cert),
+					resource.TestCheckResourceAttr("ably_app.app0", "apns_private_key", key),
+					resource.TestCheckResourceAttr("ably_app.app0", "apns_use_sandbox_endpoint", "true"),
 				),
 			},
 			// Update and Read testing of ably_app.app0
@@ -84,6 +92,8 @@ func TestAccAblyApp(t *testing.T) {
 					Status:                 "disabled",
 					TLSOnly:                false,
 					FcmKey:                 "b",
+					FcmServiceAccount:      "{\"account\":\"bar\"}",
+					FcmProjectId:           "project-b",
 					ApnsCertificate:        cert,
 					ApnsPrivateKey:         key,
 					ApnsUseSandboxEndpoint: true,
@@ -92,6 +102,12 @@ func TestAccAblyApp(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_app.app0", "name", updateAppName),
 					resource.TestCheckResourceAttr("ably_app.app0", "status", "disabled"),
 					resource.TestCheckResourceAttr("ably_app.app0", "tls_only", "false"),
+					resource.TestCheckResourceAttr("ably_app.app0", "fcm_key", "b"),
+					resource.TestCheckResourceAttr("ably_app.app0", "fcm_service_account", "{\"account\":\"bar\"}"),
+					resource.TestCheckResourceAttr("ably_app.app0", "fcm_project_id", "project-b"),
+					resource.TestCheckResourceAttr("ably_app.app0", "apns_certificate", cert),
+					resource.TestCheckResourceAttr("ably_app.app0", "apns_private_key", key),
+					resource.TestCheckResourceAttr("ably_app.app0", "apns_use_sandbox_endpoint", "true"),
 				),
 			},
 			// Delete testing automatically occurs in TestCase
@@ -128,7 +144,7 @@ func testAccAblyAppConfig(app *control.App) string {
 terraform {
 	required_providers {
 		ably = {
-		source = "github.com/ably/ably"
+			source = "github.com/ably/ably"
 		}
 	}
 }
@@ -141,11 +157,21 @@ resource "ably_app" "app0" {
 	status                    = %[2]q
 	tls_only                  = %[3]t
 	fcm_key                   = %[4]q
-	apns_certificate          = %[5]q
-	apns_private_key          = %[6]q
-	apns_use_sandbox_endpoint = %[7]t
-
-
+	fcm_service_account       = %[5]q
+	fcm_project_id            = %[6]q
+	apns_certificate          = %[7]q
+	apns_private_key          = %[8]q
+	apns_use_sandbox_endpoint = %[9]t
 }
-`, app.Name, app.Status, app.TLSOnly, app.FcmKey, app.ApnsCertificate, app.ApnsPrivateKey, app.ApnsUseSandboxEndpoint)
+`,
+		app.Name,
+		app.Status,
+		app.TLSOnly,
+		app.FcmKey,
+		app.FcmServiceAccount,
+		app.FcmProjectId,
+		app.ApnsCertificate,
+		app.ApnsPrivateKey,
+		app.ApnsUseSandboxEndpoint,
+	)
 }

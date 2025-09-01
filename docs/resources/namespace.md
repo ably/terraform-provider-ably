@@ -2,12 +2,12 @@
 page_title: "ably_namespace Resource - terraform-provider-ably"
 subcategory: ""
 description: |-
-  The ably_namespace resource allows you to manage namespaces for channel rules in Ably. Read more in the Ably documentation: https://ably.com/docs/general/channel-rules-namespaces.
+  The Ably namespace resource allows you to manage namespaces for channel rules in Ably. Read more in the Ably documentation: https://ably.com/docs/general/channel-rules-namespaces.
 ---
 
 # ably_namespace (Resource)
 
-The ably_namespace resource allows you to manage namespaces for channel rules in Ably. Read more in the Ably documentation: https://ably.com/docs/general/channel-rules-namespaces.
+The Ably namespace resource allows you to manage namespaces for channel rules in Ably. Read more in the Ably documentation: https://ably.com/docs/general/channel-rules-namespaces.
 
 
 ## Example Usage

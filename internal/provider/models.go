@@ -13,6 +13,8 @@ type AblyApp struct {
 	Status                 types.String `tfsdk:"status"`
 	TLSOnly                types.Bool   `tfsdk:"tls_only"`
 	FcmKey                 types.String `tfsdk:"fcm_key"`
+	FcmServiceAccount      types.String `tfsdk:"fcm_service_account"`
+	FcmProjectId           types.String `tfsdk:"fcm_project_id"`
 	ApnsCertificate        types.String `tfsdk:"apns_certificate"`
 	ApnsPrivateKey         types.String `tfsdk:"apns_private_key"`
 	ApnsUseSandboxEndpoint types.Bool   `tfsdk:"apns_use_sandbox_endpoint"`
