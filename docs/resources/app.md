@@ -26,6 +26,8 @@ resource "ably_app" "app1" {
   status                    = "enabled"
   tls_only                  = true
   fcm_key                   = "AABBQ1KyxCE:APA91bCCYs7r_Q-sqW8HMP_hV4t3vMYx...cJ8344-MhGWODZEuAmg_J4MUJcVQEyDn...I"
+  fcm_service_account       = jsonencode({ account = "test" })
+  fcm_project_id            = "notional-armor-405018"
   apns_certificate          = "-----BEGIN CERTIFICATE-----MIIFaDCC...EXAMPLE...3Dc=-----END CERTIFICATE-----"
   apns_private_key          = "-----BEGIN PRIVATE KEY-----ABCFaDCC...EXAMPLE...3Dc=-----END PRIVATE KEY-----"
   apns_use_sandbox_endpoint = false
@@ -45,6 +47,8 @@ resource "ably_app" "app1" {
 - `apns_private_key` (String, Sensitive) The Apple Push Notification service private key.
 - `apns_use_sandbox_endpoint` (Boolean) Use the Apple Push Notification service sandbox endpoint.
 - `fcm_key` (String, Sensitive) The Firebase Cloud Messaging key.
+- `fcm_project_id` (String) The unique identifier for the Firebase Cloud Messaging(FCM) project. This ID is used to specify the Firebase project when configuring FCM or other Firebase services.
+- `fcm_service_account` (String, Sensitive) Used to specify the Firebase Cloud Messaging(FCM) service account credentials used for authentication and enabling communication with FCM to send push notifications to devices.
 - `status` (String) The application status. Disabled applications will not accept new connections and will return an error to all clients. When creating a new application, ensure that its status is set to enabled.
 - `tls_only` (Boolean) Enforce TLS for all connections. This setting overrides any channel setting.
 
