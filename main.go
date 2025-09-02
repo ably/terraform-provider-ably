@@ -17,7 +17,7 @@ import (
 //
 // It is appended to the Ably-Agent HTTP header sent by the underlying Control
 // API client (e.g. 'Ably-Agent: ably-control-go/1.0 terraform-provider-ably/x.y.z').
-var VERSION = "0.0.0"
+var VERSION = "0.11.0"
 
 func main() {
 	// print the version and exit if argv[1] is "version"
