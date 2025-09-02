@@ -54,6 +54,10 @@ func (r ResourceApp) Schema(ctx context.Context, req resource.SchemaRequest, res
 			"tls_only": schema.BoolAttribute{
 				Optional:    true,
 				Description: "Enforce TLS for all connections. This setting overrides any channel setting.",
+				Computed:    true,
+				PlanModifiers: []planmodifier.Bool{
+					DefaultBoolAttribute(types.BoolValue(false)),
+				},
 			},
 			"fcm_key": schema.StringAttribute{
 				Optional:    true,
