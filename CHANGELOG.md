@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.11.0](https://github.com/ably/terraform-provider-ably/tree/v0.11.0)
+
+[Full Changelog](https://github.com/ably/terraform-provider-ably/compare/v0.10.0...v0.11.0)
+
+**Merged pull requests:**
+
+- Bump github.com/cloudflare/circl from 1.3.7 to 1.6.1 [\#202](https://github.com/ably/terraform-provider-ably/pull/202)
+- Add support for fcm service accounts [\#204](https://github.com/ably/terraform-provider-ably/pull/204)
+
 ## [v0.10.0](https://github.com/ably/terraform-provider-ably/tree/v0.10.0)
 
 [Full Changelog](https://github.com/ably/terraform-provider-ably/compare/v0.9.0...v0.10.0)
