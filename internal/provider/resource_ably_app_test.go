@@ -115,28 +115,6 @@ func TestAccAblyApp(t *testing.T) {
 	})
 }
 
-// Create App with status = disabled. This should fail and return status = enabled - Issue known and fix being worked on
-// For now, the test will be commented out
-// TODO: Verify fix with this test and update Doc Comment
-// func TestAccAblyAppDisabledStatus(t *testing.T) {
-// 	appName := acctest.RandStringFromCharSet(5, acctest.CharSetAlphaNum)
-// 	resource.Test(t, resource.TestCase{
-// 		PreCheck:  func() { testAccPreCheck(t) },
-// 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-// 		Steps: []resource.TestStep{
-// 			// Create and Read testing of ably_app.app0
-// 			{
-// 				Config: testAccAblyAppConfig(appName, "disabled", "false"),
-// 				Check: resource.ComposeAggregateTestCheckFunc(
-// 					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
-// 					resource.TestCheckResourceAttr("ably_app.app0", "status", "disabled"),
-// 					resource.TestCheckResourceAttr("ably_app.app0", "tls_only", "false"),
-// 				),
-// 			},
-// 		},
-// 	})
-// }
-
 // Function with inline HCL to provision an ably_app resource
 // Takes App name, status and tls_only status as function params.
 func testAccAblyAppConfig(app *control.App) string {
