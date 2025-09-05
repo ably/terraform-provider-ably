@@ -14,8 +14,8 @@ resource "ably_api_key" "api_key_1" {
   name             = "key-0001"
   revocable_tokens = false
   capabilities = {
-    "channel1" = ["subscribe"],
-    "channel2" = ["publish"],
-    "channel3" = ["subscribe"],
+    "channel1" = ["subscribe", "publish", "presence"],
+    "channel2" = ["publish", "presence", "subscribe"],
+    "channel3" = ["presence", "subscribe", "publish"],
   }
 }
