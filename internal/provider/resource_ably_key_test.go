@@ -28,8 +28,8 @@ func TestAccAblyKey(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
 					resource.TestCheckResourceAttr("ably_api_key.key0", "name", keyName),
 					resource.TestCheckResourceAttr("ably_api_key.key0", "revocable_tokens", "true"),
-					resource.TestCheckResourceAttr("ably_api_key.key0", "capabilities.channel100.0", "publish"),
-					resource.TestCheckResourceAttr("ably_api_key.key0", "capabilities.channel100.1", "subscribe"),
+					resource.TestCheckTypeSetElemAttr("ably_api_key.key0", "capabilities.channel100.*", "publish"),
+					resource.TestCheckTypeSetElemAttr("ably_api_key.key0", "capabilities.channel100.*", "subscribe"),
 					resource.TestCheckResourceAttrWith("ably_api_key.key0", "key", func(value string) error {
 						if value == "" {
 							return fmt.Errorf("key can't be empty")
@@ -45,7 +45,7 @@ func TestAccAblyKey(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_app.app0", "name", updateAppName),
 					resource.TestCheckResourceAttr("ably_api_key.key0", "name", updateKeyName),
 					resource.TestCheckResourceAttr("ably_api_key.key0", "revocable_tokens", "false"),
-					resource.TestCheckResourceAttr("ably_api_key.key0", "capabilities.channel100.0", "history"),
+					resource.TestCheckTypeSetElemAttr("ably_api_key.key0", "capabilities.channel100.*", "history"),
 					resource.TestCheckResourceAttrWith("ably_api_key.key0", "key", func(value string) error {
 						if value == "" {
 							return fmt.Errorf("key can't be empty")
