@@ -2,6 +2,9 @@
 package provider
 
 import (
+	"context"
+
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -39,15 +42,15 @@ type AblyNamespace struct {
 
 // AblyKey represents an Ably API key.
 type AblyKey struct {
-	ID              types.String              `tfsdk:"id"`
-	AppID           types.String              `tfsdk:"app_id"`
-	Name            types.String              `tfsdk:"name"`
-	RevocableTokens types.Bool                `tfsdk:"revocable_tokens"`
-	Capability      map[string][]types.String `tfsdk:"capabilities"`
-	Status          types.Int64               `tfsdk:"status"`
-	Key             types.String              `tfsdk:"key"`
-	Created         types.Int64               `tfsdk:"created"`
-	Modified        types.Int64               `tfsdk:"modified"`
+	ID              types.String         `tfsdk:"id"`
+	AppID           types.String         `tfsdk:"app_id"`
+	Name            types.String         `tfsdk:"name"`
+	RevocableTokens types.Bool           `tfsdk:"revocable_tokens"`
+	Capability      map[string]types.Set `tfsdk:"capabilities"`
+	Status          types.Int64          `tfsdk:"status"`
+	Key             types.String         `tfsdk:"key"`
+	Created         types.Int64          `tfsdk:"created"`
+	Modified        types.Int64          `tfsdk:"modified"`
 }
 
 // AblyQueue represents an Ably queue.
@@ -98,6 +101,21 @@ func mapFromStringSlice(m map[string][]types.String) map[string][]string {
 	return result
 }
 
+// mapFromSet converts a map of string sets (Terraform types) to a map of Go strings to Go string slices
+func mapFromSet(ctx context.Context, m map[string]types.Set) map[string][]string {
+	result := make(map[string][]string, len(m))
+	for k, v := range m {
+		var slice []string
+		if !v.IsNull() && !v.IsUnknown() {
+			var elems []types.String
+			v.ElementsAs(ctx, &elems, false)
+			slice = sliceString(elems)
+		}
+		result[k] = slice
+	}
+	return result
+}
+
 // mapToTypedStringSlice converts a map of Go strings to Go string slices to a map of Terraform types
 func mapToTypedStringSlice(m map[string][]string) map[string][]types.String {
 	result := make(map[string][]types.String, len(m))
@@ -107,6 +125,20 @@ func mapToTypedStringSlice(m map[string][]string) map[string][]types.String {
 			typedSlice[i] = types.StringValue(s)
 		}
 		result[k] = typedSlice
+	}
+	return result
+}
+
+// mapToTypedSet converts a map of Go strings to Go string slices to a map of Terraform types
+func mapToTypedSet(m map[string][]string) map[string]types.Set {
+	result := make(map[string]types.Set, len(m))
+	for k, v := range m {
+		typedSlice := toTypedStringSlice(v)
+		attrValues := make([]attr.Value, len(typedSlice))
+		for i, v := range typedSlice {
+			attrValues[i] = v
+		}
+		result[k] = types.SetValueMust(types.StringType, attrValues)
 	}
 	return result
 }

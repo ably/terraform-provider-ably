@@ -42,7 +42,7 @@ func (r *ResourceKey) Schema(ctx context.Context, req resource.SchemaRequest, re
 				Description: "The name for your API key. This is a friendly name for your reference.",
 			},
 			"capabilities": schema.MapAttribute{
-				ElementType: types.ListType{
+				ElementType: types.SetType{
 					ElemType: types.StringType,
 				},
 				Required:    true,
@@ -110,7 +110,7 @@ func (r ResourceKey) Create(ctx context.Context, req resource.CreateRequest, res
 	}
 
 	// Convert capability map from Terraform types to Go strings
-	capability := mapFromStringSlice(plan.Capability)
+	capability := mapFromSet(ctx, plan.Capability)
 
 	newKey := control.NewKey{
 		Name:            plan.Name.ValueString(),
@@ -130,7 +130,7 @@ func (r ResourceKey) Create(ctx context.Context, req resource.CreateRequest, res
 
 	// Maps response body to resource schema attributes.
 	// Convert capability map from Go strings to Terraform types
-	tfCapability := mapToTypedStringSlice(ablyKey.Capability)
+	tfCapability := mapToTypedSet(ablyKey.Capability)
 
 	respKey := AblyKey{
 		ID:              types.StringValue(ablyKey.ID),
@@ -187,7 +187,7 @@ func (r ResourceKey) Read(ctx context.Context, req resource.ReadRequest, resp *r
 	for _, v := range keys {
 		if v.AppID == appID && v.ID == keyID && v.Status == 0 {
 			// Convert capability map from Go strings to Terraform types
-			tfCapability := mapToTypedStringSlice(v.Capability)
+			tfCapability := mapToTypedSet(v.Capability)
 
 			respKey := AblyKey{
 				ID:              types.StringValue(v.ID),
@@ -242,7 +242,7 @@ func (r ResourceKey) Update(ctx context.Context, req resource.UpdateRequest, res
 	// Instantiates struct of type control.NewKey and sets values to output of plan
 	keyValues := control.NewKey{
 		Name:            plan.Name.ValueString(),
-		Capability:      mapFromStringSlice(plan.Capability),
+		Capability:      mapFromSet(ctx, plan.Capability),
 		RevocableTokens: plan.RevocableTokens.ValueBool(),
 	}
 
@@ -257,7 +257,7 @@ func (r ResourceKey) Update(ctx context.Context, req resource.UpdateRequest, res
 	}
 
 	// Convert capability map from Go strings to Terraform types
-	tfCapability := mapToTypedStringSlice(ablyKey.Capability)
+	tfCapability := mapToTypedSet(ablyKey.Capability)
 
 	respKey := AblyKey{
 		ID:              types.StringValue(ablyKey.ID),
