@@ -4,3 +4,7 @@ updates:
     directory: "/"
     schedule:
       interval: daily
+    groups:
+      terraform-plugin:
+        patterns:
+          - 'github.com/hashicorp/terraform-plugin*'
