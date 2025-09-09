@@ -1,5 +1,21 @@
 # Changelog
 
+## [v0.11.1](https://github.com/ably/terraform-provider-ably/tree/v0.11.1)
+
+[Full Changelog](https://github.com/ably/terraform-provider-ably/compare/v0.11.0...v0.11.1)
+
+**Closed issues:**
+
+- Capabilities ordering causes inconsistent results [#211](https://github.com/ably/terraform-provider-ably/issues/211)
+
+**Merged pull requests:**
+
+- Use types.Set rather than []types.String [#212](https://github.com/ably/terraform-provider-ably/pull/212)
+- Bump github.com/hashicorp/terraform-plugin-docs from 0.18.0 to 0.22.0 [#210](https://github.com/ably/terraform-provider-ably/pull/210)
+- Bump github.com/hashicorp/terraform-plugin-framework from 1.14.1 to 1.15.1 [#209](https://github.com/ably/terraform-provider-ably/pull/209)
+- Bump github.com/hashicorp/terraform-plugin-testing from 1.11.0 to 1.13.3 [#208](https://github.com/ably/terraform-provider-ably/pull/208)
+- Bump github.com/hashicorp/terraform-plugin-go from 0.26.0 to 0.28.0 [#207](https://github.com/ably/terraform-provider-ably/pull/207)
+
 ## [v0.11.0](https://github.com/ably/terraform-provider-ably/tree/v0.11.0)
 
 [Full Changelog](https://github.com/ably/terraform-provider-ably/compare/v0.10.0...v0.11.0)
