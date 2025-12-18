@@ -4,6 +4,7 @@ package provider
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"net/url"
 	"testing"
@@ -198,7 +199,7 @@ func TestBackoff(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run("", func(t *testing.T) {
+		t.Run(fmt.Sprintf("attempt_%d", tt.attempt), func(t *testing.T) {
 			// Run multiple times to account for randomness
 			for i := 0; i < 100; i++ {
 				result := backoff(tt.attempt)
