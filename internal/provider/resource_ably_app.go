@@ -201,7 +201,7 @@ func (r ResourceApp) Read(ctx context.Context, req resource.ReadRequest, resp *r
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reading Resource",
-			"Could not create resource, unexpected error: "+err.Error(),
+			"Could not read resource, unexpected error: "+err.Error(),
 		)
 		return
 	}
