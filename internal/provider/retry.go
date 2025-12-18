@@ -19,7 +19,10 @@ const (
 	maxBackoff     = 30 * time.Second
 )
 
-// isRetryableError determines if an error is transient and should be retried
+// isRetryableError reports whether err is transient and should be retried.
+// It returns true for network or URL-level errors (types satisfying net.Error or *url.Error),
+// and for Ably control API errors (control.ErrorInfo) with StatusCode 0, 429, or any 5xx.
+// For all other errors, including 4xx Ably errors other than 429, it returns false.
 func isRetryableError(err error) bool {
 	if err == nil {
 		return false
@@ -58,14 +61,19 @@ func isRetryableError(err error) bool {
 }
 
 // backoff returns the backoff duration for a given attempt (0-indexed)
-// Uses exponential backoff with equal jitter: 1s, 4s, 16s, ... capped at maxBackoff
+// between 50% and 100% of that capped backoff.
 func backoff(attempt int) time.Duration {
 	b := initialBackoff << (attempt * 2) // equivalent to initialBackoff * 4^attempt
 	b = min(b, maxBackoff)
 	return b/2 + rand.N(b/2) // Equal jitter: 50-100% of calculated backoff
 }
 
-// retryWithBackoff retries a function with exponential backoff
+// retryWithBackoff retries the provided operation using exponential backoff until it succeeds,
+// a non-retryable error occurs, the context is cancelled, or the maximum number of retries is reached.
+//
+// The function invokes fn repeatedly and returns nil on success. If fn returns a non-retryable error
+// the error is returned immediately. If retries are exhausted, the last error returned by fn is returned.
+// The call respects ctx cancellation and will return ctx.Err() if the context is cancelled.
 func retryWithBackoff(ctx context.Context, operation string, fn func() error) error {
 	var lastErr error
 
