@@ -164,21 +164,28 @@ func TestRetryWithBackoff(t *testing.T) {
 	})
 
 	t.Run("respects context cancellation", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
-		defer cancel()
+		ctx, cancel := context.WithCancel(context.Background())
 		callCount := 0
 
 		err := retryWithBackoff(ctx, "test", func() error {
 			callCount++
+			// Cancel context after first call to deterministically test cancellation
+			if callCount == 1 {
+				cancel()
+			}
 			return control.ErrorInfo{StatusCode: 500} // Server error
 		})
 
 		if err == nil {
 			t.Error("expected error, got nil")
 		}
-		// Should be called at least once, but not the full 4 times due to context timeout
-		if callCount > 2 {
-			t.Errorf("expected at most 2 calls due to context timeout, got %d", callCount)
+		// Should be called once, then cancelled - not the full 4 times
+		if callCount >= 4 {
+			t.Errorf("expected fewer than 4 calls due to context cancellation, got %d", callCount)
+		}
+		// Verify we got a context error
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("expected context.Canceled error, got %v", err)
 		}
 	})
 }
