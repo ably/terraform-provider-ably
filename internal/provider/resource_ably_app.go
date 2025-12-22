@@ -135,7 +135,12 @@ func (r ResourceApp) Create(ctx context.Context, req resource.CreateRequest, res
 	}
 
 	// Creates a new Ably App by invoking the CreateApp function from the Client Library
-	ablyApp, err := r.p.client.CreateApp(&appValues)
+	var ablyApp control.App
+	err := retryWithBackoff(ctx, "CreateApp", func() error {
+		var createErr error
+		ablyApp, createErr = r.p.client.CreateApp(&appValues)
+		return createErr
+	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating Resource",
@@ -187,11 +192,16 @@ func (r ResourceApp) Read(ctx context.Context, req resource.ReadRequest, resp *r
 
 	// Fetches all Ably Apps in the account. The function invokes the Client Library Apps() method.
 	// NOTE: Control API & Client Lib do not currently support fetching single app given app id
-	apps, err := r.p.client.Apps()
+	var apps []control.App
+	err := retryWithBackoff(ctx, "Apps", func() error {
+		var readErr error
+		apps, readErr = r.p.client.Apps()
+		return readErr
+	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reading Resource",
-			"Could not create resource, unexpected error: "+err.Error(),
+			"Could not read resource, unexpected error: "+err.Error(),
 		)
 		return
 	}
@@ -270,7 +280,12 @@ func (r ResourceApp) Update(ctx context.Context, req resource.UpdateRequest, res
 	}
 
 	// Updates an Ably App. The function invokes the Client Library UpdateApp method.
-	ablyApp, err := r.p.client.UpdateApp(appID, &appValues)
+	var ablyApp control.App
+	err := retryWithBackoff(ctx, "UpdateApp", func() error {
+		var updateErr error
+		ablyApp, updateErr = r.p.client.UpdateApp(appID, &appValues)
+		return updateErr
+	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating Resource",
@@ -317,7 +332,9 @@ func (r ResourceApp) Delete(ctx context.Context, req resource.DeleteRequest, res
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	appID := state.ID.ValueString()
 
-	err := r.p.client.DeleteApp(appID)
+	err := retryWithBackoff(ctx, "DeleteApp", func() error {
+		return r.p.client.DeleteApp(appID)
+	})
 	if err != nil {
 		if is404(err) {
 			resp.Diagnostics.AddWarning(
