@@ -198,11 +198,11 @@ func TestBackoff(t *testing.T) {
 		min     time.Duration
 		max     time.Duration
 	}{
-		{0, 500 * time.Millisecond, 1 * time.Second},   // base 1s
-		{1, 2 * time.Second, 4 * time.Second},          // base 4s
-		{2, 8 * time.Second, 16 * time.Second},         // base 16s
-		{3, 15 * time.Second, 30 * time.Second},        // base 64s, capped at 30s
-		{10, 15 * time.Second, 30 * time.Second},       // capped at 30s
+		{0, 500 * time.Millisecond, 1 * time.Second}, // base 1s
+		{1, 2 * time.Second, 4 * time.Second},        // base 4s
+		{2, 8 * time.Second, 16 * time.Second},       // base 16s
+		{3, 15 * time.Second, 30 * time.Second},      // base 64s, capped at 30s
+		{10, 15 * time.Second, 30 * time.Second},     // capped at 30s
 	}
 
 	for _, tt := range tests {
