@@ -9,7 +9,6 @@ resource "ably_rule_amqp_external" "rule0" {
   target = {
     url                 = "amqps://test.com"
     routing_key         = "new:key"
-    exchange            = "testexchange"
     mandatory_route     = true
     persistent_messages = true
     message_ttl         = 55

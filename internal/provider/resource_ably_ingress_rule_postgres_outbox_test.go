@@ -12,8 +12,8 @@ import (
 func TestAccAblyIngressRulePostgresOutbox(t *testing.T) {
 	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
 	updateAppName := "acc-test-" + appName
-	testPostgresURL := "postgres://test:test@test.com:5432/your-database-name"
-	testUpdatePostgresURL := "postgres://test:test@example.com:5432/your-database-name"
+	testPostgresURL := "postgres://test:test@example.com:5432/your-database-name"
+	testUpdatePostgresURL := "postgres://test:test@example.net:5432/your-database-name"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },

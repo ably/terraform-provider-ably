@@ -166,7 +166,6 @@ func GetPlanRule(plan AblyRule) control.NewRule {
 		target = &control.AmqpExternalTarget{
 			Url:                t.Url.ValueString(),
 			RoutingKey:         t.RoutingKey.ValueString(),
-			Exchange:           t.Exchange.ValueString(),
 			MandatoryRoute:     t.MandatoryRoute.ValueBool(),
 			PersistentMessages: t.PersistentMessages.ValueBool(),
 			MessageTTL:         int(t.MessageTtl.ValueInt64()),
@@ -295,11 +294,18 @@ func GetRuleResponse(ablyRule *control.Rule, plan *AblyRule) AblyRule {
 			Headers:      headers,
 		}
 	case *control.PulsarTarget:
+		// TlsTrustCerts is write-only in the API (accepted on create/update but
+		// never returned on read), so preserve whatever the user configured in
+		// state rather than overwriting it with nil from the API response.
+		var tlsTrustCerts []types.String
+		if p, ok := plan.Target.(*AblyRuleTargetPulsar); ok {
+			tlsTrustCerts = p.TlsTrustCerts
+		}
 		respTarget = &AblyRuleTargetPulsar{
 			RoutingKey:    types.StringValue(v.RoutingKey),
 			Topic:         types.StringValue(v.Topic),
 			ServiceURL:    types.StringValue(v.ServiceURL),
-			TlsTrustCerts: toTypedStringSlice(v.TlsTrustCerts),
+			TlsTrustCerts: tlsTrustCerts,
 			Authentication: PulsarAuthentication{
 				Mode:  types.StringValue(string(v.Authentication.AuthenticationMode)),
 				Token: types.StringValue(v.Authentication.Token),
@@ -377,7 +383,6 @@ func GetRuleResponse(ablyRule *control.Rule, plan *AblyRule) AblyRule {
 		respTarget = &AblyRuleTargetAMQPExternal{
 			Url:                types.StringValue(v.Url),
 			RoutingKey:         types.StringValue(v.RoutingKey),
-			Exchange:           types.StringValue(v.Exchange),
 			MandatoryRoute:     types.BoolValue(v.MandatoryRoute),
 			PersistentMessages: types.BoolValue(v.PersistentMessages),
 			MessageTtl:         ttl,
@@ -656,8 +661,8 @@ func ReadRule[T any](r Rule, ctx context.Context, req resource.ReadRequest, resp
 			return
 		}
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("Error deleting Resource %s", r.Name()),
-			fmt.Sprintf("Could not delete resource %s, unexpected error: %s", r.Name(), err.Error()),
+			fmt.Sprintf("Error reading Resource %s", r.Name()),
+			fmt.Sprintf("Could not read resource %s, unexpected error: %s", r.Name(), err.Error()),
 		)
 		return
 	}
