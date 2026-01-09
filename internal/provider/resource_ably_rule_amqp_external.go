@@ -27,10 +27,6 @@ func (r ResourceRuleAMQPExternal) Schema(_ context.Context, _ resource.SchemaReq
 				Required:    true,
 				Description: "The Kafka partition key. This is used to determine which partition a message should be routed to, where a topic has been partitioned. routingKey should be in the format topic:key where topic is the topic to publish to, and key is the value to use as the message key",
 			},
-			"exchange": schema.StringAttribute{
-				Required:    true,
-				Description: "The RabbitMQ exchange, if needed, supports interpolation; see https://faqs.ably.com/what-is-the-format-of-the-routingkey-for-an-amqp-or-kinesis-reactor-rule for more info. If you don't use RabbitMQ exchanges, leave this blank.",
-			},
 			"mandatory_route": schema.BoolAttribute{
 				Required:    true,
 				Description: "Reject delivery of the message if the route does not exist, otherwise fail silently.",

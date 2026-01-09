@@ -43,7 +43,6 @@ func TestAccAblyRuleAMQPExternal(t *testing.T) {
 					"channel.message",
 					"amqps://test.example",
 					"topic:key",
-					"exchange",
 					true,
 					true,
 					44,
@@ -57,7 +56,6 @@ func TestAccAblyRuleAMQPExternal(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "source.type", "channel.message"),
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "target.routing_key", "topic:key"),
-					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "target.exchange", "exchange"),
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "target.enveloped", "true"),
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "target.format", "json"),
 				),
@@ -71,7 +69,6 @@ func TestAccAblyRuleAMQPExternal(t *testing.T) {
 					"channel.message",
 					"amqps://test.example",
 					"newtopic:key",
-					"newexchange",
 					false,
 					false,
 					23,
@@ -85,7 +82,6 @@ func TestAccAblyRuleAMQPExternal(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "source.type", "channel.message"),
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "target.routing_key", "newtopic:key"),
-					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "target.exchange", "newexchange"),
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "target.enveloped", "false"),
 					resource.TestCheckResourceAttr("ably_rule_amqp_external.rule0", "target.format", "msgpack"),
 				),
@@ -103,7 +99,6 @@ func testAccAblyRuleAMQPExternalConfig(
 	sourceType string,
 	targetURL string,
 	targetRoutingKey string,
-	targetExchange string,
 	targetMandatoryRoute bool,
 	targetPersistentMessages bool,
 	targetMessageTTL int,
@@ -119,10 +114,10 @@ terraform {
 		}
 	}
 }
-	
+
 # You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 provider "ably" {}
-	  
+
 resource "ably_app" "app0" {
 	name     = %[1]q
 	status   = "enabled"
@@ -139,15 +134,14 @@ resource "ably_rule_amqp_external" "rule0" {
 	target = {
 	  url = %[5]q
 	  routing_key = %[6]q,
-	  exchange = %[7]q,
-	  mandatory_route = %[8]t
-	  persistent_messages = %[9]t
-	  message_ttl = %[10]d
-	  headers = %[11]s
-	  enveloped = %[12]s,
-	  format    = %[13]q,
-	  
+	  mandatory_route = %[7]t
+	  persistent_messages = %[8]t
+	  message_ttl = %[9]d
+	  headers = %[10]s
+	  enveloped = %[11]s,
+	  format    = %[12]q,
+
 	}
   }
-`, appName, ruleStatus, channelFilter, sourceType, targetURL, targetRoutingKey, targetExchange, targetMandatoryRoute, targetPersistentMessages, targetMessageTTL, targetHeaders, targetEnveloped, targetFormat)
+`, appName, ruleStatus, channelFilter, sourceType, targetURL, targetRoutingKey, targetMandatoryRoute, targetPersistentMessages, targetMessageTTL, targetHeaders, targetEnveloped, targetFormat)
 }
