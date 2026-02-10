@@ -1,5 +1,18 @@
 # Changelog
 
+## [v0.12.0](https://github.com/ably/terraform-provider-ably/tree/v0.12.0)
+
+[Full Changelog](https://github.com/ably/terraform-provider-ably/compare/v0.11.1...v0.12.0)
+
+**Closed issues:**
+
+- Status code: 0, that resolves on retry [#217](https://github.com/ably/terraform-provider-ably/issues/217)
+
+**Merged pull requests:**
+
+- \[INF-6633\] Bump API client to v0.8.0 [#221](https://github.com/ably/terraform-provider-ably/pull/221)
+- Bump the terraform-plugin group across 1 directory with 4 updates [#216](https://github.com/ably/terraform-provider-ably/pull/216)
+
 ## [v0.11.1](https://github.com/ably/terraform-provider-ably/tree/v0.11.1)
 
 [Full Changelog](https://github.com/ably/terraform-provider-ably/compare/v0.11.0...v0.11.1)
