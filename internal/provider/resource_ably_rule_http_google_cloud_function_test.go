@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccAblyRuleGoogleFunction(t *testing.T) {
@@ -55,7 +56,27 @@ func TestAccAblyRuleGoogleFunction(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_google_function.rule0", "request_mode", "single"),
 					resource.TestCheckResourceAttr("ably_rule_google_function.rule0", "target.function_name", "bbbb"),
 					resource.TestCheckResourceAttr("ably_rule_google_function.rule0", "target.project_id", "12345"),
+					resource.TestCheckResourceAttr("ably_rule_google_function.rule0", "target.region", "us"),
+					resource.TestCheckResourceAttr("ably_rule_google_function.rule0", "target.headers.0.name", "User-Agent-Conf"),
+					resource.TestCheckResourceAttr("ably_rule_google_function.rule0", "target.headers.0.value", "user-agent-string"),
+					resource.TestCheckResourceAttrSet("ably_rule_google_function.rule0", "target.signing_key_id"),
+					resource.TestCheckResourceAttrSet("ably_rule_google_function.rule0", "target.enveloped"),
+					resource.TestCheckResourceAttrSet("ably_rule_google_function.rule0", "target.format"),
 				),
+			},
+			// ImportState testing
+			{
+				ResourceName:      "ably_rule_google_function.rule0",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources["ably_rule_google_function.rule0"]
+					if !ok {
+						return "", fmt.Errorf("resource not found: ably_rule_google_function.rule0")
+					}
+					return fmt.Sprintf("%s,%s", rs.Primary.Attributes["app_id"], rs.Primary.ID), nil
+				},
+				ImportStateVerifyIgnore: []string{"target.signing_key_id"},
 			},
 			// Update and Read testing of ably_app.app0
 			{
@@ -79,6 +100,14 @@ func TestAccAblyRuleGoogleFunction(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_google_function.rule0", "request_mode", "batch"),
 					resource.TestCheckResourceAttr("ably_rule_google_function.rule0", "target.function_name", "bbbb"),
 					resource.TestCheckResourceAttr("ably_rule_google_function.rule0", "target.project_id", "12345"),
+					resource.TestCheckResourceAttr("ably_rule_google_function.rule0", "target.region", "us"),
+					resource.TestCheckResourceAttr("ably_rule_google_function.rule0", "target.headers.0.name", "User-Agent-Conf"),
+					resource.TestCheckResourceAttr("ably_rule_google_function.rule0", "target.headers.0.value", "user-agent-string"),
+					resource.TestCheckResourceAttr("ably_rule_google_function.rule0", "target.headers.1.name", "Custom-Header"),
+					resource.TestCheckResourceAttr("ably_rule_google_function.rule0", "target.headers.1.value", "custom-header-string"),
+					resource.TestCheckResourceAttrSet("ably_rule_google_function.rule0", "target.signing_key_id"),
+					resource.TestCheckResourceAttrSet("ably_rule_google_function.rule0", "target.enveloped"),
+					resource.TestCheckResourceAttrSet("ably_rule_google_function.rule0", "target.format"),
 				),
 			},
 			// Delete testing automatically occurs in TestCase
@@ -100,17 +129,16 @@ func testAccAblyRuleGoogleFunctionConfig(
 	TargetFunctionName string,
 ) string {
 	return fmt.Sprintf(`
+# You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 terraform {
 	required_providers {
 		ably = {
-		source = "github.com/ably/ably"
+			source = "registry.terraform.io/ably/ably"
 		}
 	}
 }
-	
-# You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 provider "ably" {}
-	  
+
 resource "ably_app" "app0" {
 	name     = %[1]q
 	status   = "enabled"

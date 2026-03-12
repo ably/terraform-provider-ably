@@ -32,7 +32,8 @@ func (r ResourceRuleAzureFunction) Schema(_ context.Context, _ resource.SchemaRe
 				Optional:    true,
 				Description: "The signing key ID for use in batch mode. Ably will optionally sign the payload using an API key ensuring your servers can validate the payload using the private API key. See the [webhook security docs](https://ably.com/docs/general/webhooks#security) for more information",
 			},
-			"format": GetFormatSchema(),
+			"enveloped": GetEnvelopedSchema(),
+			"format":    GetFormatSchema(),
 		},
 		"The `ably_rule_azure_function` resource allows you to create and manage an Ably integration rule for Microsoft Azure Functions. Read more at https://ably.com/docs/general/webhooks/azure")
 }

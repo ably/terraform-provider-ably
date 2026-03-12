@@ -3,10 +3,12 @@ package provider
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccAblyRuleHTTP(t *testing.T) {
@@ -53,8 +55,27 @@ func TestAccAblyRuleHTTP(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "source.type", "channel.message"),
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "request_mode", "single"),
+					resource.TestCheckResourceAttr("ably_rule_http.rule0", "target.url", "https://example.com/webhooks"),
+					resource.TestCheckResourceAttr("ably_rule_http.rule0", "target.format", "json"),
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "target.enveloped", "true"),
+					resource.TestCheckResourceAttr("ably_rule_http.rule0", "target.headers.0.name", "User-Agent-Conf"),
+					resource.TestCheckResourceAttr("ably_rule_http.rule0", "target.headers.0.value", "user-agent-string"),
+					resource.TestCheckResourceAttrSet("ably_rule_http.rule0", "target.signing_key_id"),
 				),
+			},
+			// ImportState testing
+			{
+				ResourceName:      "ably_rule_http.rule0",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources["ably_rule_http.rule0"]
+					if !ok {
+						return "", fmt.Errorf("resource not found: ably_rule_http.rule0")
+					}
+					return fmt.Sprintf("%s,%s", rs.Primary.Attributes["app_id"], rs.Primary.ID), nil
+				},
+				ImportStateVerifyIgnore: []string{"target.signing_key_id"},
 			},
 			// Update and Read testing of ably_app.app0
 			{
@@ -76,7 +97,14 @@ func TestAccAblyRuleHTTP(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "source.type", "channel.message"),
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "request_mode", "batch"),
+					resource.TestCheckResourceAttr("ably_rule_http.rule0", "target.url", "https://example1.com/webhooks"),
+					resource.TestCheckResourceAttr("ably_rule_http.rule0", "target.format", "msgpack"),
 					resource.TestCheckResourceAttr("ably_rule_http.rule0", "target.enveloped", "false"),
+					resource.TestCheckResourceAttr("ably_rule_http.rule0", "target.headers.0.name", "User-Agent-Conf"),
+					resource.TestCheckResourceAttr("ably_rule_http.rule0", "target.headers.0.value", "user-agent-string"),
+					resource.TestCheckResourceAttr("ably_rule_http.rule0", "target.headers.1.name", "Custom-Header"),
+					resource.TestCheckResourceAttr("ably_rule_http.rule0", "target.headers.1.value", "custom-header-string"),
+					resource.TestCheckResourceAttrSet("ably_rule_http.rule0", "target.signing_key_id"),
 				),
 			},
 			// Delete testing automatically occurs in TestCase
@@ -98,17 +126,16 @@ func testAccAblyRuleHTTPConfig(
 	enveloped string,
 ) string {
 	return fmt.Sprintf(`
+# You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 terraform {
 	required_providers {
 		ably = {
-		source = "github.com/ably/ably"
+			source = "registry.terraform.io/ably/ably"
 		}
 	}
 }
-	
-# You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 provider "ably" {}
-	  
+
 resource "ably_app" "app0" {
 	name     = %[1]q
 	status   = "enabled"
@@ -152,4 +179,90 @@ resource "ably_rule_http" "rule0" {
 	}
   }
 `, appName, ruleStatus, channelFilter, sourceType, requestMode, targetHeaders, targetSigningKeyID, targetURL, targetFormat, enveloped)
+}
+
+func TestAccAblyRule_InvalidStatus(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+terraform {
+	required_providers {
+		ably = {
+			source = "registry.terraform.io/ably/ably"
+		}
+	}
+}
+provider "ably" {}
+resource "ably_app" "app0" { name = "test-negative-status" }
+resource "ably_rule_http" "rule0" {
+	app_id = ably_app.app0.id
+	status = "invalid"
+	source = { channel_filter = "^test", type = "channel.message" }
+	target = { url = "https://example.com/webhook", format = "json" }
+}
+`,
+				ExpectError: regexp.MustCompile(`.*value must be one of.*`),
+			},
+		},
+	})
+}
+
+func TestAccAblyRule_InvalidRequestMode(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+terraform {
+	required_providers {
+		ably = {
+			source = "registry.terraform.io/ably/ably"
+		}
+	}
+}
+provider "ably" {}
+resource "ably_app" "app0" { name = "test-negative-reqmode" }
+resource "ably_rule_http" "rule0" {
+	app_id       = ably_app.app0.id
+	request_mode = "invalid"
+	source = { channel_filter = "^test", type = "channel.message" }
+	target = { url = "https://example.com/webhook", format = "json" }
+}
+`,
+				ExpectError: regexp.MustCompile(`.*value must be one of.*`),
+			},
+		},
+	})
+}
+
+func TestAccAblyRule_InvalidFormat(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+terraform {
+	required_providers {
+		ably = {
+			source = "registry.terraform.io/ably/ably"
+		}
+	}
+}
+provider "ably" {}
+resource "ably_app" "app0" { name = "test-negative-format" }
+resource "ably_rule_http" "rule0" {
+	app_id = ably_app.app0.id
+	source = { channel_filter = "^test", type = "channel.message" }
+	target = { url = "https://example.com/webhook", format = "xml" }
+}
+`,
+				ExpectError: regexp.MustCompile(`.*value must be one of.*`),
+			},
+		},
+	})
 }

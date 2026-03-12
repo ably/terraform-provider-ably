@@ -4,7 +4,7 @@ package provider
 import (
 	"context"
 
-	control "github.com/ably/ably-control-go"
+	control "github.com/ably/terraform-provider-ably/client"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -47,6 +47,9 @@ func (r *ResourceKey) Schema(ctx context.Context, req resource.SchemaRequest, re
 				},
 				Required:    true,
 				Description: "The capabilities that this key has. More information on capabilities can be found in the [Ably documentation](https://ably.com/docs/core-features/authentication#capabilities-explained)",
+				PlanModifiers: []planmodifier.Map{
+					SortSetsInMap(),
+				},
 			},
 			"revocable_tokens": schema.BoolAttribute{
 				Optional:    true,
@@ -65,13 +68,14 @@ func (r *ResourceKey) Schema(ctx context.Context, req resource.SchemaRequest, re
 			},
 			"created": schema.Int64Attribute{
 				Computed:    true,
-				Description: "Enforce TLS for all connections. This setting overrides any channel setting.",
+				Description: "The timestamp of when the key was created.",
 				PlanModifiers: []planmodifier.Int64{
 					DefaultInt64Attribute(types.Int64Value(0)),
 				},
 			},
 			"key": schema.StringAttribute{
 				Computed:    true,
+				Sensitive:   true,
 				Description: "The complete API key including API secret.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
@@ -92,12 +96,7 @@ func (r ResourceKey) Metadata(ctx context.Context, req resource.MetadataRequest,
 
 // Create creates a new resource.
 func (r ResourceKey) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	// Checks whether the provider and API Client are configured. If they are not, the provider responds with an error.
-	if !r.p.configured {
-		resp.Diagnostics.AddError(
-			"Provider not configured",
-			"The provider hasn't been configured before apply",
-		)
+	if !r.p.ensureConfigured(&resp.Diagnostics) {
 		return
 	}
 
@@ -112,32 +111,57 @@ func (r ResourceKey) Create(ctx context.Context, req resource.CreateRequest, res
 	// Convert capability map from Terraform types to Go strings
 	capability := mapFromSet(ctx, plan.Capability)
 
-	newKey := control.NewKey{
+	revocable := plan.RevocableTokens.ValueBool()
+	newKey := control.KeyPost{
 		Name:            plan.Name.ValueString(),
 		Capability:      capability,
-		RevocableTokens: plan.RevocableTokens.ValueBool(),
+		RevocableTokens: &revocable,
 	}
 
 	// Creates a new Ably Key by invoking the CreateKey function from the Client Library
-	ablyKey, err := r.p.client.CreateKey(plan.AppID.ValueString(), &newKey)
+	ablyKey, err := r.p.client.CreateKey(ctx, plan.AppID.ValueString(), newKey)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error creating Resource",
-			"Could not create resource, unexpected error: "+err.Error(),
+			"Error creating ably_api_key",
+			"Could not create ably_api_key, unexpected error: "+err.Error(),
 		)
 		return
+	}
+
+	// Read back the resource via GET to ensure computed fields like `modified`
+	// reflect the settled server state (the POST response may return a value
+	// that the server updates asynchronously).
+	appID := plan.AppID.ValueString()
+	keys, err := r.p.client.ListKeys(ctx, appID)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error reading back ably_api_key after create",
+			"Could not read back ably_api_key, unexpected error: "+err.Error(),
+		)
+		return
+	}
+	for _, k := range keys {
+		if k.ID == ablyKey.ID {
+			ablyKey = k
+			break
+		}
 	}
 
 	// Maps response body to resource schema attributes.
 	// Convert capability map from Go strings to Terraform types
 	tfCapability := mapToTypedSet(ablyKey.Capability)
 
+	respRevocable := false
+	if ablyKey.RevocableTokens != nil {
+		respRevocable = *ablyKey.RevocableTokens
+	}
+
 	respKey := AblyKey{
 		ID:              types.StringValue(ablyKey.ID),
 		AppID:           types.StringValue(ablyKey.AppID),
 		Name:            types.StringValue(ablyKey.Name),
 		Key:             types.StringValue(ablyKey.Key),
-		RevocableTokens: types.BoolValue(ablyKey.RevocableTokens),
+		RevocableTokens: types.BoolValue(respRevocable),
 		Capability:      tfCapability,
 		Status:          types.Int64Value(int64(ablyKey.Status)),
 		Created:         types.Int64Value(int64(ablyKey.Created)),
@@ -154,6 +178,10 @@ func (r ResourceKey) Create(ctx context.Context, req resource.CreateRequest, res
 
 // Read reads the resource.
 func (r ResourceKey) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	if !r.p.ensureConfigured(&resp.Diagnostics) {
+		return
+	}
+
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var state AblyKey
 	found := false
@@ -168,8 +196,8 @@ func (r ResourceKey) Read(ctx context.Context, req resource.ReadRequest, resp *r
 	appID := state.AppID.ValueString()
 	keyID := state.ID.ValueString()
 
-	// Fetches all Ably Keys for the Ably App. The function invokes the Client Library Keys() method.
-	keys, err := r.p.client.Keys(appID)
+	// Fetches all Ably Keys for the Ably App. The function invokes the Client Library ListKeys() method.
+	keys, err := r.p.client.ListKeys(ctx, appID)
 	if err != nil {
 		if is404(err) {
 			resp.State.RemoveResource(ctx)
@@ -177,8 +205,8 @@ func (r ResourceKey) Read(ctx context.Context, req resource.ReadRequest, resp *r
 		}
 
 		resp.Diagnostics.AddError(
-			"Error reading Resource",
-			"Could not create resource, unexpected error: "+err.Error(),
+			"Error reading ably_api_key",
+			"Could not read ably_api_key, unexpected error: "+err.Error(),
 		)
 		return
 	}
@@ -189,11 +217,16 @@ func (r ResourceKey) Read(ctx context.Context, req resource.ReadRequest, resp *r
 			// Convert capability map from Go strings to Terraform types
 			tfCapability := mapToTypedSet(v.Capability)
 
+			vRevocable := false
+			if v.RevocableTokens != nil {
+				vRevocable = *v.RevocableTokens
+			}
+
 			respKey := AblyKey{
 				ID:              types.StringValue(v.ID),
 				AppID:           types.StringValue(v.AppID),
 				Name:            types.StringValue(v.Name),
-				RevocableTokens: types.BoolValue(v.RevocableTokens),
+				RevocableTokens: types.BoolValue(vRevocable),
 				Capability:      tfCapability,
 				Status:          types.Int64Value(int64(v.Status)),
 				Key:             types.StringValue(v.Key),
@@ -220,6 +253,10 @@ func (r ResourceKey) Read(ctx context.Context, req resource.ReadRequest, resp *r
 
 // Update updates an existing resource.
 func (r ResourceKey) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	if !r.p.ensureConfigured(&resp.Diagnostics) {
+		return
+	}
+
 	// Get plan values
 	var plan AblyKey
 	diags := req.Plan.Get(ctx, &plan)
@@ -239,31 +276,53 @@ func (r ResourceKey) Update(ctx context.Context, req resource.UpdateRequest, res
 	appID := plan.AppID.ValueString()
 	keyID := state.ID.ValueString()
 
-	// Instantiates struct of type control.NewKey and sets values to output of plan
-	keyValues := control.NewKey{
+	// Instantiates struct of type control.KeyPatch and sets values to output of plan
+	updateRevocable := plan.RevocableTokens.ValueBool()
+	keyValues := control.KeyPatch{
 		Name:            plan.Name.ValueString(),
 		Capability:      mapFromSet(ctx, plan.Capability),
-		RevocableTokens: plan.RevocableTokens.ValueBool(),
+		RevocableTokens: &updateRevocable,
 	}
 
 	// Updates an Ably API Key. The function invokes the Client Library UpdateKey method.
-	ablyKey, err := r.p.client.UpdateKey(appID, keyID, &keyValues)
+	ablyKey, err := r.p.client.UpdateKey(ctx, appID, keyID, keyValues)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error updating Resource",
-			"Could not update resource, unexpected error: "+err.Error(),
+			"Error updating ably_api_key",
+			"Could not update ably_api_key, unexpected error: "+err.Error(),
 		)
 		return
+	}
+
+	// Read back via GET to get settled computed fields.
+	keys, err := r.p.client.ListKeys(ctx, appID)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error reading back ably_api_key after update",
+			"Could not read back ably_api_key, unexpected error: "+err.Error(),
+		)
+		return
+	}
+	for _, k := range keys {
+		if k.ID == ablyKey.ID {
+			ablyKey = k
+			break
+		}
 	}
 
 	// Convert capability map from Go strings to Terraform types
 	tfCapability := mapToTypedSet(ablyKey.Capability)
 
+	updateRespRevocable := false
+	if ablyKey.RevocableTokens != nil {
+		updateRespRevocable = *ablyKey.RevocableTokens
+	}
+
 	respKey := AblyKey{
 		ID:              types.StringValue(ablyKey.ID),
 		AppID:           types.StringValue(ablyKey.AppID),
 		Name:            types.StringValue(ablyKey.Name),
-		RevocableTokens: types.BoolValue(ablyKey.RevocableTokens),
+		RevocableTokens: types.BoolValue(updateRespRevocable),
 		Capability:      tfCapability,
 		Status:          types.Int64Value(int64(ablyKey.Status)),
 		Key:             types.StringValue(ablyKey.Key),
@@ -281,6 +340,10 @@ func (r ResourceKey) Update(ctx context.Context, req resource.UpdateRequest, res
 
 // Delete deletes the resource.
 func (r ResourceKey) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	if !r.p.ensureConfigured(&resp.Diagnostics) {
+		return
+	}
+
 	// Get current state
 	var state AblyKey
 	diags := req.State.Get(ctx, &state)
@@ -293,7 +356,7 @@ func (r ResourceKey) Delete(ctx context.Context, req resource.DeleteRequest, res
 	appID := state.AppID.ValueString()
 	keyID := state.ID.ValueString()
 
-	err := r.p.client.RevokeKey(appID, keyID)
+	err := r.p.client.RevokeKey(ctx, appID, keyID)
 	if err != nil {
 		if is404(err) {
 			resp.Diagnostics.AddWarning(
@@ -302,8 +365,8 @@ func (r ResourceKey) Delete(ctx context.Context, req resource.DeleteRequest, res
 			)
 		} else {
 			resp.Diagnostics.AddError(
-				"Error deleting Resource",
-				"Could not delete resource, unexpected error: "+err.Error(),
+				"Error deleting ably_api_key",
+				"Could not delete ably_api_key, unexpected error: "+err.Error(),
 			)
 			return
 		}

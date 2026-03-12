@@ -3,195 +3,307 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
-	control "github.com/ably/ably-control-go"
+	control "github.com/ably/terraform-provider-ably/client"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func GetPlanAwsAuth(plan AblyRule) control.AwsAuthentication {
+func GetPlanAwsAuth(plan AblyRule) control.AWSAuthentication {
 	var auth AwsAuth
-	var controlAuth control.AwsAuthentication
 
 	switch t := plan.Target.(type) {
 	case *AblyRuleTargetKinesis:
-		auth = t.AwsAuth
+		if t != nil {
+			auth = t.AwsAuth
+		}
 	case *AblyRuleTargetSqs:
-		auth = t.AwsAuth
+		if t != nil {
+			auth = t.AwsAuth
+		}
 	case *AblyRuleTargetLambda:
-		auth = t.AwsAuth
+		if t != nil {
+			auth = t.AwsAuth
+		}
 	}
 
+	var controlAuth control.AWSAuthentication
 	if auth.AuthenticationMode.ValueString() == "assumeRole" {
-		controlAuth = control.AwsAuthentication{
-			Authentication: &control.AuthenticationModeAssumeRole{
-				AssumeRoleArn: auth.RoleArn.ValueString(),
-			},
+		controlAuth = control.AWSAuthentication{
+			AuthenticationMode: string(control.AWSAuthModeAssumeRole),
+			AssumeRoleArn:      auth.RoleArn.ValueString(),
 		}
 	} else if auth.AuthenticationMode.ValueString() == "credentials" {
-		controlAuth = control.AwsAuthentication{
-			Authentication: &control.AuthenticationModeCredentials{
-				AccessKeyId:     auth.AccessKeyId.ValueString(),
-				SecretAccessKey: auth.SecretAccessKey.ValueString(),
-			},
+		controlAuth = control.AWSAuthentication{
+			AuthenticationMode: string(control.AWSAuthModeCredentials),
+			AccessKeyID:        auth.AccessKeyId.ValueString(),
+			SecretAccessKey:    auth.SecretAccessKey.ValueString(),
 		}
 	}
 
 	return controlAuth
 }
 
-// GetPlanRule converts rule from terraform format to control sdk format.
-func GetPlanRule(plan AblyRule) control.NewRule {
-	var target control.Target
+// webhookEnveloped returns the enveloped *bool for HTTP-type webhook targets.
+// In batch mode the API rejects enveloped=true, so we force it to false to
+// ensure any existing enveloped value is cleared on update (PATCH).
+func webhookEnveloped(enveloped types.Bool, requestMode string) *bool {
+	if requestMode == "batch" {
+		return ptr(false)
+	}
+	return ptr(enveloped.ValueBool())
+}
+
+// GetPlanRule converts rule from terraform format to the appropriate typed rule post struct.
+// Returns (nil, diagnostics) with an error diagnostic if the target type is unrecognized.
+func GetPlanRule(plan AblyRule) (any, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	source := control.RuleSource{
+		ChannelFilter: plan.Source.ChannelFilter.ValueString(),
+		Type:          plan.Source.Type.ValueString(),
+	}
+	status := plan.Status.ValueString()
+	requestMode := GetRequestMode(plan)
 
 	switch t := plan.Target.(type) {
 	case *AblyRuleTargetKinesis:
-		target = &control.AwsKinesisTarget{
-			Region:         t.Region.ValueString(),
-			StreamName:     t.StreamName.ValueString(),
-			PartitionKey:   t.PartitionKey.ValueString(),
-			Authentication: GetPlanAwsAuth(plan),
-			Enveloped:      t.Enveloped.ValueBool(),
-			Format:         control.Format(t.Format.ValueString()),
+		if requestMode != "single" {
+			diags.AddError(
+				"Unsupported request_mode",
+				"aws/kinesis rules do not support request_mode.",
+			)
+			return nil, diags
 		}
+		return control.AWSKinesisRulePost{
+			Status:      status,
+			RuleType:    "aws/kinesis",
+			RequestMode: requestMode,
+			Source:      source,
+			Target: control.AWSKinesisTarget{
+				Region:         t.Region.ValueString(),
+				StreamName:     t.StreamName.ValueString(),
+				PartitionKey:   t.PartitionKey.ValueString(),
+				Enveloped:      ptr(t.Enveloped.ValueBool()),
+				Format:         t.Format.ValueString(),
+				Authentication: GetPlanAwsAuth(plan),
+			},
+		}, diags
 	case *AblyRuleTargetSqs:
-		target = &control.AwsSqsTarget{
-			Region:         t.Region.ValueString(),
-			AwsAccountID:   t.AwsAccountID.ValueString(),
-			QueueName:      t.QueueName.ValueString(),
-			Authentication: GetPlanAwsAuth(plan),
-			Enveloped:      t.Enveloped.ValueBool(),
-			Format:         control.Format(t.Format.ValueString()),
+		if requestMode != "single" {
+			diags.AddError(
+				"Unsupported request_mode",
+				"aws/sqs rules do not support request_mode.",
+			)
+			return nil, diags
 		}
+		return control.AWSSQSRulePost{
+			Status:      status,
+			RuleType:    "aws/sqs",
+			RequestMode: requestMode,
+			Source:      source,
+			Target: control.AWSSQSTarget{
+				Region:         t.Region.ValueString(),
+				AWSAccountID:   t.AwsAccountID.ValueString(),
+				QueueName:      t.QueueName.ValueString(),
+				Enveloped:      ptr(t.Enveloped.ValueBool()),
+				Format:         t.Format.ValueString(),
+				Authentication: GetPlanAwsAuth(plan),
+			},
+		}, diags
 	case *AblyRuleTargetLambda:
-		target = &control.AwsLambdaTarget{
-			Region:         t.Region.ValueString(),
-			FunctionName:   t.FunctionName.ValueString(),
-			Authentication: GetPlanAwsAuth(plan),
-			Enveloped:      t.Enveloped.ValueBool(),
-		}
+		return control.AWSLambdaRulePost{
+			Status:      status,
+			RuleType:    "aws/lambda",
+			RequestMode: requestMode,
+			Source:      source,
+			Target: control.AWSLambdaTarget{
+				Region:         t.Region.ValueString(),
+				FunctionName:   t.FunctionName.ValueString(),
+				Enveloped:      ptr(t.Enveloped.ValueBool()),
+				Authentication: GetPlanAwsAuth(plan),
+			},
+		}, diags
 	case *AblyRuleTargetZapier:
-		target = &control.HttpZapierTarget{
-			Url:          t.Url.ValueString(),
-			Headers:      GetHeaders(t.Headers),
-			SigningKeyID: t.SigningKeyId.ValueString(),
-		}
+		return control.ZapierRulePost{
+			Status:      status,
+			RuleType:    "http/zapier",
+			RequestMode: requestMode,
+			Source:      source,
+			Target: control.ZapierRuleTarget{
+				URL:          t.Url.ValueString(),
+				Headers:      GetHeaders(t.Headers),
+				SigningKeyID: optionalStringPtr(t.SigningKeyId),
+			},
+		}, diags
 	case *AblyRuleTargetCloudflareWorker:
-		target = &control.HttpCloudfareWorkerTarget{
-			Url:          t.Url.ValueString(),
-			Headers:      GetHeaders(t.Headers),
-			SigningKeyID: t.SigningKeyId.ValueString(),
-		}
+		return control.CloudflareWorkerRulePost{
+			Status:      status,
+			RuleType:    "http/cloudflare-worker",
+			RequestMode: requestMode,
+			Source:      source,
+			Target: control.CloudflareWorkerRuleTarget{
+				URL:          t.Url.ValueString(),
+				Headers:      GetHeaders(t.Headers),
+				SigningKeyID: optionalStringPtr(t.SigningKeyId),
+			},
+		}, diags
 	case *AblyRuleTargetPulsar:
-		target = &control.PulsarTarget{
-			RoutingKey:    t.RoutingKey.ValueString(),
-			Topic:         t.Topic.ValueString(),
-			ServiceURL:    t.ServiceURL.ValueString(),
-			TlsTrustCerts: sliceString(t.TlsTrustCerts),
-			Authentication: control.PulsarAuthentication{
-				AuthenticationMode: control.PularAuthenticationMode(t.Authentication.Mode.ValueString()),
-				Token:              t.Authentication.Token.ValueString(),
-			},
-			Enveloped: t.Enveloped.ValueBool(),
-			Format:    control.Format(t.Format.ValueString()),
-		}
-	case *AblyRuleTargetHTTP:
-		var headers []control.Header
-		for _, h := range t.Headers {
-			headers = append(headers, control.Header{
-				Name:  h.Name.ValueString(),
-				Value: h.Value.ValueString(),
-			})
-		}
-
-		target = &control.HttpTarget{
-			Url:          t.Url.ValueString(),
-			Headers:      headers,
-			SigningKeyID: t.SigningKeyId.ValueString(),
-			Format:       control.Format(t.Format.ValueString()),
-			Enveloped:    t.Enveloped.ValueBool(),
-		}
-	case *AblyRuleTargetIFTTT:
-		target = &control.HttpIftttTarget{
-			WebhookKey: t.WebhookKey.ValueString(),
-			EventName:  t.EventName.ValueString(),
-		}
-	case *AblyRuleTargetAzureFunction:
-		target = &control.HttpAzureFunctionTarget{
-			AzureAppID:        t.AzureAppID.ValueString(),
-			AzureFunctionName: t.AzureFunctionName.ValueString(),
-			Headers:           GetHeaders(t.Headers),
-			SigningKeyID:      t.SigningKeyID.ValueString(),
-			Format:            control.Format(t.Format.ValueString()),
-		}
-	case *AblyRuleTargetGoogleFunction:
-		target = &control.HttpGoogleCloudFunctionTarget{
-			Region:       t.Region.ValueString(),
-			ProjectID:    t.ProjectID.ValueString(),
-			FunctionName: t.FunctionName.ValueString(),
-			Headers:      GetHeaders(t.Headers),
-			SigningKeyID: t.SigningKeyId.ValueString(),
-			Enveloped:    t.Enveloped.ValueBool(),
-			Format:       control.Format(t.Format.ValueString()),
-		}
-
-	case *AblyRuleTargetKafka:
-		target = &control.KafkaTarget{
-			RoutingKey: t.RoutingKey.ValueString(),
-			Brokers:    sliceString(t.Brokers),
-			Authentication: control.KafkaAuthentication{
-				Sasl: control.Sasl{
-					Mechanism: control.SaslMechanism(t.KafkaAuthentication.Sasl.Mechanism.ValueString()),
-					Username:  t.KafkaAuthentication.Sasl.Username.ValueString(),
-					Password:  t.KafkaAuthentication.Sasl.Password.ValueString(),
+		return control.PulsarRulePost{
+			Status:      status,
+			RuleType:    "pulsar",
+			RequestMode: requestMode,
+			Source:      source,
+			Target: control.PulsarRuleTarget{
+				RoutingKey:    t.RoutingKey.ValueString(),
+				Topic:         t.Topic.ValueString(),
+				ServiceURL:    t.ServiceURL.ValueString(),
+				TLSTrustCerts: sliceString(t.TlsTrustCerts),
+				Authentication: &control.PulsarAuth{
+					AuthenticationMode: t.Authentication.Mode.ValueString(),
+					Token:              t.Authentication.Token.ValueString(),
 				},
+				Enveloped: ptr(t.Enveloped.ValueBool()),
+				Format:    t.Format.ValueString(),
 			},
-			Enveloped: t.Enveloped.ValueBool(),
-			Format:    control.Format(t.Format.ValueString()),
-		}
+		}, diags
+	case *AblyRuleTargetHTTP:
+		return control.HTTPRulePost{
+			Status:      status,
+			RuleType:    "http",
+			RequestMode: requestMode,
+			Source:      source,
+			Target: control.HTTPRuleTarget{
+				URL:          t.Url.ValueString(),
+				Headers:      GetHeaders(t.Headers),
+				SigningKeyID: optionalStringPtr(t.SigningKeyId),
+				Format:       t.Format.ValueString(),
+				Enveloped:    webhookEnveloped(t.Enveloped, requestMode),
+			},
+		}, diags
+	case *AblyRuleTargetIFTTT:
+		return control.IFTTTRulePost{
+			Status:      status,
+			RuleType:    "http/ifttt",
+			RequestMode: requestMode,
+			Source:      source,
+			Target: control.IFTTTRuleTarget{
+				WebhookKey: t.WebhookKey.ValueString(),
+				EventName:  t.EventName.ValueString(),
+			},
+		}, diags
+	case *AblyRuleTargetAzureFunction:
+		return control.AzureFunctionRulePost{
+			Status:      status,
+			RuleType:    "http/azure-function",
+			RequestMode: requestMode,
+			Source:      source,
+			Target: control.AzureFunctionRuleTarget{
+				AzureAppID:        t.AzureAppID.ValueString(),
+				AzureFunctionName: t.AzureFunctionName.ValueString(),
+				Headers:           GetHeaders(t.Headers),
+				SigningKeyID:      optionalStringPtr(t.SigningKeyID),
+				Enveloped:         webhookEnveloped(t.Enveloped, requestMode),
+				Format:            t.Format.ValueString(),
+			},
+		}, diags
+	case *AblyRuleTargetGoogleFunction:
+		return control.GoogleCloudFunctionRulePost{
+			Status:      status,
+			RuleType:    "http/google-cloud-function",
+			RequestMode: requestMode,
+			Source:      source,
+			Target: control.GoogleCloudFunctionRuleTarget{
+				Region:       t.Region.ValueString(),
+				ProjectID:    t.ProjectID.ValueString(),
+				FunctionName: t.FunctionName.ValueString(),
+				Headers:      GetHeaders(t.Headers),
+				SigningKeyID: optionalStringPtr(t.SigningKeyId),
+				Enveloped:    webhookEnveloped(t.Enveloped, requestMode),
+				Format:       t.Format.ValueString(),
+			},
+		}, diags
+	case *AblyRuleTargetKafka:
+		return control.KafkaRulePost{
+			Status:      status,
+			RuleType:    "kafka",
+			RequestMode: requestMode,
+			Source:      source,
+			Target: control.KafkaRuleTarget{
+				RoutingKey: t.RoutingKey.ValueString(),
+				Brokers:    sliceString(t.Brokers),
+				Auth: &control.KafkaAuth{
+					SASL: &control.KafkaSASL{
+						Mechanism: t.KafkaAuthentication.Sasl.Mechanism.ValueString(),
+						Username:  t.KafkaAuthentication.Sasl.Username.ValueString(),
+						Password:  t.KafkaAuthentication.Sasl.Password.ValueString(),
+					},
+				},
+				Enveloped: ptr(t.Enveloped.ValueBool()),
+				Format:    t.Format.ValueString(),
+			},
+		}, diags
 	case *AblyRuleTargetAMQP:
-		target = &control.AmqpTarget{
-			QueueID:   t.QueueID.ValueString(),
-			Headers:   GetHeaders(t.Headers),
-			Enveloped: t.Enveloped.ValueBool(),
-			Format:    control.Format(t.Format.ValueString()),
-		}
+		return control.AMQPRulePost{
+			Status:      status,
+			RuleType:    "amqp",
+			RequestMode: requestMode,
+			Source:      source,
+			Target: control.AMQPRuleTarget{
+				QueueID:   t.QueueID.ValueString(),
+				Headers:   GetHeaders(t.Headers),
+				Enveloped: ptr(t.Enveloped.ValueBool()),
+				Format:    t.Format.ValueString(),
+			},
+		}, diags
 	case *AblyRuleTargetAMQPExternal:
-		target = &control.AmqpExternalTarget{
-			Url:                t.Url.ValueString(),
-			RoutingKey:         t.RoutingKey.ValueString(),
-			MandatoryRoute:     t.MandatoryRoute.ValueBool(),
-			PersistentMessages: t.PersistentMessages.ValueBool(),
-			MessageTTL:         int(t.MessageTtl.ValueInt64()),
-			Headers:            GetHeaders(t.Headers),
-			Enveloped:          t.Enveloped.ValueBool(),
-			Format:             control.Format(t.Format.ValueString()),
+		msgTTL := (*int)(nil)
+		if !t.MessageTtl.IsNull() && !t.MessageTtl.IsUnknown() {
+			v := int(t.MessageTtl.ValueInt64())
+			msgTTL = &v
 		}
+		exchange := t.Exchange.ValueString()
+		return control.AMQPExternalRulePost{
+			Status:      status,
+			RuleType:    "amqp/external",
+			RequestMode: requestMode,
+			Source:      source,
+			Target: control.AMQPExternalRuleTarget{
+				URL:                t.Url.ValueString(),
+				RoutingKey:         t.RoutingKey.ValueString(),
+				Exchange:           exchange,
+				MandatoryRoute:     ptr(t.MandatoryRoute.ValueBool()),
+				PersistentMessages: ptr(t.PersistentMessages.ValueBool()),
+				MessageTTL:         msgTTL,
+				Headers:            GetHeaders(t.Headers),
+				Enveloped:          ptr(t.Enveloped.ValueBool()),
+				Format:             t.Format.ValueString(),
+			},
+		}, diags
 	}
 
-	ruleValues := control.NewRule{
-		Status:      plan.Status.ValueString(),
-		RequestMode: GetRequestMode(plan),
-		Source: control.Source{
-			ChannelFilter: plan.Source.ChannelFilter.ValueString(),
-			Type:          GetSourceType(plan.Source.Type),
-		},
-		Target: target,
-	}
-
-	return ruleValues
+	diags.AddError(
+		"Unrecognized rule target type",
+		fmt.Sprintf("The plan contains an unrecognized rule target type: %T", plan.Target),
+	)
+	return nil, diags
 }
 
-func GetHeaders(headers []AblyRuleHeaders) []control.Header {
-	var retHeaders []control.Header
+func GetHeaders(headers []AblyRuleHeaders) []control.RuleHeader {
+	var retHeaders []control.RuleHeader
 	for _, h := range headers {
-		retHeaders = append(retHeaders, control.Header{
+		retHeaders = append(retHeaders, control.RuleHeader{
 			Name:  h.Name.ValueString(),
 			Value: h.Value.ValueString(),
 		})
@@ -200,44 +312,46 @@ func GetHeaders(headers []AblyRuleHeaders) []control.Header {
 	return retHeaders
 }
 
-func GetRequestMode(plan AblyRule) control.RequestMode {
-	switch plan.RequestMode.ValueString() {
-	case "single":
-		return control.Single
-	case "batch":
-		return control.Batch
-	default:
-		return control.Single
+func GetRequestMode(plan AblyRule) string {
+	if plan.RequestMode.ValueString() == "batch" {
+		return "batch"
 	}
+	return "single"
 }
 
 // GetAwsAuth converts AWS authentication from control SDK format to terraform format.
 // Using plan to fill in values that the api does not return.
-func GetAwsAuth(auth *control.AwsAuthentication, plan *AblyRule) AwsAuth {
-	var respAwsAuth AwsAuth
+func GetAwsAuth(auth control.AWSAuthentication, plan *AblyRule) AwsAuth {
 	var planAuth AwsAuth
 
 	switch p := plan.Target.(type) {
 	case *AblyRuleTargetKinesis:
-		planAuth = p.AwsAuth
+		if p != nil {
+			planAuth = p.AwsAuth
+		}
 	case *AblyRuleTargetSqs:
-		planAuth = p.AwsAuth
+		if p != nil {
+			planAuth = p.AwsAuth
+		}
 	case *AblyRuleTargetLambda:
-		planAuth = p.AwsAuth
+		if p != nil {
+			planAuth = p.AwsAuth
+		}
 	}
 
-	switch a := auth.Authentication.(type) {
-	case *control.AuthenticationModeCredentials:
+	var respAwsAuth AwsAuth
+	switch control.AWSAuthMode(auth.AuthenticationMode) {
+	case control.AWSAuthModeCredentials:
 		respAwsAuth = AwsAuth{
-			AuthenticationMode: planAuth.AuthenticationMode,
-			AccessKeyId:        types.StringValue(a.AccessKeyId),
+			AuthenticationMode: types.StringValue(auth.AuthenticationMode),
+			AccessKeyId:        types.StringValue(auth.AccessKeyID),
 			SecretAccessKey:    planAuth.SecretAccessKey,
 			RoleArn:            types.StringNull(),
 		}
-	case *control.AuthenticationModeAssumeRole:
+	case control.AWSAuthModeAssumeRole:
 		respAwsAuth = AwsAuth{
-			AuthenticationMode: planAuth.AuthenticationMode,
-			RoleArn:            types.StringValue(a.AssumeRoleArn),
+			AuthenticationMode: types.StringValue(auth.AuthenticationMode),
+			RoleArn:            types.StringValue(auth.AssumeRoleArn),
 			AccessKeyId:        types.StringNull(),
 			SecretAccessKey:    types.StringNull(),
 		}
@@ -246,162 +360,293 @@ func GetAwsAuth(auth *control.AwsAuthentication, plan *AblyRule) AwsAuth {
 	return respAwsAuth
 }
 
-// GetRuleResponse maps response body to resource schema attributes..
+// unmarshalTarget JSON-marshals the generic target from RuleResponse and unmarshals into a typed struct.
+func unmarshalTarget[T any](target interface{}) (T, error) {
+	var result T
+	b, err := json.Marshal(target)
+	if err != nil {
+		return result, err
+	}
+	err = json.Unmarshal(b, &result)
+	return result, err
+}
+
+// ToHeaders converts a slice of control.RuleHeader to terraform AblyRuleHeaders.
+func ToHeaders(headers []control.RuleHeader) []AblyRuleHeaders {
+	var respHeaders []AblyRuleHeaders
+	for _, b := range headers {
+		item := AblyRuleHeaders{
+			Name:  types.StringValue(b.Name),
+			Value: types.StringValue(b.Value),
+		}
+		respHeaders = append(respHeaders, item)
+	}
+	return respHeaders
+}
+
+// GetRuleResponse maps response body to resource schema attributes.
 // Using plan to fill in values that the api does not return.
-func GetRuleResponse(ablyRule *control.Rule, plan *AblyRule) AblyRule {
+// Returns (AblyRule, diag.Diagnostics) so callers can check for unmarshal errors.
+func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule) (AblyRule, diag.Diagnostics) {
+	var diags diag.Diagnostics
 	var respTarget any
 
-	switch v := ablyRule.Target.(type) {
-	case *control.AwsKinesisTarget:
+	switch ablyRule.RuleType {
+	case "aws/kinesis":
+		target, err := unmarshalTarget[control.AWSKinesisTarget](ablyRule.Target)
+		if err != nil {
+			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal aws/kinesis target: %s", err.Error()))
+			return AblyRule{}, diags
+		}
 		respTarget = &AblyRuleTargetKinesis{
-			Region:       types.StringValue(v.Region),
-			StreamName:   types.StringValue(v.StreamName),
-			PartitionKey: types.StringValue(v.PartitionKey),
-			AwsAuth:      GetAwsAuth(&v.Authentication, plan),
-			Enveloped:    types.BoolValue(v.Enveloped),
-			Format:       types.StringValue(string(v.Format)),
+			Region:       types.StringValue(target.Region),
+			StreamName:   types.StringValue(target.StreamName),
+			PartitionKey: types.StringValue(target.PartitionKey),
+			AwsAuth:      GetAwsAuth(target.Authentication, plan),
+			Enveloped:    types.BoolValue(deref(target.Enveloped)),
+			Format:       types.StringValue(target.Format),
 		}
-	case *control.AwsSqsTarget:
+	case "aws/sqs":
+		target, err := unmarshalTarget[control.AWSSQSTarget](ablyRule.Target)
+		if err != nil {
+			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal aws/sqs target: %s", err.Error()))
+			return AblyRule{}, diags
+		}
 		respTarget = &AblyRuleTargetSqs{
-			Region:       types.StringValue(v.Region),
-			AwsAccountID: types.StringValue(v.AwsAccountID),
-			QueueName:    types.StringValue(v.QueueName),
-			AwsAuth:      GetAwsAuth(&v.Authentication, plan),
-			Enveloped:    types.BoolValue(v.Enveloped),
-			Format:       types.StringValue(string(v.Format)),
+			Region:       types.StringValue(target.Region),
+			AwsAccountID: types.StringValue(target.AWSAccountID),
+			QueueName:    types.StringValue(target.QueueName),
+			AwsAuth:      GetAwsAuth(target.Authentication, plan),
+			Enveloped:    types.BoolValue(deref(target.Enveloped)),
+			Format:       types.StringValue(target.Format),
 		}
-	case *control.AwsLambdaTarget:
+	case "aws/lambda":
+		target, err := unmarshalTarget[control.AWSLambdaTarget](ablyRule.Target)
+		if err != nil {
+			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal aws/lambda target: %s", err.Error()))
+			return AblyRule{}, diags
+		}
 		respTarget = &AblyRuleTargetLambda{
-			Region:       types.StringValue(v.Region),
-			FunctionName: types.StringValue(v.FunctionName),
-			AwsAuth:      GetAwsAuth(&v.Authentication, plan),
-			Enveloped:    types.BoolValue(v.Enveloped),
+			Region:       types.StringValue(target.Region),
+			FunctionName: types.StringValue(target.FunctionName),
+			AwsAuth:      GetAwsAuth(target.Authentication, plan),
+			Enveloped:    types.BoolValue(deref(target.Enveloped)),
 		}
-	case *control.HttpZapierTarget:
-		headers := ToHeaders(v)
-
+	case "http/zapier":
+		target, err := unmarshalTarget[control.ZapierRuleTarget](ablyRule.Target)
+		if err != nil {
+			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http/zapier target: %s", err.Error()))
+			return AblyRule{}, diags
+		}
+		headers := ToHeaders(target.Headers)
 		respTarget = &AblyRuleTargetZapier{
-			Url:          types.StringValue(v.Url),
-			SigningKeyId: types.StringValue(v.SigningKeyID),
+			Url:          types.StringValue(target.URL),
+			SigningKeyId: optStringValue(target.SigningKeyID),
 			Headers:      headers,
 		}
-	case *control.HttpCloudfareWorkerTarget:
-		headers := ToHeaders(v)
-
+	case "http/cloudflare-worker":
+		target, err := unmarshalTarget[control.CloudflareWorkerRuleTarget](ablyRule.Target)
+		if err != nil {
+			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http/cloudflare-worker target: %s", err.Error()))
+			return AblyRule{}, diags
+		}
+		headers := ToHeaders(target.Headers)
 		respTarget = &AblyRuleTargetCloudflareWorker{
-			Url:          types.StringValue(v.Url),
-			SigningKeyId: types.StringValue(v.SigningKeyID),
+			Url:          types.StringValue(target.URL),
+			SigningKeyId: optStringValue(target.SigningKeyID),
 			Headers:      headers,
 		}
-	case *control.PulsarTarget:
+	case "pulsar":
+		target, err := unmarshalTarget[control.PulsarRuleTarget](ablyRule.Target)
+		if err != nil {
+			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal pulsar target: %s", err.Error()))
+			return AblyRule{}, diags
+		}
 		// TlsTrustCerts is write-only in the API (accepted on create/update but
 		// never returned on read), so preserve whatever the user configured in
 		// state rather than overwriting it with nil from the API response.
 		var tlsTrustCerts []types.String
-		if p, ok := plan.Target.(*AblyRuleTargetPulsar); ok {
+		if p, ok := plan.Target.(*AblyRuleTargetPulsar); ok && p != nil {
 			tlsTrustCerts = p.TlsTrustCerts
 		}
+		authMode := ""
+		authToken := ""
+		if target.Authentication != nil {
+			authMode = target.Authentication.AuthenticationMode
+			authToken = target.Authentication.Token
+		}
 		respTarget = &AblyRuleTargetPulsar{
-			RoutingKey:    types.StringValue(v.RoutingKey),
-			Topic:         types.StringValue(v.Topic),
-			ServiceURL:    types.StringValue(v.ServiceURL),
+			RoutingKey:    types.StringValue(target.RoutingKey),
+			Topic:         types.StringValue(target.Topic),
+			ServiceURL:    types.StringValue(target.ServiceURL),
 			TlsTrustCerts: tlsTrustCerts,
 			Authentication: PulsarAuthentication{
-				Mode:  types.StringValue(string(v.Authentication.AuthenticationMode)),
-				Token: types.StringValue(v.Authentication.Token),
+				Mode:  types.StringValue(authMode),
+				Token: types.StringValue(authToken),
 			},
-			Enveloped: types.BoolValue(v.Enveloped),
-			Format:    types.StringValue(string(v.Format)),
+			Enveloped: types.BoolValue(deref(target.Enveloped)),
+			Format:    types.StringValue(target.Format),
 		}
-	case *control.HttpIftttTarget:
+	case "http/ifttt":
+		target, err := unmarshalTarget[control.IFTTTRuleTarget](ablyRule.Target)
+		if err != nil {
+			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http/ifttt target: %s", err.Error()))
+			return AblyRule{}, diags
+		}
 		respTarget = &AblyRuleTargetIFTTT{
-			EventName:  types.StringValue(v.EventName),
-			WebhookKey: types.StringValue(v.WebhookKey),
+			EventName:  types.StringValue(target.EventName),
+			WebhookKey: types.StringValue(target.WebhookKey),
 		}
-	case *control.HttpGoogleCloudFunctionTarget:
-		headers := ToHeaders(v)
-
+	case "http/google-cloud-function":
+		target, err := unmarshalTarget[control.GoogleCloudFunctionRuleTarget](ablyRule.Target)
+		if err != nil {
+			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http/google-cloud-function target: %s", err.Error()))
+			return AblyRule{}, diags
+		}
+		headers := ToHeaders(target.Headers)
 		respTarget = &AblyRuleTargetGoogleFunction{
-			Region:       types.StringValue(v.Region),
-			ProjectID:    types.StringValue(v.ProjectID),
-			FunctionName: types.StringValue(v.FunctionName),
+			Region:       types.StringValue(target.Region),
+			ProjectID:    types.StringValue(target.ProjectID),
+			FunctionName: types.StringValue(target.FunctionName),
 			Headers:      headers,
-			SigningKeyId: types.StringValue(v.SigningKeyID),
-			Enveloped:    types.BoolValue(v.Enveloped),
-			Format:       types.StringValue(string(v.Format)),
+			SigningKeyId: optStringValue(target.SigningKeyID),
+			Enveloped:    types.BoolValue(deref(target.Enveloped)),
+			Format:       types.StringValue(target.Format),
 		}
-	case *control.HttpAzureFunctionTarget:
-		headers := ToHeaders(v)
-
+	case "http/azure-function":
+		target, err := unmarshalTarget[control.AzureFunctionRuleTarget](ablyRule.Target)
+		if err != nil {
+			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http/azure-function target: %s", err.Error()))
+			return AblyRule{}, diags
+		}
+		headers := ToHeaders(target.Headers)
 		respTarget = &AblyRuleTargetAzureFunction{
-			AzureAppID:        types.StringValue(v.AzureAppID),
-			AzureFunctionName: types.StringValue(v.AzureFunctionName),
+			AzureAppID:        types.StringValue(target.AzureAppID),
+			AzureFunctionName: types.StringValue(target.AzureFunctionName),
 			Headers:           headers,
-			SigningKeyID:      types.StringValue(v.SigningKeyID),
-			Format:            types.StringValue(string(v.Format)),
+			SigningKeyID:      optStringValue(target.SigningKeyID),
+			Enveloped:         types.BoolValue(deref(target.Enveloped)),
+			Format:            types.StringValue(target.Format),
 		}
-	case *control.HttpTarget:
-		headers := ToHeaders(v)
-
+	case "http":
+		target, err := unmarshalTarget[control.HTTPRuleTarget](ablyRule.Target)
+		if err != nil {
+			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http target: %s", err.Error()))
+			return AblyRule{}, diags
+		}
+		headers := ToHeaders(target.Headers)
 		respTarget = &AblyRuleTargetHTTP{
-			Url:          types.StringValue(v.Url),
+			Url:          types.StringValue(target.URL),
 			Headers:      headers,
-			SigningKeyId: types.StringValue(v.SigningKeyID),
-			Format:       types.StringValue(string(v.Format)),
-			Enveloped:    types.BoolValue(v.Enveloped),
+			SigningKeyId: optStringValue(target.SigningKeyID),
+			Format:       types.StringValue(target.Format),
+			Enveloped:    types.BoolValue(deref(target.Enveloped)),
 		}
-	case *control.KafkaTarget:
+	case "kafka":
+		target, err := unmarshalTarget[control.KafkaRuleTarget](ablyRule.Target)
+		if err != nil {
+			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal kafka target: %s", err.Error()))
+			return AblyRule{}, diags
+		}
+		saslMechanism := ""
+		saslUsername := ""
+		saslPassword := ""
+		if target.Auth != nil && target.Auth.SASL != nil {
+			saslMechanism = target.Auth.SASL.Mechanism
+			saslUsername = target.Auth.SASL.Username
+			saslPassword = target.Auth.SASL.Password
+		}
 		respTarget = &AblyRuleTargetKafka{
-			RoutingKey: types.StringValue(v.RoutingKey),
-			Brokers:    toTypedStringSlice(v.Brokers),
+			RoutingKey: types.StringValue(target.RoutingKey),
+			Brokers:    toTypedStringSlice(target.Brokers),
 			KafkaAuthentication: KafkaAuthentication{
 				Sasl{
-					Mechanism: types.StringValue(string(v.Authentication.Sasl.Mechanism)),
-					Username:  types.StringValue(v.Authentication.Sasl.Username),
-					Password:  types.StringValue(v.Authentication.Sasl.Password),
+					Mechanism: types.StringValue(saslMechanism),
+					Username:  types.StringValue(saslUsername),
+					Password:  types.StringValue(saslPassword),
 				},
 			},
-			Enveloped: types.BoolValue(v.Enveloped),
-			Format:    types.StringValue(string(v.Format)),
+			Enveloped: types.BoolValue(deref(target.Enveloped)),
+			Format:    types.StringValue(target.Format),
 		}
-	case *control.AmqpTarget:
-		headers := ToHeaders(v)
-
+	case "amqp":
+		target, err := unmarshalTarget[control.AMQPRuleTarget](ablyRule.Target)
+		if err != nil {
+			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal amqp target: %s", err.Error()))
+			return AblyRule{}, diags
+		}
+		headers := ToHeaders(target.Headers)
 		respTarget = &AblyRuleTargetAMQP{
-			QueueID:   types.StringValue(v.QueueID),
+			QueueID:   types.StringValue(target.QueueID),
 			Headers:   headers,
-			Enveloped: types.BoolValue(v.Enveloped),
-			Format:    types.StringValue(string(v.Format)),
+			Enveloped: types.BoolValue(deref(target.Enveloped)),
+			Format:    types.StringValue(target.Format),
 		}
-	case *control.AmqpExternalTarget:
-		headers := ToHeaders(v)
-		ttl := types.Int64Null()
-		if v.MessageTTL != 0 {
-			ttl = types.Int64Value(int64(v.MessageTTL))
+	case "amqp/external":
+		target, err := unmarshalTarget[control.AMQPExternalRuleTarget](ablyRule.Target)
+		if err != nil {
+			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal amqp/external target: %s", err.Error()))
+			return AblyRule{}, diags
 		}
+		headers := ToHeaders(target.Headers)
 
+		// Several target fields are not required in the API response and may
+		// be omitted. When the plan provided values for these fields, preserve
+		// them so Terraform doesn't see a diff (the target block contains the
+		// sensitive "url" field, so ANY field mismatch triggers the opaque
+		// "inconsistent values for sensitive attribute" error).
+		url := types.StringValue(target.URL)
+		exchange := types.StringNull()
+		if target.Exchange != "" {
+			exchange = types.StringValue(target.Exchange)
+		}
+		ttl := types.Int64Null()
+		if target.MessageTTL != nil && *target.MessageTTL != 0 {
+			ttl = types.Int64Value(int64(*target.MessageTTL))
+		}
+		if p, ok := plan.Target.(*AblyRuleTargetAMQPExternal); ok && p != nil {
+			if !p.Url.IsNull() {
+				url = p.Url
+			}
+			if target.Exchange == "" {
+				exchange = p.Exchange
+			}
+			if ttl.IsNull() && !p.MessageTtl.IsNull() {
+				ttl = p.MessageTtl
+			}
+		}
 		respTarget = &AblyRuleTargetAMQPExternal{
-			Url:                types.StringValue(v.Url),
-			RoutingKey:         types.StringValue(v.RoutingKey),
-			MandatoryRoute:     types.BoolValue(v.MandatoryRoute),
-			PersistentMessages: types.BoolValue(v.PersistentMessages),
+			Url:                url,
+			RoutingKey:         types.StringValue(target.RoutingKey),
+			Exchange:           exchange,
+			MandatoryRoute:     types.BoolValue(deref(target.MandatoryRoute)),
+			PersistentMessages: types.BoolValue(deref(target.PersistentMessages)),
 			MessageTtl:         ttl,
 			Headers:            headers,
-			Enveloped:          types.BoolValue(v.Enveloped),
-			Format:             types.StringValue(string(v.Format)),
+			Enveloped:          types.BoolValue(deref(target.Enveloped)),
+			Format:             types.StringValue(target.Format),
 		}
+	default:
+		diags.AddError(
+			"Unknown rule type in response",
+			fmt.Sprintf("Received unrecognized rule type from API: %q", ablyRule.RuleType),
+		)
+		return AblyRule{}, diags
 	}
 
 	channelFilter := types.StringNull()
-	if ablyRule.Source.ChannelFilter != "" {
-		channelFilter = types.StringValue(
-			ablyRule.Source.ChannelFilter,
-		)
+	if ablyRule.Source != nil && ablyRule.Source.ChannelFilter != "" {
+		channelFilter = types.StringValue(ablyRule.Source.ChannelFilter)
+	}
+
+	sourceType := ""
+	if ablyRule.Source != nil {
+		sourceType = ablyRule.Source.Type
 	}
 
 	respSource := AblyRuleSource{
 		ChannelFilter: channelFilter,
-		Type:          types.StringValue(string(ablyRule.Source.Type)),
+		Type:          types.StringValue(sourceType),
 	}
 
 	respRule := AblyRule{
@@ -410,10 +655,10 @@ func GetRuleResponse(ablyRule *control.Rule, plan *AblyRule) AblyRule {
 		Status:      types.StringValue(ablyRule.Status),
 		Source:      &respSource,
 		Target:      respTarget,
-		RequestMode: types.StringValue(string(ablyRule.RequestMode)),
+		RequestMode: types.StringValue(ablyRule.RequestMode),
 	}
 
-	return respRule
+	return respRule, diags
 }
 
 // GetRuleSchema returns the schema for a rule resource.
@@ -437,7 +682,12 @@ func GetRuleSchema(target map[string]schema.Attribute, markdownDescription strin
 			},
 			"status": schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "The status of the rule. Rules can be enabled or disabled.",
+				Default:     stringdefault.StaticString("enabled"),
+				Validators: []validator.String{
+					stringvalidator.OneOf("enabled", "disabled"),
+				},
 			},
 			"request_mode": schema.StringAttribute{
 				Optional:    true,
@@ -447,10 +697,13 @@ func GetRuleSchema(target map[string]schema.Attribute, markdownDescription strin
 					DefaultStringAttribute(types.StringValue("single")),
 					stringplanmodifier.UseStateForUnknown(),
 				},
+				Validators: []validator.String{
+					stringvalidator.OneOf("single", "batch"),
+				},
 			},
 			"source": schema.SingleNestedAttribute{
 				Required:    true,
-				Description: "object (rule_source)",
+				Description: "The source for the rule",
 				Attributes: map[string]schema.Attribute{
 					"channel_filter": schema.StringAttribute{
 						Optional: true,
@@ -462,7 +715,7 @@ func GetRuleSchema(target map[string]schema.Attribute, markdownDescription strin
 			},
 			"target": schema.SingleNestedAttribute{
 				Required:    true,
-				Description: "object (rule_source)",
+				Description: "The target for the rule",
 				Attributes:  target,
 			},
 		},
@@ -472,7 +725,7 @@ func GetRuleSchema(target map[string]schema.Attribute, markdownDescription strin
 func GetAwsAuthSchema() schema.Attribute {
 	return schema.SingleNestedAttribute{
 		Required:    true,
-		Description: "object (rule_source)",
+		Description: "AWS authentication configuration",
 		Attributes: map[string]schema.Attribute{
 			"mode": schema.StringAttribute{
 				Required: true,
@@ -480,6 +733,9 @@ func GetAwsAuthSchema() schema.Attribute {
 					stringplanmodifier.RequiresReplace(),
 				},
 				Description: "Authentication method. Use 'credentials' or 'assumeRole'",
+				Validators: []validator.String{
+					stringvalidator.OneOf("credentials", "assumeRole"),
+				},
 			},
 			"role_arn": schema.StringAttribute{
 				Optional:    true,
@@ -537,54 +793,10 @@ func GetFormatSchema() schema.Attribute {
 		PlanModifiers: []planmodifier.String{
 			DefaultStringAttribute(types.StringValue("json")),
 		},
+		Validators: []validator.String{
+			stringvalidator.OneOf("json", "msgpack", "json/ably-compact"),
+		},
 	}
-}
-
-func GetSourceType(mode types.String) control.SourceType {
-	switch mode {
-	case types.StringValue("channel.message"):
-		return control.ChannelMessage
-	case types.StringValue("channel.presence"):
-		return control.ChannelPresence
-	case types.StringValue("channel.lifecycle"):
-		return control.ChannelLifeCycle
-	case types.StringValue("channel.occupancy"):
-		return control.ChannelOccupancy
-	default:
-		return control.ChannelMessage
-	}
-}
-
-func ToHeaders(plan control.Target) []AblyRuleHeaders {
-	var respHeaders []AblyRuleHeaders
-	var headers []control.Header
-
-	switch t := plan.(type) {
-	case *control.HttpTarget:
-		headers = t.Headers
-	case *control.HttpZapierTarget:
-		headers = t.Headers
-	case *control.HttpCloudfareWorkerTarget:
-		headers = t.Headers
-	case *control.HttpGoogleCloudFunctionTarget:
-		headers = t.Headers
-	case *control.HttpAzureFunctionTarget:
-		headers = t.Headers
-	case *control.AmqpTarget:
-		headers = t.Headers
-	case *control.AmqpExternalTarget:
-		headers = t.Headers
-	}
-
-	for _, b := range headers {
-		item := AblyRuleHeaders{
-			Name:  types.StringValue(b.Name),
-			Value: types.StringValue(b.Value),
-		}
-		respHeaders = append(respHeaders, item)
-	}
-
-	return respHeaders
 }
 
 type Rule interface {
@@ -594,12 +806,7 @@ type Rule interface {
 
 // CreateRule creates a new rule resource.
 func CreateRule[T any](r Rule, ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	// Checks whether the provider and API Client are configured. If they are not, the provider responds with an error.
-	if !r.Provider().configured {
-		resp.Diagnostics.AddError(
-			"Provider not configured",
-			"The provider hasn't been configured before apply",
-		)
+	if !r.Provider().ensureConfigured(&resp.Diagnostics) {
 		return
 	}
 
@@ -612,20 +819,27 @@ func CreateRule[T any](r Rule, ctx context.Context, req resource.CreateRequest, 
 	}
 
 	plan := p.Rule()
-	planValues := GetPlanRule(plan)
-
-	// Creates a new Ably Rule by invoking the CreateRule function from the Client Library
-	rule, err := r.Provider().client.CreateRule(plan.AppID.ValueString(), &planValues)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("Error creating Resource '%s'", r.Name()),
-			fmt.Sprintf("Could not create resource '%s', unexpected error: %s", r.Name(), err.Error()),
-		)
-
+	planValues, planDiags := GetPlanRule(plan)
+	resp.Diagnostics.Append(planDiags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	responseValues := GetRuleResponse(&rule, &plan)
+	// Creates a new Ably Rule by invoking the CreateRule function from the Client Library
+	rule, err := r.Provider().client.CreateRule(ctx, plan.AppID.ValueString(), planValues)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Error creating resource %s", r.Name()),
+			fmt.Sprintf("Could not create resource %s, unexpected error: %s", r.Name(), err.Error()),
+		)
+		return
+	}
+
+	responseValues, respDiags := GetRuleResponse(&rule, &plan)
+	resp.Diagnostics.Append(respDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Sets state for the new Ably App.
 	diags = resp.State.Set(ctx, responseValues)
@@ -653,7 +867,7 @@ func ReadRule[T any](r Rule, ctx context.Context, req resource.ReadRequest, resp
 	ruleID := s.ID.ValueString()
 
 	// Get Rule data
-	rule, err := r.Provider().client.Rule(appID, ruleID)
+	rule, err := r.Provider().client.GetRule(ctx, appID, ruleID)
 
 	if err != nil {
 		if is404(err) {
@@ -661,13 +875,17 @@ func ReadRule[T any](r Rule, ctx context.Context, req resource.ReadRequest, resp
 			return
 		}
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("Error reading Resource %s", r.Name()),
+			fmt.Sprintf("Error reading resource %s", r.Name()),
 			fmt.Sprintf("Could not read resource %s, unexpected error: %s", r.Name(), err.Error()),
 		)
 		return
 	}
 
-	responseValues := GetRuleResponse(&rule, &state)
+	responseValues, respDiags := GetRuleResponse(&rule, &state)
+	resp.Diagnostics.Append(respDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Sets state to app values.
 	diags = resp.State.Set(ctx, &responseValues)
@@ -692,23 +910,31 @@ func UpdateRule[T any](r Rule, ctx context.Context, req resource.UpdateRequest, 
 
 	plan := p.Rule()
 
-	ruleValues := GetPlanRule(plan)
+	ruleValues, planDiags := GetPlanRule(plan)
+	resp.Diagnostics.Append(planDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Gets the Ably App ID and Ably Rule ID value for the resource
 	appID := plan.AppID.ValueString()
 	ruleID := plan.ID.ValueString()
 
 	// Update Ably Rule
-	rule, err := r.Provider().client.UpdateRule(appID, ruleID, &ruleValues)
+	rule, err := r.Provider().client.UpdateRule(ctx, appID, ruleID, ruleValues)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("Error updading Resource %s", r.Name()),
+			fmt.Sprintf("Error updating resource %s", r.Name()),
 			fmt.Sprintf("Could not update resource %s, unexpected error: %s", r.Name(), err.Error()),
 		)
 		return
 	}
 
-	responseValues := GetRuleResponse(&rule, &plan)
+	responseValues, respDiags := GetRuleResponse(&rule, &plan)
+	resp.Diagnostics.Append(respDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Sets state to app values.
 	diags = resp.State.Set(ctx, &responseValues)
@@ -737,17 +963,17 @@ func DeleteRule[T any](r Rule, ctx context.Context, req resource.DeleteRequest, 
 	appID := state.AppID.ValueString()
 	ruleID := state.ID.ValueString()
 
-	err := r.Provider().client.DeleteRule(appID, ruleID)
+	err := r.Provider().client.DeleteRule(ctx, appID, ruleID)
 	if err != nil {
 		if is404(err) {
 			resp.Diagnostics.AddWarning(
-				fmt.Sprintf("Resource does %s not exist", r.Name()),
-				fmt.Sprintf("Resource does %s not exist, it may have already been deleted: %s", r.Name(), err.Error()),
+				fmt.Sprintf("Resource %s does not exist", r.Name()),
+				fmt.Sprintf("Resource %s does not exist, it may have already been deleted: %s", r.Name(), err.Error()),
 			)
 		} else {
 			resp.Diagnostics.AddError(
-				fmt.Sprintf("Error deleting Resource %s'", r.Name()),
-				fmt.Sprintf("Could not delete resource '%s', unexpected error: %s", r.Name(), err.Error()),
+				fmt.Sprintf("Error deleting resource %s", r.Name()),
+				fmt.Sprintf("Could not delete resource %s, unexpected error: %s", r.Name(), err.Error()),
 			)
 			return
 		}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccAblyRuleIFTTT(t *testing.T) {
@@ -38,6 +39,20 @@ func TestAccAblyRuleIFTTT(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_ifttt.rule0", "target.event_name", "bbbb"),
 				),
 			},
+			// ImportState testing
+			{
+				ResourceName:      "ably_rule_ifttt.rule0",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources["ably_rule_ifttt.rule0"]
+					if !ok {
+						return "", fmt.Errorf("resource not found: ably_rule_ifttt.rule0")
+					}
+					return fmt.Sprintf("%s,%s", rs.Primary.Attributes["app_id"], rs.Primary.ID), nil
+				},
+				ImportStateVerifyIgnore: []string{"target.webhook_key"},
+			},
 			// Update and Read testing of ably_app.app0
 			{
 				Config: testAccAblyRuleIFTTTConfig(
@@ -45,7 +60,7 @@ func TestAccAblyRuleIFTTT(t *testing.T) {
 					"enabled",
 					"^my-channel.*",
 					"channel.message",
-					// TODO: change to batch when control api not broken #147
+					// IFTTT does not support batch mode.
 					"single",
 					"dddd",
 					"eeee",
@@ -76,42 +91,21 @@ func testAccAblyRuleIFTTTConfig(
 	targetEventName string,
 ) string {
 	return fmt.Sprintf(`
+# You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 terraform {
 	required_providers {
 		ably = {
-		source = "github.com/ably/ably"
+			source = "registry.terraform.io/ably/ably"
 		}
 	}
 }
-	
-# You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 provider "ably" {}
-	  
+
 resource "ably_app" "app0" {
 	name     = %[1]q
 	status   = "enabled"
 	tls_only = true
 }
-
-resource "ably_api_key" "api_key_0" {
-	app_id = ably_app.app0.id
-	name   = "key-0000"
-	capabilities = {
-	  "channel2"  = ["publish"],
-	  "channel3"  = ["subscribe"],
-	  "channel33" = ["subscribe"],
-	}
-	revocable_tokens = true
-  }
-
-  resource "ably_api_key" "api_key_1" {
-	app_id = ably_app.app0.id
-	name   = "key-0001"
-	capabilities = {
-	  "channel2"  = ["publish"],
-	}
-	revocable_tokens = false
-  }
 
 resource "ably_rule_ifttt" "rule0" {
 	app_id = ably_app.app0.id

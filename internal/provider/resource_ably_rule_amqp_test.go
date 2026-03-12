@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccAblyRuleAMQP(t *testing.T) {
@@ -48,13 +49,31 @@ func TestAccAblyRuleAMQP(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
+					resource.TestCheckResourceAttrSet("ably_rule_amqp.rule0", "id"),
+					resource.TestCheckResourceAttrSet("ably_rule_amqp.rule0", "app_id"),
 					resource.TestCheckResourceAttr("ably_rule_amqp.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_amqp.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_amqp.rule0", "source.type", "channel.message"),
 					resource.TestCheckResourceAttr("ably_rule_amqp.rule0", "request_mode", "single"),
+					resource.TestCheckResourceAttrSet("ably_rule_amqp.rule0", "target.queue_id"),
+					resource.TestCheckResourceAttr("ably_rule_amqp.rule0", "target.headers.0.name", "User-Agent-Conf"),
+					resource.TestCheckResourceAttr("ably_rule_amqp.rule0", "target.headers.0.value", "user-agent-string"),
 					resource.TestCheckResourceAttr("ably_rule_amqp.rule0", "target.enveloped", "true"),
 					resource.TestCheckResourceAttr("ably_rule_amqp.rule0", "target.format", "json"),
 				),
+			},
+			// ImportState testing
+			{
+				ResourceName:      "ably_rule_amqp.rule0",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources["ably_rule_amqp.rule0"]
+					if !ok {
+						return "", fmt.Errorf("resource not found")
+					}
+					return fmt.Sprintf("%s,%s", rs.Primary.Attributes["app_id"], rs.Primary.ID), nil
+				},
 			},
 			// Update and Read testing of ably_app.app0
 			{
@@ -70,10 +89,17 @@ func TestAccAblyRuleAMQP(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", updateAppName),
+					resource.TestCheckResourceAttrSet("ably_rule_amqp.rule0", "id"),
+					resource.TestCheckResourceAttrSet("ably_rule_amqp.rule0", "app_id"),
 					resource.TestCheckResourceAttr("ably_rule_amqp.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_amqp.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_amqp.rule0", "source.type", "channel.message"),
 					resource.TestCheckResourceAttr("ably_rule_amqp.rule0", "request_mode", "single"),
+					resource.TestCheckResourceAttrSet("ably_rule_amqp.rule0", "target.queue_id"),
+					resource.TestCheckResourceAttr("ably_rule_amqp.rule0", "target.headers.0.name", "User-Agent-Conf"),
+					resource.TestCheckResourceAttr("ably_rule_amqp.rule0", "target.headers.0.value", "user-agent-string"),
+					resource.TestCheckResourceAttr("ably_rule_amqp.rule0", "target.headers.1.name", "Custom-Header"),
+					resource.TestCheckResourceAttr("ably_rule_amqp.rule0", "target.headers.1.value", "custom-header-string"),
 					resource.TestCheckResourceAttr("ably_rule_amqp.rule0", "target.enveloped", "false"),
 					resource.TestCheckResourceAttr("ably_rule_amqp.rule0", "target.format", "msgpack"),
 				),
@@ -95,15 +121,14 @@ func testAccAblyRuleAMQPConfig(
 	targetFormat string,
 ) string {
 	return fmt.Sprintf(`
+# You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 terraform {
 	required_providers {
 		ably = {
-		source = "github.com/ably/ably"
+			source = "registry.terraform.io/ably/ably"
 		}
 	}
 }
-
-# You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 provider "ably" {}
 
 resource "ably_app" "app0" {

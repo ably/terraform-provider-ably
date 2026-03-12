@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccAblyRuleCloudflareWorker(t *testing.T) {
@@ -40,7 +41,7 @@ func TestAccAblyRuleCloudflareWorker(t *testing.T) {
 					"enabled",
 					"^my-channel.*",
 					"channel.message",
-					"single",
+					"batch",
 					"https://example.com/webhooks",
 					originalHeadersBlock,
 					"ably_api_key.api_key_0.id",
@@ -50,9 +51,26 @@ func TestAccAblyRuleCloudflareWorker(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "source.type", "channel.message"),
-					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "request_mode", "single"),
+					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "request_mode", "batch"),
 					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "target.url", "https://example.com/webhooks"),
+					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "target.headers.0.name", "User-Agent-Conf"),
+					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "target.headers.0.value", "user-agent-string"),
+					resource.TestCheckResourceAttrSet("ably_rule_cloudflare_worker.rule0", "target.signing_key_id"),
 				),
+			},
+			// ImportState testing
+			{
+				ResourceName:      "ably_rule_cloudflare_worker.rule0",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources["ably_rule_cloudflare_worker.rule0"]
+					if !ok {
+						return "", fmt.Errorf("resource not found: ably_rule_cloudflare_worker.rule0")
+					}
+					return fmt.Sprintf("%s,%s", rs.Primary.Attributes["app_id"], rs.Primary.ID), nil
+				},
+				ImportStateVerifyIgnore: []string{"target.signing_key_id"},
 			},
 			// Update and Read testing of ably_app.app0
 			{
@@ -61,8 +79,7 @@ func TestAccAblyRuleCloudflareWorker(t *testing.T) {
 					"enabled",
 					"^my-channel.*",
 					"channel.message",
-					// TODO: change to batch when control api not broken #147
-					"single",
+					"batch",
 					"https://example1.com/webhooks",
 					updateHeadersBlock,
 					"ably_api_key.api_key_1.id",
@@ -72,8 +89,13 @@ func TestAccAblyRuleCloudflareWorker(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "source.type", "channel.message"),
-					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "request_mode", "single"),
+					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "request_mode", "batch"),
 					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "target.url", "https://example1.com/webhooks"),
+					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "target.headers.0.name", "User-Agent-Conf"),
+					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "target.headers.0.value", "user-agent-string"),
+					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "target.headers.1.name", "Custom-Header"),
+					resource.TestCheckResourceAttr("ably_rule_cloudflare_worker.rule0", "target.headers.1.value", "custom-header-string"),
+					resource.TestCheckResourceAttrSet("ably_rule_cloudflare_worker.rule0", "target.signing_key_id"),
 				),
 			},
 			// Delete testing automatically occurs in TestCase
@@ -93,17 +115,16 @@ func testAccAblyRuleCloudflareWorkerConfig(
 	targetSigningKeyID string,
 ) string {
 	return fmt.Sprintf(`
+# You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 terraform {
 	required_providers {
 		ably = {
-		source = "github.com/ably/ably"
+			source = "registry.terraform.io/ably/ably"
 		}
 	}
 }
-	
-# You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 provider "ably" {}
-	  
+
 resource "ably_app" "app0" {
 	name     = %[1]q
 	status   = "enabled"

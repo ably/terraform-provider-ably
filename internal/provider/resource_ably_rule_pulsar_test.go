@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccAblyRulePulsar(t *testing.T) {
@@ -34,6 +35,8 @@ func TestAccAblyRulePulsar(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
+					resource.TestCheckResourceAttrSet("ably_rule_pulsar.rule0", "id"),
+					resource.TestCheckResourceAttrSet("ably_rule_pulsar.rule0", "app_id"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "source.type", "channel.message"),
@@ -43,8 +46,27 @@ func TestAccAblyRulePulsar(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.service_url", "pulsar://pulsar.us-west.example.com:6650/"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.enveloped", "true"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.format", "json"),
+					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.authentication.mode", "token"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.authentication.token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"),
+					resource.TestCheckResourceAttrSet("ably_rule_pulsar.rule0", "target.tls_trust_certs.0"),
 				),
+			},
+			// ImportState testing
+			{
+				ResourceName:      "ably_rule_pulsar.rule0",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources["ably_rule_pulsar.rule0"]
+					if !ok {
+						return "", fmt.Errorf("resource not found")
+					}
+					return fmt.Sprintf("%s,%s", rs.Primary.Attributes["app_id"], rs.Primary.ID), nil
+				},
+				ImportStateVerifyIgnore: []string{
+					"target.authentication.token",
+					"target.tls_trust_certs",
+				},
 			},
 			// Update and Read testing of ably_app.app0
 			{
@@ -63,6 +85,8 @@ func TestAccAblyRulePulsar(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", updateAppName),
+					resource.TestCheckResourceAttrSet("ably_rule_pulsar.rule0", "id"),
+					resource.TestCheckResourceAttrSet("ably_rule_pulsar.rule0", "app_id"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "source.type", "channel.message"),
@@ -72,6 +96,7 @@ func TestAccAblyRulePulsar(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.service_url", "pulsar://pulsar.us-east.example.com:6650/"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.enveloped", "false"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.format", "msgpack"),
+					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.authentication.mode", "token"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.authentication.token", "YWxnOkhTNTEyIHR5cDpKV1QK"),
 				),
 			},
@@ -95,17 +120,16 @@ func testAccAblyRulePulsarConfig(
 	targetAuthToken string,
 ) string {
 	return fmt.Sprintf(`
+# You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 terraform {
 	required_providers {
 		ably = {
-		source = "github.com/ably/ably"
+			source = "registry.terraform.io/ably/ably"
 		}
 	}
 }
-	
-# You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 provider "ably" {}
-	  
+
 resource "ably_app" "app0" {
 	name     = %[1]q
 	status   = "enabled"

@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 // Test Create and Update of an Ably Key with:
@@ -36,7 +37,25 @@ func TestAccAblyKey(t *testing.T) {
 						}
 						return nil
 					}),
+					resource.TestCheckResourceAttrSet("ably_api_key.key0", "id"),
+					resource.TestCheckResourceAttrSet("ably_api_key.key0", "app_id"),
+					resource.TestCheckResourceAttrSet("ably_api_key.key0", "status"),
+					resource.TestCheckResourceAttrSet("ably_api_key.key0", "created"),
+					resource.TestCheckResourceAttrSet("ably_api_key.key0", "modified"),
 				),
+			},
+			// ImportState testing of ably_api_key.key0
+			{
+				ResourceName:      "ably_api_key.key0",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources["ably_api_key.key0"]
+					if !ok {
+						return "", fmt.Errorf("resource not found")
+					}
+					return fmt.Sprintf("%s,%s", rs.Primary.Attributes["app_id"], rs.Primary.ID), nil
+				},
 			},
 			// Update and Read testing of ably_app.app0
 			{
@@ -63,15 +82,14 @@ func TestAccAblyKey(t *testing.T) {
 // Takes App name, Key Name, Capability Name and Capability List as function params.
 func testAccAblyKeyConfig(appName string, keyName string, keyCapabilityName0 string, keyCapabilityCap0 string, revocableTokens bool) string {
 	return fmt.Sprintf(`
+# You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 terraform {
 	required_providers {
 		ably = {
-		source = "github.com/ably/ably"
+			source = "registry.terraform.io/ably/ably"
 		}
 	}
 }
-
-# You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 provider "ably" {}
 
 resource "ably_app" "app0" {
