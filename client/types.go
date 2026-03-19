@@ -15,13 +15,20 @@ type Error struct {
 }
 
 func (e *Error) Error() string {
-	if len(e.Details) > 0 && string(e.Details) != "null" {
-		return fmt.Sprintf("%s (code: %d, details: %s)", e.Message, e.Code, string(e.Details))
-	}
 	if e.Code != 0 {
 		return fmt.Sprintf("%s (code: %d)", e.Message, e.Code)
 	}
 	return e.Message
+}
+
+// GetDetails returns the raw JSON details from the API error response, or nil
+// if no details were provided. Use this when you need to inspect the server's
+// detailed error payload rather than relying on the Error() string.
+func (e *Error) GetDetails() json.RawMessage {
+	if len(e.Details) > 0 && string(e.Details) != "null" {
+		return e.Details
+	}
+	return nil
 }
 
 // AppPost is the request body for creating an app.
@@ -335,6 +342,16 @@ type BeforePublishConfig struct {
 	MaxRetries            int    `json:"maxRetries"`
 	FailedAction          string `json:"failedAction"`
 	TooManyRequestsAction string `json:"tooManyRequestsAction"`
+}
+
+// BeforePublishConfigPatch is the patch-safe variant of BeforePublishConfig.
+// All fields are pointer types with omitempty so that omitted fields are not
+// serialized, preventing PATCH requests from overwriting existing values.
+type BeforePublishConfigPatch struct {
+	RetryTimeout          *int    `json:"retryTimeout,omitempty"`
+	MaxRetries            *int    `json:"maxRetries,omitempty"`
+	FailedAction          *string `json:"failedAction,omitempty"`
+	TooManyRequestsAction *string `json:"tooManyRequestsAction,omitempty"`
 }
 
 // AMQPRuleTarget is the target for AMQP rules.

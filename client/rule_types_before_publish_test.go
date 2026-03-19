@@ -77,11 +77,11 @@ func TestUpdateRule_BeforePublishWebhook_Success(t *testing.T) {
 	t.Parallel()
 	mux, client := newTestMux(t)
 
-	bpc := BeforePublishConfig{
-		RetryTimeout:          10,
-		MaxRetries:            2,
-		FailedAction:          "reject",
-		TooManyRequestsAction: "reject",
+	bpc := BeforePublishConfigPatch{
+		RetryTimeout:          ptr(10),
+		MaxRetries:            ptr(2),
+		FailedAction:          ptr("reject"),
+		TooManyRequestsAction: ptr("reject"),
 	}
 	body := BeforePublishWebhookRulePatch{
 		Status:              "disabled",
@@ -107,7 +107,8 @@ func TestUpdateRule_BeforePublishWebhook_Success(t *testing.T) {
 		assert.Equal(t, "http/before-publish", got.RuleType)
 		assert.Equal(t, "disabled", got.Status)
 		require.NotNil(t, got.BeforePublishConfig)
-		assert.Equal(t, 10, got.BeforePublishConfig.RetryTimeout)
+		require.NotNil(t, got.BeforePublishConfig.RetryTimeout)
+		assert.Equal(t, 10, *got.BeforePublishConfig.RetryTimeout)
 		require.NotNil(t, got.Target)
 		require.NotNil(t, got.Target.URL)
 		assert.Equal(t, "https://example.com/updated", *got.Target.URL)
@@ -305,9 +306,9 @@ func TestUpdateRule_BeforePublishAWSLambda_Success(t *testing.T) {
 	t.Parallel()
 	mux, client := newTestMux(t)
 
-	bpc := BeforePublishConfig{
-		RetryTimeout: 20, MaxRetries: 4,
-		FailedAction: "allow", TooManyRequestsAction: "reject",
+	bpc := BeforePublishConfigPatch{
+		RetryTimeout: ptr(20), MaxRetries: ptr(4),
+		FailedAction: ptr("allow"), TooManyRequestsAction: ptr("reject"),
 	}
 	body := BeforePublishAWSLambdaRulePatch{
 		Status:              "disabled",
@@ -318,9 +319,9 @@ func TestUpdateRule_BeforePublishAWSLambda_Success(t *testing.T) {
 		Source:              &RuleSource{ChannelFilter: "^filtered", Type: "channel.message"},
 		Target: &BeforePublishAWSLambdaTargetPatch{
 			Region: ptr("us-east-1"), FunctionName: ptr("updated-fn"),
-			Authentication: &AWSAuthentication{
-				AuthenticationMode: "assumeRole",
-				AssumeRoleArn:      "arn:aws:iam::111111111111:role/test",
+			Authentication: &AWSAuthenticationPatch{
+				AuthenticationMode: ptr("assumeRole"),
+				AssumeRoleArn:      ptr("arn:aws:iam::111111111111:role/test"),
 			},
 		},
 	}
@@ -337,12 +338,14 @@ func TestUpdateRule_BeforePublishAWSLambda_Success(t *testing.T) {
 		assert.Equal(t, "aws/lambda/before-publish", got.RuleType)
 		assert.Equal(t, "disabled", got.Status)
 		require.NotNil(t, got.BeforePublishConfig)
-		assert.Equal(t, 20, got.BeforePublishConfig.RetryTimeout)
+		require.NotNil(t, got.BeforePublishConfig.RetryTimeout)
+		assert.Equal(t, 20, *got.BeforePublishConfig.RetryTimeout)
 		require.NotNil(t, got.Source)
 		assert.Equal(t, "^filtered", got.Source.ChannelFilter)
 		require.NotNil(t, got.Target)
 		require.NotNil(t, got.Target.Authentication)
-		assert.Equal(t, "assumeRole", got.Target.Authentication.AuthenticationMode)
+		require.NotNil(t, got.Target.Authentication.AuthenticationMode)
+		assert.Equal(t, "assumeRole", *got.Target.Authentication.AuthenticationMode)
 		writeJSON(w, http.StatusOK, wantResp)
 	})
 

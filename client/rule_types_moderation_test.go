@@ -73,12 +73,12 @@ func TestUpdateRule_HiveTextModelOnly_Success(t *testing.T) {
 	body := HiveTextModelOnlyRulePatch{
 		Status:   "disabled",
 		RuleType: "hive/text-model-only",
-		BeforePublishConfig: &BeforePublishConfig{
-			RetryTimeout: 10, MaxRetries: 1, FailedAction: "allow",
+		BeforePublishConfig: &BeforePublishConfigPatch{
+			RetryTimeout: ptr(10), MaxRetries: ptr(1), FailedAction: ptr("allow"),
 		},
 		InvocationMode: "before-publish",
-		Target: &HiveTextModelOnlyTarget{
-			APIKey:     "new-key",
+		Target: &HiveTextModelOnlyTargetPatch{
+			APIKey:     ptr("new-key"),
 			Thresholds: map[string]int{"profanity": 50},
 		},
 	}
@@ -95,7 +95,8 @@ func TestUpdateRule_HiveTextModelOnly_Success(t *testing.T) {
 		assert.Equal(t, "hive/text-model-only", got.RuleType)
 		assert.Equal(t, "disabled", got.Status)
 		require.NotNil(t, got.Target)
-		assert.Equal(t, "new-key", got.Target.APIKey)
+		require.NotNil(t, got.Target.APIKey)
+		assert.Equal(t, "new-key", *got.Target.APIKey)
 		assert.Equal(t, 50, got.Target.Thresholds["profanity"])
 		writeJSON(w, http.StatusOK, wantResp)
 	})
@@ -222,7 +223,7 @@ func TestUpdateRule_HiveDashboard_Success(t *testing.T) {
 
 	body := HiveDashboardRulePatch{
 		RuleType: "hive/dashboard",
-		Target:   &HiveDashboardTarget{APIKey: "updated-key", CheckWatchLists: ptr(false)},
+		Target:   &HiveDashboardTargetPatch{APIKey: ptr("updated-key"), CheckWatchLists: ptr(false)},
 	}
 	wantResp := RuleResponse{
 		ID: "rule031", AppID: "app123", Status: "enabled", RuleType: "hive/dashboard",
@@ -416,13 +417,13 @@ func TestUpdateRule_BodyguardTextModeration_Success(t *testing.T) {
 	body := BodyguardTextModerationRulePatch{
 		Status:   "disabled",
 		RuleType: "bodyguard/text-moderation",
-		BeforePublishConfig: &BeforePublishConfig{
-			RetryTimeout: 15, MaxRetries: 5, FailedAction: "allow",
+		BeforePublishConfig: &BeforePublishConfigPatch{
+			RetryTimeout: ptr(15), MaxRetries: ptr(5), FailedAction: ptr("allow"),
 		},
 		InvocationMode: "before-publish",
-		Target: &BodyguardTextModerationTarget{
-			APIKey:          "new-bg-key",
-			DefaultLanguage: "fr",
+		Target: &BodyguardTextModerationTargetPatch{
+			APIKey:          ptr("new-bg-key"),
+			DefaultLanguage: ptr("fr"),
 		},
 	}
 	wantResp := RuleResponse{
@@ -438,8 +439,10 @@ func TestUpdateRule_BodyguardTextModeration_Success(t *testing.T) {
 		assert.Equal(t, "bodyguard/text-moderation", got.RuleType)
 		assert.Equal(t, "disabled", got.Status)
 		require.NotNil(t, got.Target)
-		assert.Equal(t, "new-bg-key", got.Target.APIKey)
-		assert.Equal(t, "fr", got.Target.DefaultLanguage)
+		require.NotNil(t, got.Target.APIKey)
+		assert.Equal(t, "new-bg-key", *got.Target.APIKey)
+		require.NotNil(t, got.Target.DefaultLanguage)
+		assert.Equal(t, "fr", *got.Target.DefaultLanguage)
 		writeJSON(w, http.StatusOK, wantResp)
 	})
 
@@ -533,16 +536,16 @@ func TestUpdateRule_TisaneTextModeration_Success(t *testing.T) {
 	body := TisaneTextModerationRulePatch{
 		Status:   "disabled",
 		RuleType: "tisane/text-moderation",
-		BeforePublishConfig: &BeforePublishConfig{
-			RetryTimeout: 10, MaxRetries: 2,
-			FailedAction: "allow", TooManyRequestsAction: "reject",
+		BeforePublishConfig: &BeforePublishConfigPatch{
+			RetryTimeout: ptr(10), MaxRetries: ptr(2),
+			FailedAction: ptr("allow"), TooManyRequestsAction: ptr("reject"),
 		},
 		InvocationMode: "before-publish",
 		ChatRoomFilter: "room-*",
-		Target: &TisaneTextModerationTarget{
-			APIKey:          "updated-key",
+		Target: &TisaneTextModerationTargetPatch{
+			APIKey:          ptr("updated-key"),
 			Thresholds:      map[string]int{"toxicity": 85},
-			DefaultLanguage: "de",
+			DefaultLanguage: ptr("de"),
 		},
 	}
 	wantResp := RuleResponse{
@@ -558,8 +561,10 @@ func TestUpdateRule_TisaneTextModeration_Success(t *testing.T) {
 		assert.Equal(t, "tisane/text-moderation", got.RuleType)
 		assert.Equal(t, "disabled", got.Status)
 		require.NotNil(t, got.Target)
-		assert.Equal(t, "updated-key", got.Target.APIKey)
-		assert.Equal(t, "de", got.Target.DefaultLanguage)
+		require.NotNil(t, got.Target.APIKey)
+		assert.Equal(t, "updated-key", *got.Target.APIKey)
+		require.NotNil(t, got.Target.DefaultLanguage)
+		assert.Equal(t, "de", *got.Target.DefaultLanguage)
 		assert.Equal(t, 85, got.Target.Thresholds["toxicity"])
 		writeJSON(w, http.StatusOK, wantResp)
 	})
@@ -656,14 +661,14 @@ func TestUpdateRule_AzureTextModeration_Success(t *testing.T) {
 	body := AzureTextModerationRulePatch{
 		Status:   "disabled",
 		RuleType: "azure/text-moderation",
-		BeforePublishConfig: &BeforePublishConfig{
-			RetryTimeout: 5, MaxRetries: 1, FailedAction: "allow",
+		BeforePublishConfig: &BeforePublishConfigPatch{
+			RetryTimeout: ptr(5), MaxRetries: ptr(1), FailedAction: ptr("allow"),
 		},
 		InvocationMode: "before-publish",
 		ChatRoomFilter: "moderated-*",
-		Target: &AzureTextModerationTarget{
-			APIKey:     "new-azure-key",
-			Endpoint:   "https://westus.api.cognitive.microsoft.com",
+		Target: &AzureTextModerationTargetPatch{
+			APIKey:     ptr("new-azure-key"),
+			Endpoint:   ptr("https://westus.api.cognitive.microsoft.com"),
 			Thresholds: map[string]int{"self_harm": 30},
 		},
 	}
@@ -680,8 +685,10 @@ func TestUpdateRule_AzureTextModeration_Success(t *testing.T) {
 		assert.Equal(t, "azure/text-moderation", got.RuleType)
 		assert.Equal(t, "disabled", got.Status)
 		require.NotNil(t, got.Target)
-		assert.Equal(t, "new-azure-key", got.Target.APIKey)
-		assert.Equal(t, "https://westus.api.cognitive.microsoft.com", got.Target.Endpoint)
+		require.NotNil(t, got.Target.APIKey)
+		assert.Equal(t, "new-azure-key", *got.Target.APIKey)
+		require.NotNil(t, got.Target.Endpoint)
+		assert.Equal(t, "https://westus.api.cognitive.microsoft.com", *got.Target.Endpoint)
 		assert.Equal(t, 30, got.Target.Thresholds["self_harm"])
 		writeJSON(w, http.StatusOK, wantResp)
 	})

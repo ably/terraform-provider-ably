@@ -12,6 +12,16 @@ type AWSAuthentication struct {
 	AssumeRoleArn      string `json:"assumeRoleArn,omitempty"`
 }
 
+// AWSAuthenticationPatch is the patch-safe variant of AWSAuthentication.
+// All fields are pointer types with omitempty so that omitted fields are not
+// serialized, preventing partial PATCH updates from overwriting existing values.
+type AWSAuthenticationPatch struct {
+	AuthenticationMode *string `json:"authenticationMode,omitempty"`
+	AccessKeyID        *string `json:"accessKeyId,omitempty"`
+	SecretAccessKey    *string `json:"secretAccessKey,omitempty"`
+	AssumeRoleArn      *string `json:"assumeRoleArn,omitempty"`
+}
+
 // ---------------------------------------------------------------------------
 // Before-Publish Webhook (ruleType: "http/before-publish")
 // ---------------------------------------------------------------------------
@@ -43,7 +53,7 @@ type BeforePublishWebhookTargetPatch struct {
 type BeforePublishWebhookRulePatch struct {
 	Status              string                           `json:"status,omitempty"`
 	RuleType            string                           `json:"ruleType"`
-	BeforePublishConfig *BeforePublishConfig             `json:"beforePublishConfig,omitempty"`
+	BeforePublishConfig *BeforePublishConfigPatch        `json:"beforePublishConfig,omitempty"`
 	InvocationMode      string                           `json:"invocationMode,omitempty"`
 	ChatRoomFilter      string                           `json:"chatRoomFilter,omitempty"`
 	Target              *BeforePublishWebhookTargetPatch `json:"target,omitempty"`
@@ -74,16 +84,16 @@ type BeforePublishAWSLambdaRulePost struct {
 // BeforePublishAWSLambdaTargetPatch is the patch-specific target for before-publish AWS Lambda rules.
 // Fields use pointer types so that omitted fields are not sent in the PATCH request.
 type BeforePublishAWSLambdaTargetPatch struct {
-	Region         *string            `json:"region,omitempty"`
-	FunctionName   *string            `json:"functionName,omitempty"`
-	Authentication *AWSAuthentication `json:"authentication,omitempty"`
+	Region         *string                 `json:"region,omitempty"`
+	FunctionName   *string                 `json:"functionName,omitempty"`
+	Authentication *AWSAuthenticationPatch `json:"authentication,omitempty"`
 }
 
 // BeforePublishAWSLambdaRulePatch is the request body for updating a before-publish AWS Lambda rule.
 type BeforePublishAWSLambdaRulePatch struct {
 	Status              string                             `json:"status,omitempty"`
 	RuleType            string                             `json:"ruleType"`
-	BeforePublishConfig *BeforePublishConfig               `json:"beforePublishConfig,omitempty"`
+	BeforePublishConfig *BeforePublishConfigPatch          `json:"beforePublishConfig,omitempty"`
 	InvocationMode      string                             `json:"invocationMode,omitempty"`
 	ChatRoomFilter      string                             `json:"chatRoomFilter,omitempty"`
 	Source              *RuleSource                        `json:"source,omitempty"`

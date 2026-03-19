@@ -400,7 +400,9 @@ func TestIntegration_AppsCRUD(t *testing.T) {
 
 	t.Cleanup(func() {
 		if appID != "" {
-			_ = client.DeleteApp(context.Background(), appID)
+			if err := client.DeleteApp(context.Background(), appID); err != nil {
+				t.Errorf("DeleteApp cleanup failed for app %q: %v", appID, err)
+			}
 		}
 	})
 

@@ -312,10 +312,11 @@ func TestAccAblyE2ELifecycle(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_queue.e2e_queue", "name", queueName),
 					resource.TestCheckResourceAttr("ably_queue.e2e_queue", "ttl", "60"),
 
-					// -- HTTP rule updated URL --
+					// -- HTTP rule updated URL and enveloped --
 					resource.TestCheckResourceAttr("ably_rule_http.http_rule", "target.url", "https://example.com/webhooks/v2"),
 					resource.TestCheckResourceAttr("ably_rule_http.http_rule", "request_mode", "batch"),
 					resource.TestCheckResourceAttr("ably_rule_http.http_rule", "target.format", "msgpack"),
+					resource.TestCheckResourceAttr("ably_rule_http.http_rule", "target.enveloped", "false"),
 
 					// -- AMQP rule still references the queue --
 					resource.TestCheckResourceAttrPair(

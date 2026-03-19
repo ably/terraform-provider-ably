@@ -149,7 +149,7 @@ func integrationClient(t *testing.T) *Client {
 	}
 	token := os.Getenv("ABLY_ACCOUNT_TOKEN")
 	if token == "" {
-		t.Fatal("ABLY_ACCOUNT_TOKEN not set (set SKIP_INTEGRATION to skip integration tests)")
+		t.Skip("ABLY_ACCOUNT_TOKEN not set (set SKIP_INTEGRATION to skip integration tests)")
 	}
 	c := NewClient(token)
 	if url := os.Getenv("ABLY_URL"); url != "" {

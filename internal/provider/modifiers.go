@@ -122,7 +122,11 @@ func (m sortSetsInMapModifier) PlanModifyMap(ctx context.Context, req planmodifi
 			continue
 		}
 		var elems []types.String
-		setVal.ElementsAs(ctx, &elems, false)
+		diags := setVal.ElementsAs(ctx, &elems, false)
+		if diags.HasError() {
+			resp.Diagnostics.Append(diags...)
+			return
+		}
 
 		strs := make([]string, len(elems))
 		for i, e := range elems {
@@ -137,10 +141,15 @@ func (m sortSetsInMapModifier) PlanModifyMap(ctx context.Context, req planmodifi
 		normalized[k] = types.SetValueMust(types.StringType, attrVals)
 	}
 
-	resp.PlanValue, _ = types.MapValue(
+	mapVal, diags := types.MapValue(
 		types.SetType{ElemType: types.StringType},
 		normalized,
 	)
+	if diags.HasError() {
+		resp.Diagnostics.Append(diags...)
+		return
+	}
+	resp.PlanValue = mapVal
 }
 
 // SortSetsInMap returns a plan modifier that normalizes set element ordering

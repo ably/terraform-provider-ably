@@ -3,6 +3,7 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	control "github.com/ably/terraform-provider-ably/client"
@@ -241,11 +242,20 @@ func (r ResourceApp) Create(ctx context.Context, req resource.CreateRequest, res
 		)
 		return
 	}
+	found := false
 	for _, a := range apps {
 		if a.ID == ablyApp.ID {
 			ablyApp = a
+			found = true
 			break
 		}
+	}
+	if !found {
+		resp.Diagnostics.AddError(
+			"Error reading back ably_app after create",
+			fmt.Sprintf("Created app %s was not found in the app list read-back", ablyApp.ID),
+		)
+		return
 	}
 
 	// Maps response body to resource schema attributes.
@@ -427,11 +437,20 @@ func (r ResourceApp) Update(ctx context.Context, req resource.UpdateRequest, res
 		)
 		return
 	}
+	foundInList := false
 	for _, a := range apps {
 		if a.ID == ablyApp.ID {
 			ablyApp = a
+			foundInList = true
 			break
 		}
+	}
+	if !foundInList {
+		resp.Diagnostics.AddError(
+			"Error reading back ably_app after update",
+			fmt.Sprintf("Updated app %s was not found in the app list read-back", ablyApp.ID),
+		)
+		return
 	}
 
 	respApps := AblyAppState{
