@@ -21,6 +21,7 @@ func (r ResourceRuleIFTTT) Schema(_ context.Context, _ resource.SchemaRequest, r
 		map[string]schema.Attribute{
 			"webhook_key": schema.StringAttribute{
 				Required:    true,
+				Sensitive:   true,
 				Description: "The key in the Webhook Service Documentation page of your IFTTT account",
 			},
 			"event_name": schema.StringAttribute{

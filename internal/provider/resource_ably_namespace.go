@@ -4,11 +4,13 @@ package provider
 import (
 	"context"
 
-	control "github.com/ably/ably-control-go"
+	"github.com/ably/terraform-provider-ably/control"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -85,6 +87,22 @@ func (r ResourceNamespace) Schema(_ context.Context, _ resource.SchemaRequest, r
 					DefaultBoolAttribute(types.BoolValue(false)),
 				},
 			},
+			"mutable_messages": schema.BoolAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "Enables message editing and deletion on the namespace. When enabled, messages published to channels matching this namespace can be modified or deleted.",
+				PlanModifiers: []planmodifier.Bool{
+					DefaultBoolAttribute(types.BoolValue(false)),
+				},
+			},
+			"populate_channel_registry": schema.BoolAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "When enabled, channels matching this namespace will appear in the channel registry, allowing channel enumeration.",
+				PlanModifiers: []planmodifier.Bool{
+					DefaultBoolAttribute(types.BoolValue(false)),
+				},
+			},
 			"batching_enabled": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
@@ -99,6 +117,9 @@ func (r ResourceNamespace) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Description: "When configured, sets the maximium batching interval in the channel.",
 				PlanModifiers: []planmodifier.Int64{
 					DefaultInt64Attribute(types.Int64Null()),
+				},
+				Validators: []validator.Int64{
+					int64validator.AtLeast(0),
 				},
 			},
 			"conflation_enabled": schema.BoolAttribute{
@@ -116,6 +137,9 @@ func (r ResourceNamespace) Schema(_ context.Context, _ resource.SchemaRequest, r
 				PlanModifiers: []planmodifier.Int64{
 					DefaultInt64Attribute(types.Int64Null()),
 				},
+				Validators: []validator.Int64{
+					int64validator.AtLeast(0),
+				},
 			},
 			"conflation_key": schema.StringAttribute{
 				Optional:    true,
@@ -132,12 +156,7 @@ func (r ResourceNamespace) Schema(_ context.Context, _ resource.SchemaRequest, r
 
 // Create creates a new resource.
 func (r ResourceNamespace) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	// Checks whether the provider and API Client are configured. If they are not, the provider responds with an error.
-	if !r.p.configured {
-		resp.Diagnostics.AddError(
-			"Provider not configured",
-			"The provider hasn't been configured before apply",
-		)
+	if !r.p.ensureConfigured(&resp.Diagnostics) {
 		return
 	}
 
@@ -150,35 +169,41 @@ func (r ResourceNamespace) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	// Generates an API request body from the plan values
-	namespaceValues := control.Namespace{
-		ID:               plan.ID.ValueString(),
-		Authenticated:    plan.Authenticated.ValueBool(),
-		Persisted:        plan.Persisted.ValueBool(),
-		PersistLast:      plan.PersistLast.ValueBool(),
-		PushEnabled:      plan.PushEnabled.ValueBool(),
-		TlsOnly:          plan.TlsOnly.ValueBool(),
-		ExposeTimeserial: plan.ExposeTimeserial.ValueBool(),
+	namespaceValues := control.NamespacePost{
+		ID:                      plan.ID.ValueString(),
+		Authenticated:           plan.Authenticated.ValueBool(),
+		Persisted:               plan.Persisted.ValueBool(),
+		PersistLast:             plan.PersistLast.ValueBool(),
+		PushEnabled:             plan.PushEnabled.ValueBool(),
+		TLSOnly:                 plan.TlsOnly.ValueBool(),
+		ExposeTimeserial:        plan.ExposeTimeserial.ValueBool(),
+		MutableMessages:         plan.MutableMessages.ValueBool(),
+		PopulateChannelRegistry: plan.PopulateChannelRegistry.ValueBool(),
 	}
 
 	if plan.BatchingEnabled.ValueBool() {
-		namespaceValues.BatchingEnabled = true
-		namespaceValues.BatchingInterval = control.Interval(int(plan.BatchingInterval.ValueInt64()))
+		namespaceValues.BatchingEnabled = ptr(true)
+		if !plan.BatchingInterval.IsNull() && !plan.BatchingInterval.IsUnknown() {
+			namespaceValues.BatchingInterval = ptr(int(plan.BatchingInterval.ValueInt64()))
+		}
 	}
 
 	if plan.ConflationEnabled.ValueBool() {
-		namespaceValues.ConflationEnabled = true
-		namespaceValues.ConflationInterval = control.Interval(int(plan.ConflationInterval.ValueInt64()))
+		namespaceValues.ConflationEnabled = ptr(true)
+		if !plan.ConflationInterval.IsNull() && !plan.ConflationInterval.IsUnknown() {
+			namespaceValues.ConflationInterval = ptr(int(plan.ConflationInterval.ValueInt64()))
+		}
 
 		if !plan.ConflationKey.IsNull() {
-			namespaceValues.ConflationKey = plan.ConflationKey.ValueString()
+			namespaceValues.ConflationKey = ptr(plan.ConflationKey.ValueString())
 		}
 	}
 
 	// Creates a new Ably namespace by invoking the CreateNamespace function from the Client Library
-	ablyNamespace, err := r.p.client.CreateNamespace(plan.AppID.ValueString(), &namespaceValues)
+	ablyNamespace, err := r.p.client.CreateNamespace(ctx, plan.AppID.ValueString(), namespaceValues)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error creating Resource",
+			"Error creating ably_namespace",
 			"Could not create resource, unexpected error: "+err.Error(),
 		)
 		return
@@ -186,28 +211,27 @@ func (r ResourceNamespace) Create(ctx context.Context, req resource.CreateReques
 
 	// Maps response body to resource schema attributes.
 	respApps := AblyNamespace{
-		AppID:             types.StringValue(plan.AppID.ValueString()),
-		ID:                types.StringValue(ablyNamespace.ID),
-		Authenticated:     types.BoolValue(ablyNamespace.Authenticated),
-		Persisted:         types.BoolValue(ablyNamespace.Persisted),
-		PersistLast:       types.BoolValue(ablyNamespace.PersistLast),
-		PushEnabled:       types.BoolValue(ablyNamespace.PushEnabled),
-		TlsOnly:           types.BoolValue(ablyNamespace.TlsOnly),
-		ExposeTimeserial:  types.BoolValue(namespaceValues.ExposeTimeserial),
-		BatchingEnabled:   types.BoolValue(ablyNamespace.BatchingEnabled),
-		ConflationEnabled: types.BoolValue(ablyNamespace.ConflationEnabled),
+		AppID:                   types.StringValue(plan.AppID.ValueString()),
+		ID:                      types.StringValue(ablyNamespace.ID),
+		Authenticated:           types.BoolValue(ablyNamespace.Authenticated),
+		Persisted:               types.BoolValue(ablyNamespace.Persisted),
+		PersistLast:             types.BoolValue(ablyNamespace.PersistLast),
+		PushEnabled:             types.BoolValue(ablyNamespace.PushEnabled),
+		TlsOnly:                 types.BoolValue(ablyNamespace.TLSOnly),
+		ExposeTimeserial:        types.BoolValue(ablyNamespace.ExposeTimeserial),
+		MutableMessages:         types.BoolValue(ablyNamespace.MutableMessages),
+		PopulateChannelRegistry: types.BoolValue(ablyNamespace.PopulateChannelRegistry),
+		BatchingEnabled:         optBoolValue(ablyNamespace.BatchingEnabled),
+		ConflationEnabled:       optBoolValue(ablyNamespace.ConflationEnabled),
 	}
 
-	if ablyNamespace.BatchingEnabled {
-		respApps.BatchingInterval = ptrValueInt(ablyNamespace.BatchingInterval)
+	if ablyNamespace.BatchingEnabled != nil && *ablyNamespace.BatchingEnabled {
+		respApps.BatchingInterval = optIntValue(ablyNamespace.BatchingInterval)
 	}
 
-	if ablyNamespace.ConflationEnabled {
-		respApps.ConflationInterval = ptrValueInt(ablyNamespace.ConflationInterval)
-
-		if !respApps.ConflationInterval.IsNull() {
-			respApps.ConflationKey = types.StringValue(ablyNamespace.ConflationKey)
-		}
+	if ablyNamespace.ConflationEnabled != nil && *ablyNamespace.ConflationEnabled {
+		respApps.ConflationInterval = optIntValue(ablyNamespace.ConflationInterval)
+		respApps.ConflationKey = optStringValue(ablyNamespace.ConflationKey)
 	}
 
 	// Sets state for the new Ably App.
@@ -224,6 +248,10 @@ func (r ResourceNamespace) Metadata(ctx context.Context, req resource.MetadataRe
 
 // Read reads the resource.
 func (r ResourceNamespace) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	if !r.p.ensureConfigured(&resp.Diagnostics) {
+		return
+	}
+
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var state AblyNamespace
 	found := false
@@ -238,17 +266,17 @@ func (r ResourceNamespace) Read(ctx context.Context, req resource.ReadRequest, r
 	appID := state.AppID.ValueString()
 	namespaceID := state.ID.ValueString()
 
-	// Fetches all Ably Namespaces in the app. The function invokes the Client Library Namespaces() method.
+	// Fetches all Ably Namespaces in the app. The function invokes the Client Library ListNamespaces() method.
 	// NOTE: Control API & Client Lib do not currently support fetching single namespace given namespace id
-	namespaces, err := r.p.client.Namespaces(appID)
+	namespaces, err := r.p.client.ListNamespaces(ctx, appID)
 	if err != nil {
 		if is404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
 		resp.Diagnostics.AddError(
-			"Error updating Resource",
-			"Could not update resource, unexpected error: "+err.Error(),
+			"Error reading ably_namespace",
+			"Could not read resource, unexpected error: "+err.Error(),
 		)
 		return
 	}
@@ -257,28 +285,27 @@ func (r ResourceNamespace) Read(ctx context.Context, req resource.ReadRequest, r
 	for _, v := range namespaces {
 		if v.ID == namespaceID {
 			respNamespaces := AblyNamespace{
-				AppID:             types.StringValue(appID),
-				ID:                types.StringValue(namespaceID),
-				Authenticated:     types.BoolValue(v.Authenticated),
-				Persisted:         types.BoolValue(v.Persisted),
-				PersistLast:       types.BoolValue(v.PersistLast),
-				PushEnabled:       types.BoolValue(v.PushEnabled),
-				TlsOnly:           types.BoolValue(v.TlsOnly),
-				ExposeTimeserial:  types.BoolValue(v.ExposeTimeserial),
-				BatchingEnabled:   types.BoolValue(v.BatchingEnabled),
-				ConflationEnabled: types.BoolValue(v.ConflationEnabled),
+				AppID:                   types.StringValue(appID),
+				ID:                      types.StringValue(namespaceID),
+				Authenticated:           types.BoolValue(v.Authenticated),
+				Persisted:               types.BoolValue(v.Persisted),
+				PersistLast:             types.BoolValue(v.PersistLast),
+				PushEnabled:             types.BoolValue(v.PushEnabled),
+				TlsOnly:                 types.BoolValue(v.TLSOnly),
+				ExposeTimeserial:        types.BoolValue(v.ExposeTimeserial),
+				MutableMessages:         types.BoolValue(v.MutableMessages),
+				PopulateChannelRegistry: types.BoolValue(v.PopulateChannelRegistry),
+				BatchingEnabled:         optBoolValue(v.BatchingEnabled),
+				ConflationEnabled:       optBoolValue(v.ConflationEnabled),
 			}
 
-			if v.BatchingEnabled {
-				respNamespaces.BatchingInterval = ptrValueInt(v.BatchingInterval)
+			if v.BatchingEnabled != nil && *v.BatchingEnabled {
+				respNamespaces.BatchingInterval = optIntValue(v.BatchingInterval)
 			}
 
-			if v.ConflationEnabled {
-				respNamespaces.ConflationInterval = ptrValueInt(v.ConflationInterval)
-
-				if !respNamespaces.ConflationInterval.IsNull() {
-					respNamespaces.ConflationKey = types.StringValue(v.ConflationKey)
-				}
+			if v.ConflationEnabled != nil && *v.ConflationEnabled {
+				respNamespaces.ConflationInterval = optIntValue(v.ConflationInterval)
+				respNamespaces.ConflationKey = optStringValue(v.ConflationKey)
 			}
 
 			// Sets state to namespace values.
@@ -300,6 +327,10 @@ func (r ResourceNamespace) Read(ctx context.Context, req resource.ReadRequest, r
 
 // Update updates an existing resource.
 func (r ResourceNamespace) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	if !r.p.ensureConfigured(&resp.Diagnostics) {
+		return
+	}
+
 	// Get plan values
 	var plan AblyNamespace
 	diags := req.Plan.Get(ctx, &plan)
@@ -312,64 +343,70 @@ func (r ResourceNamespace) Update(ctx context.Context, req resource.UpdateReques
 	appID := plan.AppID.ValueString()
 	namespaceID := plan.ID.ValueString()
 
-	// Instantiates struct of type control.Namespace and sets values to output of plan
-	namespaceValues := control.Namespace{
-		ID:               namespaceID,
-		Authenticated:    plan.Authenticated.ValueBool(),
-		Persisted:        plan.Persisted.ValueBool(),
-		PersistLast:      plan.PersistLast.ValueBool(),
-		PushEnabled:      plan.PushEnabled.ValueBool(),
-		TlsOnly:          plan.TlsOnly.ValueBool(),
-		ExposeTimeserial: plan.ExposeTimeserial.ValueBool(),
+	// Instantiates struct of type control.NamespacePatch and sets values to output of plan
+	namespaceValues := control.NamespacePatch{
+		Authenticated:           ptr(plan.Authenticated.ValueBool()),
+		Persisted:               ptr(plan.Persisted.ValueBool()),
+		PersistLast:             ptr(plan.PersistLast.ValueBool()),
+		PushEnabled:             ptr(plan.PushEnabled.ValueBool()),
+		TLSOnly:                 ptr(plan.TlsOnly.ValueBool()),
+		ExposeTimeserial:        ptr(plan.ExposeTimeserial.ValueBool()),
+		MutableMessages:         ptr(plan.MutableMessages.ValueBool()),
+		PopulateChannelRegistry: ptr(plan.PopulateChannelRegistry.ValueBool()),
 	}
 
-	if plan.BatchingEnabled.ValueBool() {
-		namespaceValues.BatchingEnabled = true
-		namespaceValues.BatchingInterval = control.Interval(int(plan.BatchingInterval.ValueInt64()))
+	batchEnabled := plan.BatchingEnabled.ValueBool()
+	namespaceValues.BatchingEnabled = &batchEnabled
+	if batchEnabled {
+		if !plan.BatchingInterval.IsNull() && !plan.BatchingInterval.IsUnknown() {
+			namespaceValues.BatchingInterval = ptr(int(plan.BatchingInterval.ValueInt64()))
+		}
 	}
 
-	if plan.ConflationEnabled.ValueBool() {
-		namespaceValues.ConflationEnabled = true
-		namespaceValues.ConflationInterval = control.Interval(int(plan.ConflationInterval.ValueInt64()))
+	conflationEnabled := plan.ConflationEnabled.ValueBool()
+	namespaceValues.ConflationEnabled = &conflationEnabled
+	if conflationEnabled {
+		if !plan.ConflationInterval.IsNull() && !plan.ConflationInterval.IsUnknown() {
+			namespaceValues.ConflationInterval = ptr(int(plan.ConflationInterval.ValueInt64()))
+		}
 
 		if !plan.ConflationKey.IsNull() {
-			namespaceValues.ConflationKey = plan.ConflationKey.ValueString()
+			namespaceValues.ConflationKey = ptr(plan.ConflationKey.ValueString())
 		}
 	}
 
 	// Updates an Ably Namespace. The function invokes the Client Library UpdateNamespace method.
-	ablyNamespace, err := r.p.client.UpdateNamespace(appID, &namespaceValues)
+	ablyNamespace, err := r.p.client.UpdateNamespace(ctx, appID, namespaceID, namespaceValues)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error updating Resource",
+			"Error updating ably_namespace",
 			"Could not update resource, unexpected error: "+err.Error(),
 		)
 		return
 	}
 
 	respNamespaces := AblyNamespace{
-		AppID:             types.StringValue(appID),
-		ID:                types.StringValue(ablyNamespace.ID),
-		Authenticated:     types.BoolValue(ablyNamespace.Authenticated),
-		Persisted:         types.BoolValue(ablyNamespace.Persisted),
-		PersistLast:       types.BoolValue(ablyNamespace.PersistLast),
-		PushEnabled:       types.BoolValue(ablyNamespace.PushEnabled),
-		TlsOnly:           types.BoolValue(ablyNamespace.TlsOnly),
-		ExposeTimeserial:  types.BoolValue(ablyNamespace.ExposeTimeserial),
-		BatchingEnabled:   types.BoolValue(ablyNamespace.BatchingEnabled),
-		ConflationEnabled: types.BoolValue(ablyNamespace.ConflationEnabled),
+		AppID:                   types.StringValue(appID),
+		ID:                      types.StringValue(ablyNamespace.ID),
+		Authenticated:           types.BoolValue(ablyNamespace.Authenticated),
+		Persisted:               types.BoolValue(ablyNamespace.Persisted),
+		PersistLast:             types.BoolValue(ablyNamespace.PersistLast),
+		PushEnabled:             types.BoolValue(ablyNamespace.PushEnabled),
+		TlsOnly:                 types.BoolValue(ablyNamespace.TLSOnly),
+		ExposeTimeserial:        types.BoolValue(ablyNamespace.ExposeTimeserial),
+		MutableMessages:         types.BoolValue(ablyNamespace.MutableMessages),
+		PopulateChannelRegistry: types.BoolValue(ablyNamespace.PopulateChannelRegistry),
+		BatchingEnabled:         optBoolValue(ablyNamespace.BatchingEnabled),
+		ConflationEnabled:       optBoolValue(ablyNamespace.ConflationEnabled),
 	}
 
-	if ablyNamespace.BatchingEnabled {
-		respNamespaces.BatchingInterval = ptrValueInt(ablyNamespace.BatchingInterval)
+	if ablyNamespace.BatchingEnabled != nil && *ablyNamespace.BatchingEnabled {
+		respNamespaces.BatchingInterval = optIntValue(ablyNamespace.BatchingInterval)
 	}
 
-	if ablyNamespace.ConflationEnabled {
-		respNamespaces.ConflationInterval = ptrValueInt(ablyNamespace.ConflationInterval)
-
-		if !respNamespaces.ConflationInterval.IsNull() {
-			respNamespaces.ConflationKey = types.StringValue(ablyNamespace.ConflationKey)
-		}
+	if ablyNamespace.ConflationEnabled != nil && *ablyNamespace.ConflationEnabled {
+		respNamespaces.ConflationInterval = optIntValue(ablyNamespace.ConflationInterval)
+		respNamespaces.ConflationKey = optStringValue(ablyNamespace.ConflationKey)
 	}
 
 	// Sets state to new namespace.
@@ -382,6 +419,10 @@ func (r ResourceNamespace) Update(ctx context.Context, req resource.UpdateReques
 
 // Delete deletes the resource.
 func (r ResourceNamespace) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	if !r.p.ensureConfigured(&resp.Diagnostics) {
+		return
+	}
+
 	// Get current state
 	var state AblyNamespace
 	diags := req.State.Get(ctx, &state)
@@ -394,7 +435,7 @@ func (r ResourceNamespace) Delete(ctx context.Context, req resource.DeleteReques
 	appID := state.AppID.ValueString()
 	namespaceID := state.ID.ValueString()
 
-	err := r.p.client.DeleteNamespace(appID, namespaceID)
+	err := r.p.client.DeleteNamespace(ctx, appID, namespaceID)
 	if err != nil {
 		if is404(err) {
 			resp.Diagnostics.AddWarning(
@@ -403,7 +444,7 @@ func (r ResourceNamespace) Delete(ctx context.Context, req resource.DeleteReques
 			)
 		} else {
 			resp.Diagnostics.AddError(
-				"Error deleting Resource",
+				"Error deleting ably_namespace",
 				"Could not delete resource, unexpected error: "+err.Error(),
 			)
 			return
@@ -417,13 +458,4 @@ func (r ResourceNamespace) Delete(ctx context.Context, req resource.DeleteReques
 // ImportState handles the import state functionality.
 func (r ResourceNamespace) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	ImportResource(ctx, req, resp, "app_id", "id")
-}
-
-// Safely return an interval as null if it's not set
-func ptrValueInt(in *int) types.Int64 {
-	res := types.Int64Null()
-	if in != nil {
-		res = types.Int64Value(int64(*in))
-	}
-	return res
 }

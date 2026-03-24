@@ -3,6 +3,7 @@ package provider
 
 import (
 	"context"
+	"sort"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -10,34 +11,44 @@ import (
 
 // AblyApp represents an Ably application.
 type AblyApp struct {
-	AccountID              types.String `tfsdk:"account_id"`
-	ID                     types.String `tfsdk:"id"`
-	Name                   types.String `tfsdk:"name"`
-	Status                 types.String `tfsdk:"status"`
-	TLSOnly                types.Bool   `tfsdk:"tls_only"`
-	FcmKey                 types.String `tfsdk:"fcm_key"`
-	FcmServiceAccount      types.String `tfsdk:"fcm_service_account"`
-	FcmProjectId           types.String `tfsdk:"fcm_project_id"`
-	ApnsCertificate        types.String `tfsdk:"apns_certificate"`
-	ApnsPrivateKey         types.String `tfsdk:"apns_private_key"`
-	ApnsUseSandboxEndpoint types.Bool   `tfsdk:"apns_use_sandbox_endpoint"`
+	AccountID                   types.String `tfsdk:"account_id"`
+	ID                          types.String `tfsdk:"id"`
+	Name                        types.String `tfsdk:"name"`
+	Status                      types.String `tfsdk:"status"`
+	TLSOnly                     types.Bool   `tfsdk:"tls_only"`
+	FcmKey                      types.String `tfsdk:"fcm_key"`
+	FcmServiceAccount           types.String `tfsdk:"fcm_service_account"`
+	FcmProjectId                types.String `tfsdk:"fcm_project_id"`
+	FcmServiceAccountConfigured types.Bool   `tfsdk:"fcm_service_account_configured"`
+	ApnsCertificate             types.String `tfsdk:"apns_certificate"`
+	ApnsPrivateKey              types.String `tfsdk:"apns_private_key"`
+	ApnsUseSandboxEndpoint      types.Bool   `tfsdk:"apns_use_sandbox_endpoint"`
+	ApnsAuthType                types.String `tfsdk:"apns_auth_type"`
+	ApnsSigningKey              types.String `tfsdk:"apns_signing_key"`
+	ApnsSigningKeyId            types.String `tfsdk:"apns_signing_key_id"`
+	ApnsIssuerKey               types.String `tfsdk:"apns_issuer_key"`
+	ApnsTopicHeader             types.String `tfsdk:"apns_topic_header"`
+	ApnsCertificateConfigured   types.Bool   `tfsdk:"apns_certificate_configured"`
+	ApnsSigningKeyConfigured    types.Bool   `tfsdk:"apns_signing_key_configured"`
 }
 
 // AblyNamespace represents an Ably namespace.
 type AblyNamespace struct {
-	AppID              types.String `tfsdk:"app_id"`
-	ID                 types.String `tfsdk:"id"`
-	Authenticated      types.Bool   `tfsdk:"authenticated"`
-	Persisted          types.Bool   `tfsdk:"persisted"`
-	PersistLast        types.Bool   `tfsdk:"persist_last"`
-	PushEnabled        types.Bool   `tfsdk:"push_enabled"`
-	TlsOnly            types.Bool   `tfsdk:"tls_only"`
-	ExposeTimeserial   types.Bool   `tfsdk:"expose_timeserial"`
-	BatchingEnabled    types.Bool   `tfsdk:"batching_enabled"`
-	BatchingInterval   types.Int64  `tfsdk:"batching_interval"`
-	ConflationEnabled  types.Bool   `tfsdk:"conflation_enabled"`
-	ConflationInterval types.Int64  `tfsdk:"conflation_interval"`
-	ConflationKey      types.String `tfsdk:"conflation_key"`
+	AppID                   types.String `tfsdk:"app_id"`
+	ID                      types.String `tfsdk:"id"`
+	Authenticated           types.Bool   `tfsdk:"authenticated"`
+	Persisted               types.Bool   `tfsdk:"persisted"`
+	PersistLast             types.Bool   `tfsdk:"persist_last"`
+	PushEnabled             types.Bool   `tfsdk:"push_enabled"`
+	TlsOnly                 types.Bool   `tfsdk:"tls_only"`
+	ExposeTimeserial        types.Bool   `tfsdk:"expose_timeserial"`
+	MutableMessages         types.Bool   `tfsdk:"mutable_messages"`
+	PopulateChannelRegistry types.Bool   `tfsdk:"populate_channel_registry"`
+	BatchingEnabled         types.Bool   `tfsdk:"batching_enabled"`
+	BatchingInterval        types.Int64  `tfsdk:"batching_interval"`
+	ConflationEnabled       types.Bool   `tfsdk:"conflation_enabled"`
+	ConflationInterval      types.Int64  `tfsdk:"conflation_interval"`
+	ConflationKey           types.String `tfsdk:"conflation_key"`
 }
 
 // AblyKey represents an Ably API key.
@@ -62,20 +73,14 @@ type AblyQueue struct {
 	MaxLength types.Int64  `tfsdk:"max_length"`
 	Region    types.String `tfsdk:"region"`
 
-	AmqpUri                  types.String  `tfsdk:"amqp_uri"`
-	AmqpQueueName            types.String  `tfsdk:"amqp_queue_name"`
-	StompURI                 types.String  `tfsdk:"stomp_uri"`
-	StompHost                types.String  `tfsdk:"stomp_host"`
-	StompDestination         types.String  `tfsdk:"stomp_destination"`
-	State                    types.String  `tfsdk:"state"`
-	MessagesReady            types.Int64   `tfsdk:"messages_ready"`
-	MessagesUnacknowledged   types.Int64   `tfsdk:"messages_unacknowledged"`
-	MessagesTotal            types.Int64   `tfsdk:"messages_total"`
-	StatsPublishRate         types.Float64 `tfsdk:"stats_publish_rate"`
-	StatsDeliveryRate        types.Float64 `tfsdk:"stats_delivery_rate"`
-	StatsAcknowledgementRate types.Float64 `tfsdk:"stats_acknowledgement_rate"`
-	Deadletter               types.Bool    `tfsdk:"deadletter"`
-	DeadletterID             types.String  `tfsdk:"deadletter_id"`
+	AmqpUri          types.String `tfsdk:"amqp_uri"`
+	AmqpQueueName    types.String `tfsdk:"amqp_queue_name"`
+	StompURI         types.String `tfsdk:"stomp_uri"`
+	StompHost        types.String `tfsdk:"stomp_host"`
+	StompDestination types.String `tfsdk:"stomp_destination"`
+	State            types.String `tfsdk:"state"`
+	Deadletter       types.Bool   `tfsdk:"deadletter"`
+	DeadletterID     types.String `tfsdk:"deadletter_id"`
 }
 
 func emptyStringToNull(v *types.String) {
@@ -92,16 +97,8 @@ func sliceString(v []types.String) []string {
 	return s
 }
 
-// mapFromStringSlice converts a map of strings to string slices (Terraform types) to a map of Go strings to Go string slices
-func mapFromStringSlice(m map[string][]types.String) map[string][]string {
-	result := make(map[string][]string, len(m))
-	for k, v := range m {
-		result[k] = sliceString(v)
-	}
-	return result
-}
-
-// mapFromSet converts a map of string sets (Terraform types) to a map of Go strings to Go string slices
+// mapFromSet converts a map of string sets (Terraform types) to a map of Go strings to Go string slices.
+// Elements are sorted alphabetically to ensure consistent ordering when sent to the API.
 func mapFromSet(ctx context.Context, m map[string]types.Set) map[string][]string {
 	result := make(map[string][]string, len(m))
 	for k, v := range m {
@@ -110,21 +107,9 @@ func mapFromSet(ctx context.Context, m map[string]types.Set) map[string][]string
 			var elems []types.String
 			v.ElementsAs(ctx, &elems, false)
 			slice = sliceString(elems)
+			sort.Strings(slice)
 		}
 		result[k] = slice
-	}
-	return result
-}
-
-// mapToTypedStringSlice converts a map of Go strings to Go string slices to a map of Terraform types
-func mapToTypedStringSlice(m map[string][]string) map[string][]types.String {
-	result := make(map[string][]types.String, len(m))
-	for k, v := range m {
-		typedSlice := make([]types.String, len(v))
-		for i, s := range v {
-			typedSlice[i] = types.StringValue(s)
-		}
-		result[k] = typedSlice
 	}
 	return result
 }
@@ -133,6 +118,7 @@ func mapToTypedStringSlice(m map[string][]string) map[string][]types.String {
 func mapToTypedSet(m map[string][]string) map[string]types.Set {
 	result := make(map[string]types.Set, len(m))
 	for k, v := range m {
+		sort.Strings(v)
 		typedSlice := toTypedStringSlice(v)
 		attrValues := make([]attr.Value, len(typedSlice))
 		for i, v := range typedSlice {
@@ -308,6 +294,7 @@ type AblyRuleTargetAzureFunction struct {
 	AzureFunctionName types.String      `tfsdk:"function_name"`
 	Headers           []AblyRuleHeaders `tfsdk:"headers"`
 	SigningKeyID      types.String      `tfsdk:"signing_key_id"`
+	Enveloped         types.Bool        `tfsdk:"enveloped"`
 	Format            types.String      `tfsdk:"format"`
 }
 
@@ -334,6 +321,7 @@ type AblyRuleTargetAMQP struct {
 type AblyRuleTargetAMQPExternal struct {
 	Url                types.String      `tfsdk:"url"`
 	RoutingKey         types.String      `tfsdk:"routing_key"`
+	Exchange           types.String      `tfsdk:"exchange"`
 	MandatoryRoute     types.Bool        `tfsdk:"mandatory_route"`
 	PersistentMessages types.Bool        `tfsdk:"persistent_messages"`
 	MessageTtl         types.Int64       `tfsdk:"message_ttl"`

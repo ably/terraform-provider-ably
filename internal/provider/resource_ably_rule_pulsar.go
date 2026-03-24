@@ -4,8 +4,10 @@ package provider
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -45,12 +47,16 @@ func (r ResourceRulePulsar) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Description: "Pulsar supports authenticating clients using security tokens that are based on JSON Web Tokens.",
 				Attributes: map[string]schema.Attribute{
 					"mode": schema.StringAttribute{
-						Description: "Authentication mode, in this case JSON Web Token. Use `jwt`",
+						Description: "Authentication mode. Use `token` for JSON Web Token authentication.",
 						Required:    true,
+						Validators: []validator.String{
+							stringvalidator.OneOf("token"),
+						},
 					},
 					"token": schema.StringAttribute{
-						Description: "The JWT string.`",
+						Description: "The authentication token string.",
 						Required:    true,
+						Sensitive:   true,
 					},
 				},
 			},

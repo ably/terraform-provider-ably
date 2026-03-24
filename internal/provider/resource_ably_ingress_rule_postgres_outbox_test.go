@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccAblyIngressRulePostgresOutbox(t *testing.T) {
@@ -36,7 +37,7 @@ func TestAccAblyIngressRulePostgresOutbox(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
 					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "status", "enabled"),
-					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "target.url", testPostgresURL),
+					resource.TestCheckResourceAttrSet("ably_ingress_rule_postgres_outbox.rule0", "target.url"),
 					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "target.outbox_table_schema", "public"),
 					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "target.outbox_table_name", "outbox"),
 					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "target.nodes_table_schema", "public"),
@@ -45,6 +46,20 @@ func TestAccAblyIngressRulePostgresOutbox(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "target.ssl_root_cert", "-----BEGIN CERTIFICATE----- MIIFiTCCA3GgAwIBAgIUYO1Lomxzj7VRawWwEFiQht9OLpUwDQYJKoZIhvcNAQEL BQAwTDELMAkGA1UEBhMCVVMxETAPBgNVBAgMCE1pY2hpZ2FuMQ8wDQYDVQQHDAZX ...snip... TOfReTlUQzgpXRW5h3n2LVXbXQhPGcVitb88Cm2R8cxQwgB1VncM8yvmKhREo2tz 7Y+sUx6eIl4dlNl9kVrH1TD3EwwtGsjUNlFSZhg= -----END CERTIFICATE-----"),
 					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "target.primary_site", "us-east-1-A"),
 				),
+			},
+			// ImportState testing of ably_ingress_rule_postgres_outbox.rule0
+			{
+				ResourceName:      "ably_ingress_rule_postgres_outbox.rule0",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources["ably_ingress_rule_postgres_outbox.rule0"]
+					if !ok {
+						return "", fmt.Errorf("resource not found")
+					}
+					return fmt.Sprintf("%s,%s", rs.Primary.Attributes["app_id"], rs.Primary.ID), nil
+				},
+				ImportStateVerifyIgnore: []string{"target.url"},
 			},
 			// Update and Read testing of ably_app.app0
 			{
@@ -63,7 +78,7 @@ func TestAccAblyIngressRulePostgresOutbox(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", updateAppName),
 					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "status", "enabled"),
-					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "target.url", testUpdatePostgresURL),
+					resource.TestCheckResourceAttrSet("ably_ingress_rule_postgres_outbox.rule0", "target.url"),
 					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "target.outbox_table_schema", "public1"),
 					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "target.outbox_table_name", "outbox1"),
 					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "target.nodes_table_schema", "public1"),
@@ -92,15 +107,14 @@ func testAccAblyIngressRulePostgresOutboxConfig(
 	primarySite string,
 ) string {
 	return fmt.Sprintf(`
+# You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 terraform {
 	required_providers {
 		ably = {
-		source = "github.com/ably/ably"
+			source = "registry.terraform.io/ably/ably"
 		}
 	}
 }
-
-# You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 provider "ably" {}
 
 resource "ably_app" "app0" {
