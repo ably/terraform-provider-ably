@@ -1,56 +1,183 @@
-# This GitHub action can publish assets for release when a tag is created.
-# Currently its setup to run on any tag that matches the pattern "v*" (ie. v0.1.0).
+# Release workflow for the Terraform provider and the Control API client.
 #
-# This uses an action (hashicorp/ghaction-import-gpg) that assumes you set your
-# private key in the `GPG_PRIVATE_KEY` secret and passphrase in the `PASSPHRASE`
-# secret. If you would rather own your own GPG handling, please fork this action
-# or use an alternative one for key handling.
+# Both components live in this repo and are versioned independently:
+#   - Provider: tagged as v<semver>       (e.g. v1.2.3)
+#   - Control:  tagged as control/v<semver> (e.g. control/v1.0.0)
 #
-# You will need to pass the `--batch` flag to `gpg` in your signing step
-# in `goreleaser` to indicate this is being used in a non-interactive mode.
+# How it works:
+#   1. Push one or both tags to the repo.
+#   2. Trigger this workflow manually (no inputs needed).
+#   3. The "detect" job finds the latest tag for each component and
+#      checks whether a GitHub Release already exists for it.
+#      Tags that already have a release are cleared (set to empty),
+#      so downstream jobs only run for unreleased tags.
+#   4. "release-provider" and "release-control" run in parallel,
+#      each only if its tag is non-empty.
 #
-name: release
+# Provider releases use GoReleaser to build signed binaries and create
+# a draft GitHub Release. The Terraform Registry webhook fires when the
+# draft is published.
+#
+# Control releases are notes-only (no binaries). The Go module proxy
+# indexes new versions from the git tag automatically. Release notes
+# are scoped to PRs that touch control/ paths.
+#
+# The workflow is idempotent — running it again after both releases
+# exist will exit cleanly with an error annotation.
+
+name: Release
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version, without v prefix, appended to v to locate tag'
-        required: true
+  workflow_dispatch: {}
 
 permissions:
   contents: write
+
+# ─── Detect which components need releasing ──────────────────────────
+
 jobs:
-  goreleaser:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      provider_tag: ${{ steps.detect.outputs.provider_tag }}
+      control_tag: ${{ steps.detect.outputs.control_tag }}
+      provider_prev: ${{ steps.detect.outputs.provider_prev }}
+      control_prev: ${{ steps.detect.outputs.control_prev }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect unreleased tags
+        id: detect
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Latest tag per component (--sort=-v:refname = semver descending).
+          provider_tag=$(git tag -l 'v[0-9]*' --sort=-v:refname | head -1)
+          control_tag=$(git tag -l 'control/v[0-9]*' --sort=-v:refname | head -1)
+
+          # Clear tags that already have a GitHub Release.
+          if [ -n "$provider_tag" ] && gh release view "$provider_tag" &>/dev/null; then
+            provider_tag=""
+          fi
+          if [ -n "$control_tag" ] && gh release view "$control_tag" &>/dev/null; then
+            control_tag=""
+          fi
+
+          if [ -z "$provider_tag" ] && [ -z "$control_tag" ]; then
+            echo "::error::All tags already have releases — nothing to do"
+            exit 1
+          fi
+
+          # Previous tag per component (2nd line = one before latest).
+          # Used for changelog scoping.
+          provider_prev=$(git tag -l 'v[0-9]*' --sort=-v:refname | sed -n '2p')
+          control_prev=$(git tag -l 'control/v[0-9]*' --sort=-v:refname | sed -n '2p')
+
+          # Export for downstream jobs.
+          echo "provider_tag=$provider_tag" >> "$GITHUB_OUTPUT"
+          echo "control_tag=$control_tag" >> "$GITHUB_OUTPUT"
+          echo "provider_prev=$provider_prev" >> "$GITHUB_OUTPUT"
+          echo "control_prev=$control_prev" >> "$GITHUB_OUTPUT"
+
+  # ─── Provider: GoReleaser → signed binaries → draft GitHub Release ─
+
+  release-provider:
+    needs: detect
+    if: needs.detect.outputs.provider_tag != ''
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v3
+      # Check out the exact commit the provider tag points to,
+      # so GoReleaser builds the right code.
+      - uses: actions/checkout@v4
         with:
-          ref: v${{ github.event.inputs.version }}
-      -
-        name: Unshallow
-        run: git fetch --prune --unshallow
-      -
-        name: Set up Go
-        uses: actions/setup-go@v3
+          ref: ${{ needs.detect.outputs.provider_tag }}
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
-          cache: true
-      -
-        name: Import GPG key
+
+      - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v5
         id: import_gpg
         with:
           gpg_private_key: ${{ secrets.TERRAFORM_REGISTRY_PRIVATE_KEY }}
           passphrase: ${{ secrets.TERRAFORM_REGISTRY_PRIVATE_KEY_PASSWORD }}
-      -
-        name: Run GoReleaser
+
+      # GoReleaser builds binaries, creates checksums, signs them, and
+      # creates a draft GitHub Release with all artifacts attached.
+      # GORELEASER_CURRENT_TAG / _PREVIOUS_TAG override auto-detection
+      # so that control/v* tags don't confuse it.
+      - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
           version: latest
           args: release --clean
         env:
+          GORELEASER_CURRENT_TAG: ${{ needs.detect.outputs.provider_tag }}
+          GORELEASER_PREVIOUS_TAG: ${{ needs.detect.outputs.provider_prev }}
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
-          # GitHub sets this automatically
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─── Control: path-scoped release notes → draft GitHub Release ─────
+
+  release-control:
+    needs: detect
+    if: needs.detect.outputs.control_tag != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.detect.outputs.control_tag }}
+          fetch-depth: 0
+
+      # Build release notes from PRs that touch control/ paths only,
+      # so provider-only changes don't leak into the control changelog.
+      #
+      # 1. Get the date of the previous control tag.
+      # 2. Fetch all PRs merged to main since that date (one API call).
+      # 3. For each PR, check if it modified any control/ files.
+      # 4. Format matching PRs as "* title by @author in #number".
+      - name: Generate scoped release notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${{ needs.detect.outputs.control_tag }}"
+          prev="${{ needs.detect.outputs.control_prev }}"
+          since=$([ -n "$prev" ] && git log -1 --format=%aI "$prev" || echo "1970-01-01T00:00:00Z")
+
+          gh pr list --repo "$GITHUB_REPOSITORY" \
+            --state merged \
+            --base main \
+            --search "merged:>=$since" \
+            --json number,title,author,mergedAt \
+            --jq 'sort_by(.mergedAt) | .[] | "\(.number)\t\(.title)\t\(.author.login)"' |
+          while IFS=$'\t' read -r number title author; do
+            touches_control=$(gh pr view "$number" --repo "$GITHUB_REPOSITORY" \
+              --json files --jq '[.files[].path | select(startswith("control/"))] | length')
+
+            if [ "$touches_control" -gt 0 ]; then
+              echo "* $title by @$author in #$number" >> "$RUNNER_TEMP/pr_lines.txt"
+            fi
+          done
+
+          notes="## What's Changed"$'\n'
+          notes+=$(cat "$RUNNER_TEMP/pr_lines.txt" 2>/dev/null || echo "No control-specific changes.")
+          notes+=$'\n'
+
+          if [ -n "$prev" ]; then
+            notes+=$'\n'"**Full Changelog**: $prev...$tag"
+          fi
+
+          echo "$notes" > "$RUNNER_TEMP/notes.md"
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ needs.detect.outputs.control_tag }}" \
+            --title "Release ${{ needs.detect.outputs.control_tag }}" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            --draft

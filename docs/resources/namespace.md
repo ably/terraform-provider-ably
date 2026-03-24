@@ -69,7 +69,9 @@ resource "ably_namespace" "namespace_conflation" {
 - `conflation_interval` (Number) The interval in milliseconds at which messages are conflated. This determines how frequently messages are combined into a single message.
 - `conflation_key` (String) The key used to determine which messages should be conflated. Messages with the same conflation key will be combined into a single message.
 - `expose_timeserial` (Boolean) If true, messages received on a channel will contain a unique timeserial that can be referenced by later messages for use with message interactions.
+- `mutable_messages` (Boolean) Enables message editing and deletion on the namespace. When enabled, messages published to channels matching this namespace can be modified or deleted.
 - `persist_last` (Boolean) If true, the last message on each channel will persist for 365 days.
 - `persisted` (Boolean) If true, messages will be stored for 24 hours.
+- `populate_channel_registry` (Boolean) When enabled, channels matching this namespace will appear in the channel registry, allowing channel enumeration.
 - `push_enabled` (Boolean) If true, publishing messages with a push payload in the extras field is permitted.
 - `tls_only` (Boolean) If true, only clients that are connected using TLS will be permitted to subscribe.

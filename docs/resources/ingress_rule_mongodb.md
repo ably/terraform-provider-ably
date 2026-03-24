@@ -18,7 +18,7 @@ The `ably_ingress_rule_mongodb` resource sets up a MongoDB Integration Rule to s
 ### Required
 
 - `app_id` (String) The Ably application ID.
-- `target` (Attributes) object (rule_source) (see [below for nested schema](#nestedatt--target))
+- `target` (Attributes) The target for the ingress rule (see [below for nested schema](#nestedatt--target))
 
 ### Optional
 
@@ -39,4 +39,4 @@ Required:
 - `full_document_before_change` (String) Controls whether the full document before the change should be included in the change event. Full Document before change is not available on all types of change event. Possible values are `whenAvailable` or `off`. The default is `off`.
 - `pipeline` (String) A MongoDB pipeline to pass to the Change Stream API. This field allows you to control which types of change events are published, and which channel the change event should be published to. The pipeline must set the _ablyChannel field on the root of the change event. It must also be a valid JSON array of pipeline operations.
 - `primary_site` (String) The primary site that the connector will run in. You should choose a site that is close to your database.
-- `url` (String) The connection string of your MongoDB instance. (e.g. mongodb://user:pass@myhost.com)
+- `url` (String, Sensitive) The connection string of your MongoDB instance. (e.g. mongodb://user:pass@myhost.com)

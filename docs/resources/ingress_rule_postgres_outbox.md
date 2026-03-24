@@ -18,7 +18,7 @@ The `ably_ingress_rule_postgres_outbox` resource Use the Postgres database conne
 ### Required
 
 - `app_id` (String) The Ably application ID.
-- `target` (Attributes) object (rule_source) (see [below for nested schema](#nestedatt--target))
+- `target` (Attributes) The target for the ingress rule (see [below for nested schema](#nestedatt--target))
 
 ### Optional
 
@@ -45,7 +45,7 @@ Required:
   - verify-full: Verify server certificate and hostname.
 
 Default: prefer.
-- `url` (String) The URL for your Postgres database, for example postgres://user:password@example.com:5432/your-database-name. The associated user must have the correct privileges
+- `url` (String, Sensitive) The URL for your Postgres database, for example postgres://user:password@example.com:5432/your-database-name. The associated user must have the correct privileges
 
 Optional:
 

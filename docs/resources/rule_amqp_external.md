@@ -48,8 +48,8 @@ resource "ably_rule_amqp_external" "rule0" {
 ### Required
 
 - `app_id` (String) The Ably application ID.
-- `source` (Attributes) object (rule_source) (see [below for nested schema](#nestedatt--source))
-- `target` (Attributes) object (rule_source) (see [below for nested schema](#nestedatt--target))
+- `source` (Attributes) The source for the rule (see [below for nested schema](#nestedatt--source))
+- `target` (Attributes) The target for the rule (see [below for nested schema](#nestedatt--target))
 
 ### Optional
 
@@ -79,12 +79,13 @@ Required:
 
 - `mandatory_route` (Boolean) Reject delivery of the message if the route does not exist, otherwise fail silently.
 - `persistent_messages` (Boolean) Marks the message as persistent, instructing the broker to write it to disk if it is in a durable queue.
-- `routing_key` (String) The Kafka partition key. This is used to determine which partition a message should be routed to, where a topic has been partitioned. routingKey should be in the format topic:key where topic is the topic to publish to, and key is the value to use as the message key
+- `routing_key` (String) The AMQP routing key used for message routing.
 - `url` (String) The webhook URL that Ably will POST events to
 
 Optional:
 
 - `enveloped` (Boolean) Delivered messages are wrapped in an Ably envelope by default that contains metadata about the message and its payload. The form of the envelope depends on whether it is part of a Webhook/Function or a Queue/Firehose rule. For everything besides Webhooks, you can ensure you only get the raw payload by unchecking "Enveloped" when setting up the rule.
+- `exchange` (String) The AMQP exchange to publish to. If not set, the default exchange is used.
 - `format` (String) JSON provides a text-based encoding, whereas MsgPack provides a more efficient binary encoding
 - `headers` (Attributes List) If you have additional information to send, you'll need to include the relevant headers (see [below for nested schema](#nestedatt--target--headers))
 - `message_ttl` (Number) You can optionally override the default TTL on a queue and specify a TTL in minutes for messages to be persisted. It is unusual to change the default TTL, so if this field is left empty, the default TTL for the queue will be used.

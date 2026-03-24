@@ -81,8 +81,8 @@ resource "ably_rule_pulsar" "rule0" {
 ### Required
 
 - `app_id` (String) The Ably application ID.
-- `source` (Attributes) object (rule_source) (see [below for nested schema](#nestedatt--source))
-- `target` (Attributes) object (rule_source) (see [below for nested schema](#nestedatt--target))
+- `source` (Attributes) The source for the rule (see [below for nested schema](#nestedatt--source))
+- `target` (Attributes) The target for the rule (see [below for nested schema](#nestedatt--target))
 
 ### Optional
 
@@ -126,5 +126,5 @@ Optional:
 
 Required:
 
-- `mode` (String) Authentication mode, in this case JSON Web Token. Use `jwt`
-- `token` (String) The JWT string.`
+- `mode` (String) Authentication mode. Use `token` for JSON Web Token authentication.
+- `token` (String, Sensitive) The authentication token string.

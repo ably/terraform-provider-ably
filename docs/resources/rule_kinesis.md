@@ -41,8 +41,8 @@ resource "ably_rule_kinesis" "aws_kinesis" {
 ### Required
 
 - `app_id` (String) The Ably application ID.
-- `source` (Attributes) object (rule_source) (see [below for nested schema](#nestedatt--source))
-- `target` (Attributes) object (rule_source) (see [below for nested schema](#nestedatt--target))
+- `source` (Attributes) The source for the rule (see [below for nested schema](#nestedatt--source))
+- `target` (Attributes) The target for the rule (see [below for nested schema](#nestedatt--target))
 
 ### Optional
 
@@ -70,7 +70,7 @@ Optional:
 
 Required:
 
-- `authentication` (Attributes) object (rule_source) (see [below for nested schema](#nestedatt--target--authentication))
+- `authentication` (Attributes) AWS authentication configuration (see [below for nested schema](#nestedatt--target--authentication))
 
 Optional:
 
