@@ -5,9 +5,10 @@ go 1.24.0
 toolchain go1.24.1
 
 require (
-	github.com/ably/ably-control-go v0.8.0
+	github.com/ably/terraform-provider-ably/control v0.0.0
 	github.com/hashicorp/terraform-plugin-docs v0.24.0
 	github.com/hashicorp/terraform-plugin-framework v1.17.0
+	github.com/hashicorp/terraform-plugin-framework-validators v0.16.0
 	github.com/hashicorp/terraform-plugin-go v0.29.0
 	github.com/hashicorp/terraform-plugin-testing v1.14.0
 )
@@ -86,3 +87,5 @@ require (
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/ably/terraform-provider-ably/control => ./control

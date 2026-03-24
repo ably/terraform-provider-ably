@@ -4,8 +4,10 @@ package provider
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
 type ResourceIngressRuleMongo struct {
@@ -21,6 +23,7 @@ func (r ResourceIngressRuleMongo) Schema(_ context.Context, _ resource.SchemaReq
 		map[string]schema.Attribute{
 			"url": schema.StringAttribute{
 				Required:    true,
+				Sensitive:   true,
 				Description: "The connection string of your MongoDB instance. (e.g. mongodb://user:pass@myhost.com)",
 			},
 			"database": schema.StringAttribute{
@@ -38,10 +41,16 @@ func (r ResourceIngressRuleMongo) Schema(_ context.Context, _ resource.SchemaReq
 			"full_document": schema.StringAttribute{
 				Required:    true,
 				Description: "Controls whether the full document should be included in the published change events. Full Document is not available by default in all types of change event. Possible values are `updateLookup`, `whenAvailable`, `off`. The default is `off`.",
+				Validators: []validator.String{
+					stringvalidator.OneOf("updateLookup", "whenAvailable", "off"),
+				},
 			},
 			"full_document_before_change": schema.StringAttribute{
 				Required:    true,
 				Description: "Controls whether the full document before the change should be included in the change event. Full Document before change is not available on all types of change event. Possible values are `whenAvailable` or `off`. The default is `off`.",
+				Validators: []validator.String{
+					stringvalidator.OneOf("whenAvailable", "off"),
+				},
 			},
 			"primary_site": schema.StringAttribute{
 				Required:    true,

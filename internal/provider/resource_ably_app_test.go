@@ -3,12 +3,14 @@ package provider
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
-	control "github.com/ably/ably-control-go"
+	"github.com/ably/terraform-provider-ably/control"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 var cert string = `-----BEGIN CERTIFICATE-----
@@ -62,17 +64,12 @@ func TestAccAblyApp(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing of ably_app.app0
 			{
-				Config: testAccAblyAppConfig(&control.App{
+				Config: testAccAblyAppConfig(&control.AppResponse{
 					Name:                   appName,
 					Status:                 "enabled",
-					TLSOnly:                true,
-					FcmKey:                 "a",
-					FcmServiceAccount:      "{\"account\":\"foo\"}",
-					FcmProjectId:           "project-a",
-					ApnsCertificate:        cert,
-					ApnsPrivateKey:         key,
-					ApnsUseSandboxEndpoint: true,
-				}),
+					TLSOnly:                ptr(true),
+					APNSUseSandboxEndpoint: ptr(true),
+				}, ptr("a"), ptr("{\"account\":\"foo\"}"), ptr("project-a"), cert, key),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
 					resource.TestCheckResourceAttr("ably_app.app0", "status", "enabled"),
@@ -83,21 +80,39 @@ func TestAccAblyApp(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_app.app0", "apns_certificate", cert),
 					resource.TestCheckResourceAttr("ably_app.app0", "apns_private_key", key),
 					resource.TestCheckResourceAttr("ably_app.app0", "apns_use_sandbox_endpoint", "true"),
+					resource.TestCheckResourceAttrSet("ably_app.app0", "id"),
+					resource.TestCheckResourceAttrSet("ably_app.app0", "account_id"),
+					resource.TestCheckResourceAttrSet("ably_app.app0", "created"),
+					resource.TestCheckResourceAttrSet("ably_app.app0", "modified"),
 				),
+			},
+			// ImportState testing of ably_app.app0
+			{
+				ResourceName:      "ably_app.app0",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources["ably_app.app0"]
+					if !ok {
+						return "", fmt.Errorf("resource not found")
+					}
+					return rs.Primary.ID, nil
+				},
+				ImportStateVerifyIgnore: []string{
+					"fcm_key",
+					"fcm_service_account",
+					"apns_certificate",
+					"apns_private_key",
+				},
 			},
 			// Update and Read testing of ably_app.app0
 			{
-				Config: testAccAblyAppConfig(&control.App{
+				Config: testAccAblyAppConfig(&control.AppResponse{
 					Name:                   updateAppName,
 					Status:                 "disabled",
-					TLSOnly:                false,
-					FcmKey:                 "b",
-					FcmServiceAccount:      "{\"account\":\"bar\"}",
-					FcmProjectId:           "project-b",
-					ApnsCertificate:        cert,
-					ApnsPrivateKey:         key,
-					ApnsUseSandboxEndpoint: true,
-				}),
+					TLSOnly:                ptr(false),
+					APNSUseSandboxEndpoint: ptr(true),
+				}, ptr("b"), ptr("{\"account\":\"bar\"}"), ptr("project-b"), cert, key),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", updateAppName),
 					resource.TestCheckResourceAttr("ably_app.app0", "status", "disabled"),
@@ -116,18 +131,19 @@ func TestAccAblyApp(t *testing.T) {
 }
 
 // Function with inline HCL to provision an ably_app resource
-// Takes App name, status and tls_only status as function params.
-func testAccAblyAppConfig(app *control.App) string {
+// Takes AppResponse fields and sensitive string values as function params.
+// Sensitive fields (fcmKey, fcmServiceAccount, fcmProjectID, apnsCertificate, apnsPrivateKey)
+// are not in AppResponse, so they are passed separately.
+func testAccAblyAppConfig(app *control.AppResponse, fcmKey, fcmServiceAccount, fcmProjectID *string, apnsCertificate, apnsPrivateKey string) string {
 	return fmt.Sprintf(`
+# You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 terraform {
 	required_providers {
 		ably = {
-			source = "github.com/ably/ably"
+			source = "registry.terraform.io/ably/ably"
 		}
 	}
 }
-
-# You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 provider "ably" {}
 
 resource "ably_app" "app0" {
@@ -144,12 +160,73 @@ resource "ably_app" "app0" {
 `,
 		app.Name,
 		app.Status,
-		app.TLSOnly,
-		app.FcmKey,
-		app.FcmServiceAccount,
-		app.FcmProjectId,
-		app.ApnsCertificate,
-		app.ApnsPrivateKey,
-		app.ApnsUseSandboxEndpoint,
+		deref(app.TLSOnly),
+		deref(fcmKey),
+		deref(fcmServiceAccount),
+		deref(fcmProjectID),
+		apnsCertificate,
+		apnsPrivateKey,
+		deref(app.APNSUseSandboxEndpoint),
 	)
+}
+
+func TestAccAblyApp_InvalidConfig(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+terraform {
+	required_providers {
+		ably = {
+			source = "registry.terraform.io/ably/ably"
+		}
+	}
+}
+provider "ably" {}
+resource "ably_app" "app0" {
+	status = "enabled"
+}
+`,
+				ExpectError: regexp.MustCompile(`(?i).*missing.*|.*required.*`),
+			},
+		},
+	})
+}
+
+func TestAccAblyApp_SteadyState(t *testing.T) {
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	config := fmt.Sprintf(`
+terraform {
+	required_providers {
+		ably = {
+			source = "registry.terraform.io/ably/ably"
+		}
+	}
+}
+provider "ably" {}
+resource "ably_app" "app0" {
+	name     = %q
+	status   = "enabled"
+	tls_only = true
+}
+`, appName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
+				),
+			},
+			{
+				Config:   config,
+				PlanOnly: true,
+			},
+		},
+	})
 }

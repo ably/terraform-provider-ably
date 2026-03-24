@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccAblyRuleLambda(t *testing.T) {
@@ -42,12 +43,33 @@ func TestAccAblyRuleLambda(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
 					resource.TestCheckResourceAttr("ably_rule_lambda.rule0", "status", "enabled"),
+					resource.TestCheckResourceAttr("ably_rule_lambda.rule0", "request_mode", "single"),
 					resource.TestCheckResourceAttr("ably_rule_lambda.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_lambda.rule0", "source.type", "channel.message"),
+					resource.TestCheckResourceAttr("ably_rule_lambda.rule0", "target.region", "us-west-1"),
+					resource.TestCheckResourceAttr("ably_rule_lambda.rule0", "target.function_name", "rule0-testing"),
+					resource.TestCheckResourceAttr("ably_rule_lambda.rule0", "target.enveloped", "false"),
 					resource.TestCheckResourceAttr("ably_rule_lambda.rule0", "target.authentication.mode", "credentials"),
 					resource.TestCheckResourceAttr("ably_rule_lambda.rule0", "target.authentication.access_key_id", "gggg"),
 					resource.TestCheckResourceAttr("ably_rule_lambda.rule0", "target.authentication.secret_access_key", "ffff"),
 				),
+			},
+			// ImportState testing of ably_rule_lambda.rule0
+			{
+				ResourceName:      "ably_rule_lambda.rule0",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources["ably_rule_lambda.rule0"]
+					if !ok {
+						return "", fmt.Errorf("resource not found")
+					}
+					return fmt.Sprintf("%s,%s", rs.Primary.Attributes["app_id"], rs.Primary.ID), nil
+				},
+				ImportStateVerifyIgnore: []string{
+					"target.authentication.access_key_id",
+					"target.authentication.secret_access_key",
+				},
 			},
 			// Update and Read testing of ably_app.app0
 			{
@@ -64,8 +86,12 @@ func TestAccAblyRuleLambda(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ably_app.app0", "name", updateAppName),
 					resource.TestCheckResourceAttr("ably_rule_lambda.rule0", "status", "enabled"),
+					resource.TestCheckResourceAttr("ably_rule_lambda.rule0", "request_mode", "single"),
 					resource.TestCheckResourceAttr("ably_rule_lambda.rule0", "source.channel_filter", "^my-channel.*"),
 					resource.TestCheckResourceAttr("ably_rule_lambda.rule0", "source.type", "channel.message"),
+					resource.TestCheckResourceAttr("ably_rule_lambda.rule0", "target.region", "us-east-1"),
+					resource.TestCheckResourceAttr("ably_rule_lambda.rule0", "target.function_name", "rule0-testing"),
+					resource.TestCheckResourceAttr("ably_rule_lambda.rule0", "target.enveloped", "true"),
 					resource.TestCheckResourceAttr("ably_rule_lambda.rule0", "target.authentication.mode", "assumeRole"),
 					resource.TestCheckResourceAttr("ably_rule_lambda.rule0", "target.authentication.role_arn", "cccc"),
 				),
@@ -87,17 +113,16 @@ func testAccAblyRuleLambdaConfig(
 	enveloped string,
 ) string {
 	return fmt.Sprintf(`
+# You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 terraform {
 	required_providers {
 		ably = {
-		source = "github.com/ably/ably"
+			source = "registry.terraform.io/ably/ably"
 		}
 	}
 }
-	
-# You can provide your Ably Token & URL inline or use environment variables ABLY_ACCOUNT_TOKEN & ABLY_URL
 provider "ably" {}
-	  
+
 resource "ably_app" "app0" {
 	name     = %[1]q
 	status   = "enabled"
@@ -117,6 +142,6 @@ resource "ably_rule_lambda" "rule0" {
 	  enveloped = %[8]s,
 	  %[5]s
 	}
-  }  
+  }
 `, appName, ruleStatus, channelFilter, sourceType, awsAuthBlock, targetRegion, functionName, enveloped)
 }

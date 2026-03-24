@@ -3,21 +3,22 @@ package provider
 
 import (
 	"context"
-	"fmt"
 
-	control "github.com/ably/ably-control-go"
-	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/ably/terraform-provider-ably/control"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // Ensure the implementation satisfies the expected interfaces
 var _ resource.Resource = &ResourceQueue{}
 var _ resource.ResourceWithImportState = &ResourceQueue{}
-var _ resource.ResourceWithModifyPlan = &ResourceQueue{}
 
 type ResourceQueue struct {
 	p *AblyProvider
@@ -44,67 +45,79 @@ func (r ResourceQueue) Schema(ctx context.Context, req resource.SchemaRequest, r
 			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "The name of the queue.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"ttl": schema.Int64Attribute{
 				Required:    true,
 				Description: "Time to live in minutes.",
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.RequiresReplace(),
+				},
+				Validators: []validator.Int64{
+					int64validator.AtLeast(1),
+				},
 			},
 			"max_length": schema.Int64Attribute{
 				Required:    true,
 				Description: "Message limit in number of messages.",
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.RequiresReplace(),
+				},
+				Validators: []validator.Int64{
+					int64validator.AtLeast(1),
+				},
 			},
 			"region": schema.StringAttribute{
 				Required:    true,
 				Description: "The data center region. US East (Virginia) or EU West (Ireland). Values are us-east-1-a or eu-west-1-a.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.OneOf("us-east-1-a", "eu-west-1-a"),
+				},
 			},
 
 			"amqp_uri": schema.StringAttribute{
 				Computed:    true,
 				Description: "URI for the AMQP queue interface.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"amqp_queue_name": schema.StringAttribute{
 				Computed:    true,
 				Description: "Name of the Ably queue.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"stomp_uri": schema.StringAttribute{
 				Computed:    true,
 				Description: "URI for the STOMP queue interface.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"stomp_host": schema.StringAttribute{
 				Computed:    true,
 				Description: "The host type for the queue.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"stomp_destination": schema.StringAttribute{
 				Computed:    true,
 				Description: "Destination queue.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"state": schema.StringAttribute{
 				Computed:    true,
 				Description: "The current state of the queue.",
-			},
-			"messages_ready": schema.Int64Attribute{
-				Computed:    true,
-				Description: "The number of ready messages in the queue.",
-			},
-			"messages_unacknowledged": schema.Int64Attribute{
-				Computed:    true,
-				Description: "The number of unacknowledged messages in the queue.",
-			},
-			"messages_total": schema.Int64Attribute{
-				Computed:    true,
-				Description: "The total number of messages in the queue.",
-			},
-			"stats_publish_rate": schema.Float64Attribute{
-				Computed:    true,
-				Description: "The rate at which messages are published to the queue. Rate is messages per minute.",
-			},
-			"stats_delivery_rate": schema.Float64Attribute{
-				Computed:    true,
-				Description: "The rate at which messages are delivered from the queue. Rate is messages per minute.",
-			},
-			"stats_acknowledgement_rate": schema.Float64Attribute{
-				Computed:    true,
-				Description: "The rate at which messages are acknowledged. Rate is messages per minute.",
 			},
 			"deadletter": schema.BoolAttribute{
 				Computed:    true,
@@ -125,12 +138,7 @@ func (r ResourceQueue) Metadata(ctx context.Context, req resource.MetadataReques
 
 // Create creates a new resource.
 func (r ResourceQueue) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	// Checks whether the provider and API Client are configured. If they are not, the provider responds with an error.
-	if !r.p.configured {
-		resp.Diagnostics.AddError(
-			"Provider not configured",
-			"The provider hasn't been configured before apply",
-		)
+	if !r.p.ensureConfigured(&resp.Diagnostics) {
 		return
 	}
 
@@ -142,34 +150,20 @@ func (r ResourceQueue) Create(ctx context.Context, req resource.CreateRequest, r
 		return
 	}
 
-	var region control.Region
-	switch plan.Region.ValueString() {
-	case string(control.UsEast1A):
-		region = control.UsEast1A
-	case string(control.EuWest1A):
-		region = control.EuWest1A
-	default:
-		resp.Diagnostics.AddError(
-			"Provider not configured",
-			fmt.Sprintf("Invalid value for Queue.Region '%s'", plan.Region.ValueString()),
-		)
-		return
-	}
-
 	// Generates an API request body from the plan values
-	queueValues := control.NewQueue{
+	queueValues := control.Queue{
 		Name:      plan.Name.ValueString(),
-		Ttl:       int(plan.Ttl.ValueInt64()),
+		TTL:       int(plan.Ttl.ValueInt64()),
 		MaxLength: int(plan.MaxLength.ValueInt64()),
-		Region:    region,
+		Region:    plan.Region.ValueString(),
 	}
 
 	// Creates a new Ably queue by invoking the CreateQueue function from the Client Library
-	ablyQueue, err := r.p.client.CreateQueue(plan.AppID.ValueString(), &queueValues)
+	ablyQueue, err := r.p.client.CreateQueue(ctx, plan.AppID.ValueString(), queueValues)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error creating Resource",
-			"Could not create resource, unexpected error: "+err.Error(),
+			"Error creating ably_queue",
+			"Could not create ably_queue, unexpected error: "+err.Error(),
 		)
 		return
 	}
@@ -179,24 +173,18 @@ func (r ResourceQueue) Create(ctx context.Context, req resource.CreateRequest, r
 		AppID:     types.StringValue(plan.AppID.ValueString()),
 		ID:        types.StringValue(ablyQueue.ID),
 		Name:      types.StringValue(ablyQueue.Name),
-		Ttl:       types.Int64Value(int64(ablyQueue.Ttl)),
+		Ttl:       types.Int64Value(int64(ablyQueue.TTL)),
 		MaxLength: types.Int64Value(int64(ablyQueue.MaxLength)),
-		Region:    types.StringValue(string(ablyQueue.Region)),
+		Region:    types.StringValue(ablyQueue.Region),
 
-		AmqpUri:                  types.StringValue(ablyQueue.Amqp.Uri),
-		AmqpQueueName:            types.StringValue(ablyQueue.Amqp.QueueName),
-		StompURI:                 types.StringValue(ablyQueue.Stomp.Uri),
-		StompHost:                types.StringValue(ablyQueue.Stomp.Host),
-		StompDestination:         types.StringValue(ablyQueue.Stomp.Destination),
-		State:                    types.StringValue(ablyQueue.State),
-		MessagesReady:            types.Int64Value(int64(ablyQueue.Messages.Ready)),
-		MessagesUnacknowledged:   types.Int64Value(int64(ablyQueue.Messages.Unacknowledged)),
-		MessagesTotal:            types.Int64Value(int64(ablyQueue.Messages.Total)),
-		StatsPublishRate:         types.Float64Value(ablyQueue.Stats.PublishRate),
-		StatsDeliveryRate:        types.Float64Value(ablyQueue.Stats.DeliveryRate),
-		StatsAcknowledgementRate: types.Float64Value(ablyQueue.Stats.AcknowledgementRate),
-		Deadletter:               types.BoolValue(ablyQueue.DeadLetter),
-		DeadletterID:             types.StringValue(ablyQueue.DeadLetterID),
+		AmqpUri:          types.StringValue(ablyQueue.AMQP.URI),
+		AmqpQueueName:    types.StringValue(ablyQueue.AMQP.QueueName),
+		StompURI:         types.StringValue(ablyQueue.Stomp.URI),
+		StompHost:        types.StringValue(ablyQueue.Stomp.Host),
+		StompDestination: types.StringValue(ablyQueue.Stomp.Destination),
+		State:            types.StringValue(ablyQueue.State),
+		Deadletter:       types.BoolValue(ablyQueue.Deadletter),
+		DeadletterID:     optStringValue(ablyQueue.DeadletterID),
 	}
 
 	// Sets state for the new Ably App.
@@ -209,6 +197,10 @@ func (r ResourceQueue) Create(ctx context.Context, req resource.CreateRequest, r
 
 // Read reads the resource.
 func (r ResourceQueue) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	if !r.p.ensureConfigured(&resp.Diagnostics) {
+		return
+	}
+
 	// Gets the current state. If it is unable to, the provider responds with an error.
 	var state AblyQueue
 	found := false
@@ -225,15 +217,15 @@ func (r ResourceQueue) Read(ctx context.Context, req resource.ReadRequest, resp 
 
 	// Fetches all Ably Queues in the app. The function invokes the Client Library Queues() method.
 	// NOTE: Control API & Client Lib do not currently support fetching single queue given queue id
-	queues, err := r.p.client.Queues(appID)
+	queues, err := r.p.client.ListQueues(ctx, appID)
 	if err != nil {
 		if is404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
 		resp.Diagnostics.AddError(
-			"Error updating Resource",
-			"Could not update resource, unexpected error: "+err.Error(),
+			"Error reading ably_queue",
+			"Could not read ably_queue, unexpected error: "+err.Error(),
 		)
 		return
 	}
@@ -245,24 +237,18 @@ func (r ResourceQueue) Read(ctx context.Context, req resource.ReadRequest, resp 
 				AppID:     types.StringValue(v.AppID),
 				ID:        types.StringValue(v.ID),
 				Name:      types.StringValue(v.Name),
-				Ttl:       types.Int64Value(int64(v.Ttl)),
+				Ttl:       types.Int64Value(int64(v.TTL)),
 				MaxLength: types.Int64Value(int64(v.MaxLength)),
-				Region:    types.StringValue(string(v.Region)),
+				Region:    types.StringValue(v.Region),
 
-				AmqpUri:                  types.StringValue(v.Amqp.Uri),
-				AmqpQueueName:            types.StringValue(v.Amqp.QueueName),
-				StompURI:                 types.StringValue(v.Stomp.Uri),
-				StompHost:                types.StringValue(v.Stomp.Host),
-				StompDestination:         types.StringValue(v.Stomp.Destination),
-				State:                    types.StringValue(v.State),
-				MessagesReady:            types.Int64Value(int64(v.Messages.Ready)),
-				MessagesUnacknowledged:   types.Int64Value(int64(v.Messages.Unacknowledged)),
-				MessagesTotal:            types.Int64Value(int64(v.Messages.Total)),
-				StatsPublishRate:         types.Float64Value(v.Stats.PublishRate),
-				StatsDeliveryRate:        types.Float64Value(v.Stats.DeliveryRate),
-				StatsAcknowledgementRate: types.Float64Value(v.Stats.AcknowledgementRate),
-				Deadletter:               types.BoolValue(v.DeadLetter),
-				DeadletterID:             types.StringValue(v.DeadLetterID),
+				AmqpUri:          types.StringValue(v.AMQP.URI),
+				AmqpQueueName:    types.StringValue(v.AMQP.QueueName),
+				StompURI:         types.StringValue(v.Stomp.URI),
+				StompHost:        types.StringValue(v.Stomp.Host),
+				StompDestination: types.StringValue(v.Stomp.Destination),
+				State:            types.StringValue(v.State),
+				Deadletter:       types.BoolValue(v.Deadletter),
+				DeadletterID:     optStringValue(v.DeadletterID),
 			}
 			// Sets state to queue values.
 			diags = resp.State.Set(ctx, &respQueues)
@@ -283,16 +269,24 @@ func (r ResourceQueue) Read(ctx context.Context, req resource.ReadRequest, resp 
 
 // Update updates an existing resource.
 func (r ResourceQueue) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	if !r.p.ensureConfigured(&resp.Diagnostics) {
+		return
+	}
+
 	// This function should never end up being run but needs to exist to satisfy the interface
 	// this error is just in case terraform decides to call it.
 	resp.Diagnostics.AddError(
-		"Error modifying Resource",
-		"Queue can not be modified",
+		"Error updating ably_queue",
+		"ably_queue can not be modified",
 	)
 }
 
 // Delete deletes the resource.
 func (r ResourceQueue) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	if !r.p.ensureConfigured(&resp.Diagnostics) {
+		return
+	}
+
 	// Get current state
 	var state AblyQueue
 	diags := req.State.Get(ctx, &state)
@@ -305,7 +299,7 @@ func (r ResourceQueue) Delete(ctx context.Context, req resource.DeleteRequest, r
 	appID := state.AppID.ValueString()
 	queueID := state.ID.ValueString()
 
-	err := r.p.client.DeleteQueue(appID, queueID)
+	err := r.p.client.DeleteQueue(ctx, appID, queueID)
 	if err != nil {
 		if is404(err) {
 			resp.Diagnostics.AddWarning(
@@ -314,8 +308,8 @@ func (r ResourceQueue) Delete(ctx context.Context, req resource.DeleteRequest, r
 			)
 		} else {
 			resp.Diagnostics.AddError(
-				"Error deleting Resource",
-				"Could not delete resource, unexpected error: "+err.Error(),
+				"Error deleting ably_queue",
+				"Could not delete ably_queue, unexpected error: "+err.Error(),
 			)
 			return
 		}
@@ -327,17 +321,5 @@ func (r ResourceQueue) Delete(ctx context.Context, req resource.DeleteRequest, r
 
 // ImportState handles the import state functionality.
 func (r ResourceQueue) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	ImportResource(ctx, req, resp, "id")
-}
-
-func (r ResourceQueue) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	// Make all attributes require replace
-	// Get all attributes from the schema using a temporary response
-	schemaResp := &resource.SchemaResponse{}
-	r.Schema(ctx, resource.SchemaRequest{}, schemaResp)
-
-	// Mark all attributes as requiring replacement
-	for attrName := range schemaResp.Schema.Attributes {
-		resp.RequiresReplace.Append(path.Root(attrName))
-	}
+	ImportResource(ctx, req, resp, "app_id", "id")
 }

@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	control "github.com/ably/ably-control-go"
+	"github.com/ably/terraform-provider-ably/control"
 )
 
 const controlAPIDefaultURL = "https://control.ably.net/v1"
@@ -20,8 +20,12 @@ const controlAPIDefaultURL = "https://control.ably.net/v1"
 var _ provider.Provider = &AblyProvider{}
 
 type AblyProvider struct {
+	// configured is set to true after the provider has been successfully configured.
+	// All CRUD methods (Create, Read, Update, Delete) in resources should check
+	// p.configured before making API calls to ensure the provider is properly initialized.
 	configured bool
 	client     *control.Client
+	accountID  string
 	version    string
 }
 
@@ -40,13 +44,16 @@ func New(version string) func() provider.Provider {
 
 func (p *AblyProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "The Ably provider allows you to manage [Ably](https://ably.com) resources including apps, keys, namespaces, queues, and integration rules.",
 		Attributes: map[string]schema.Attribute{
 			"token": schema.StringAttribute{
-				Sensitive: true,
-				Optional:  true,
+				Description: "The Ably account token used for authentication. Can also be set via the `ABLY_ACCOUNT_TOKEN` environment variable.",
+				Sensitive:   true,
+				Optional:    true,
 			},
 			"url": schema.StringAttribute{
-				Optional: true,
+				Description: "The Ably Control API URL. Can also be set via the `ABLY_URL` environment variable. Defaults to the production API.",
+				Optional:    true,
 			},
 		},
 	}
@@ -71,9 +78,9 @@ func (p *AblyProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 	var token string
 	if config.Token.IsUnknown() {
 		// Cannot connect to client with an unknown value
-		resp.Diagnostics.AddWarning(
+		resp.Diagnostics.AddError(
 			"Unable to create client",
-			"Ably API Token required",
+			"The Ably API token is unknown. The provider cannot be configured without a known token value.",
 		)
 		return
 	}
@@ -115,18 +122,31 @@ func (p *AblyProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 	if url == "" {
 		url = controlAPIDefaultURL
 	}
-	c, _, err := control.NewClientWithURL(token, url)
+	c := control.NewClient(token)
+	c.BaseURL = url
+	c.UserAgent += " terraform-provider-ably/" + p.version
 
+	p.client = c
+
+	// Fetch account ID via /me endpoint for use by resources that need it.
+	me, err := c.Me(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Unable to create client",
-			"Unable to create Ably client:\n\n"+err.Error(),
+			"Unable to fetch account information",
+			"Could not retrieve account ID from Ably API: "+err.Error(),
 		)
 		return
 	}
-	c.AppendAblyAgent("terraform-provider-ably", p.version)
 
-	p.client = &c
+	if me.Account == nil || me.Account.ID == "" {
+		resp.Diagnostics.AddError(
+			"Unable to determine account ID",
+			"Failed to determine account ID from the Ably API. Please verify your token has account-level access.",
+		)
+		return
+	}
+
+	p.accountID = me.Account.ID
 	p.configured = true
 }
 

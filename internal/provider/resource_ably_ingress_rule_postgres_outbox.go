@@ -4,8 +4,10 @@ package provider
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
 type ResourceIngressRulePostgresOutbox struct {
@@ -21,6 +23,7 @@ func (r ResourceIngressRulePostgresOutbox) Schema(_ context.Context, _ resource.
 		map[string]schema.Attribute{
 			"url": schema.StringAttribute{
 				Required:    true,
+				Sensitive:   true,
 				Description: "The URL for your Postgres database, for example postgres://user:password@example.com:5432/your-database-name. The associated user must have the correct privileges",
 			},
 			"outbox_table_schema": schema.StringAttribute{
@@ -48,6 +51,9 @@ func (r ResourceIngressRulePostgresOutbox) Schema(_ context.Context, _ resource.
   - verify-full: Verify server certificate and hostname.
 
 Default: prefer.`,
+				Validators: []validator.String{
+					stringvalidator.OneOf("prefer", "require", "verify-ca", "verify-full"),
+				},
 			},
 			"ssl_root_cert": schema.StringAttribute{
 				Optional:    true,

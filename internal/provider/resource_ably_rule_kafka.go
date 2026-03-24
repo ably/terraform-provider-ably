@@ -4,8 +4,10 @@ package provider
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -42,6 +44,9 @@ func (r ResourceRuleKafka) Schema(_ context.Context, _ resource.SchemaRequest, r
 							"mechanism": schema.StringAttribute{
 								Description: "`plain` `scram-sha-256` `scram-sha-512`. The hash type to use. SCRAM supports either SHA-256 or SHA-512 hash functions",
 								Required:    true,
+								Validators: []validator.String{
+									stringvalidator.OneOf("plain", "scram-sha-256", "scram-sha-512"),
+								},
 							},
 							"username": schema.StringAttribute{
 								Description: "Kafka login credential",
