@@ -39,8 +39,8 @@ resource "ably_api_key" "api_key_1" {
 
 ### Read-Only
 
-- `created` (Number) Enforce TLS for all connections. This setting overrides any channel setting.
+- `created` (Number) The timestamp of when the key was created.
 - `id` (String) The key ID.
-- `key` (String) The complete API key including API secret.
+- `key` (String, Sensitive) The complete API key including API secret.
 - `modified` (Number) Unix timestamp representing the date and time of the last modification of the key.
 - `status` (Number) The status of the key. 0 is enabled, 1 is revoked.

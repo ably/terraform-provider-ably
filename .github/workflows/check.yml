@@ -42,8 +42,8 @@ jobs:
 
       - name: Test
         run: |
-          echo "provider_installation { dev_overrides { \"github.com/ably/ably\" = \"$PWD/bin\", } direct {} }" > ~/.terraformrc
-          TF_ACC=1 go test -v ./...
+          echo "provider_installation { dev_overrides { \"registry.terraform.io/ably/ably\" = \"$PWD/bin\", } direct {} }" > ~/.terraformrc
+          TF_ACC=1 go test -v -parallel 4 ./...
         env:
           ABLY_ACCOUNT_TOKEN: ${{ secrets.ABLY_ACCOUNT_TOKEN }}
           ABLY_URL: 'https://staging-control.ably-dev.net/v1'

@@ -46,8 +46,8 @@ resource "ably_rule_amqp" "rule0" {
 ### Required
 
 - `app_id` (String) The Ably application ID.
-- `source` (Attributes) object (rule_source) (see [below for nested schema](#nestedatt--source))
-- `target` (Attributes) object (rule_source) (see [below for nested schema](#nestedatt--target))
+- `source` (Attributes) The source for the rule (see [below for nested schema](#nestedatt--source))
+- `target` (Attributes) The target for the rule (see [below for nested schema](#nestedatt--target))
 
 ### Optional
 

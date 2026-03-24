@@ -88,5 +88,5 @@ This will add the app to your Terraform state file. You can then run `terraform 
 
 ### Optional
 
-- `token` (String, Sensitive)
-- `url` (String)
+- `token` (String, Sensitive) The Ably account token used for authentication. Can also be set via the `ABLY_ACCOUNT_TOKEN` environment variable.
+- `url` (String) The Ably Control API URL. Can also be set via the `ABLY_URL` environment variable. Defaults to the production API.

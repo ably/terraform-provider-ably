@@ -34,8 +34,8 @@ resource "ably_rule_ifttt" "rule0" {
 ### Required
 
 - `app_id` (String) The Ably application ID.
-- `source` (Attributes) object (rule_source) (see [below for nested schema](#nestedatt--source))
-- `target` (Attributes) object (rule_source) (see [below for nested schema](#nestedatt--target))
+- `source` (Attributes) The source for the rule (see [below for nested schema](#nestedatt--source))
+- `target` (Attributes) The target for the rule (see [below for nested schema](#nestedatt--target))
 
 ### Optional
 
@@ -64,4 +64,4 @@ Optional:
 Required:
 
 - `event_name` (String) The Event name is used to identify the IFTTT applet that will receive the Event, make sure the name matches the name of the IFTTT applet.
-- `webhook_key` (String) The key in the Webhook Service Documentation page of your IFTTT account
+- `webhook_key` (String, Sensitive) The key in the Webhook Service Documentation page of your IFTTT account

@@ -43,8 +43,13 @@ resource "ably_app" "app1" {
 
 ### Optional
 
+- `apns_auth_type` (String) The APNS authentication type. Can be 'certificate' or 'token'.
 - `apns_certificate` (String, Sensitive) The Apple Push Notification service certificate.
+- `apns_issuer_key` (String) The APNS issuer key (Team ID) used for token-based authentication.
 - `apns_private_key` (String, Sensitive) The Apple Push Notification service private key.
+- `apns_signing_key` (String, Sensitive) The APNS signing key used for token-based authentication.
+- `apns_signing_key_id` (String) The APNS signing key ID used for token-based authentication.
+- `apns_topic_header` (String) The APNS topic header, typically the app bundle ID.
 - `apns_use_sandbox_endpoint` (Boolean) Use the Apple Push Notification service sandbox endpoint.
 - `fcm_key` (String, Sensitive) The Firebase Cloud Messaging key.
 - `fcm_project_id` (String) The unique identifier for the Firebase Cloud Messaging(FCM) project. This ID is used to specify the Firebase project when configuring FCM or other Firebase services.
@@ -55,4 +60,9 @@ resource "ably_app" "app1" {
 ### Read-Only
 
 - `account_id` (String) The ID of your Ably account.
+- `apns_certificate_configured` (Boolean) Whether an APNS certificate has been configured.
+- `apns_signing_key_configured` (Boolean) Whether an APNS signing key has been configured.
+- `created` (String) The timestamp when the app was created.
+- `fcm_service_account_configured` (Boolean) Whether a Firebase Cloud Messaging service account has been configured.
 - `id` (String) The application ID.
+- `modified` (String) The timestamp when the app was last modified.
