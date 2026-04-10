@@ -1,5 +1,24 @@
 # Changelog
 
+## [v1.0.0](https://github.com/ably/terraform-provider-ably/tree/v1.0.0)
+
+[Full Changelog](https://github.com/ably/terraform-provider-ably/compare/v0.12.0...v1.0.0)
+
+**Merged pull requests:**
+
+- \[INF-6939\] Migrate client into this repo and switch provider to it [#229](https://github.com/ably/terraform-provider-ably/pull/229)
+
+**Note:**
+This release brings the Ably Control API Go client in-repo, replacing the external `ably-control-go` dependency. The previous client had diverged significantly from the actual Control API surface, causing persistent bugs and requiring workarounds throughout the provider. Rather than continuing to patch the misalignment across two repositories, the client has been rewritten from scratch and embedded directly as a Go sub-module.
+
+New in-repo client: The client lives under `control/` (module path `github.com/ably/terraform-provider-ably/control`, package name `control`) and covers the full Control API surface: apps, keys, namespaces, queues, stats, reactor/integration rules (HTTP, AMQP, Kafka, Kinesis, Lambda, SQS, Pulsar, IFTTT, Zapier, Cloudflare Workers, Google/Azure Functions), ingress rules (MongoDB, Postgres Outbox), and before-publish/moderation rule types (Hive, Bodyguard, Tisane, Azure). All endpoints have comprehensive unit tests plus integration test scaffolding gated behind `ABLY_ACCOUNT_TOKEN`. The client is publicly importable for use outside this provider.
+
+Provider migration: Every resource and data source has been rewritten to use the new client. This includes tighter error handling, read-back verification after create/update to catch silent failures, pointer-based patch types to avoid overwriting values during partial updates, and improved schema descriptions. An end-to-end acceptance test exercises the full Terraform lifecycle (create, update, read-back, import, destroy) for every resource type against the real Control API.
+
+Release automation: The release workflow has been rebuilt to handle both components from a single `workflow_dispatch` trigger. It discovers what to release from git tags (`v<semver>` for the provider, `control/v<semver>` for the client) and runs both release jobs in parallel. Provider releases go through GoReleaser as before. Control release notes are scoped to PRs that touch `control/` paths, matching the format used by the old standalone repo. Both produce draft releases for review before publishing.
+
+Documentation: Terraform resource docs have been regenerated to reflect the updated schemas. The control client has public-quality godoc comments and a standalone reference doc under `control/docs/`. CI has been updated to account for the sub-module. CONTRIBUTING.md documents the new release process.
+
 ## [v0.12.0](https://github.com/ably/terraform-provider-ably/tree/v0.12.0)
 
 [Full Changelog](https://github.com/ably/terraform-provider-ably/compare/v0.11.1...v0.12.0)
