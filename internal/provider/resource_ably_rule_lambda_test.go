@@ -101,6 +101,38 @@ func TestAccAblyRuleLambda(t *testing.T) {
 	})
 }
 
+func TestAccAblyRuleLambda_Minimal(t *testing.T) {
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	config := minimalRuleConfig(appName, "ably_rule_lambda", `target = {
+		region        = "us-west-1"
+		function_name = "test-function"
+		authentication = {
+			mode              = "credentials"
+			access_key_id     = "AKIAIOSFODNN7EXAMPLE"
+			secret_access_key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+		}
+	}`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("ably_rule_lambda.rule0", "id"),
+					resource.TestCheckResourceAttr("ably_rule_lambda.rule0", "status", "enabled"),
+					resource.TestCheckResourceAttr("ably_rule_lambda.rule0", "request_mode", "single"),
+				),
+			},
+			{
+				Config:   config,
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 // Function with inline HCL to provision an ably_app resource
 func testAccAblyRuleLambdaConfig(
 	appName string,

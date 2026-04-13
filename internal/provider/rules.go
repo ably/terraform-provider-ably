@@ -321,7 +321,7 @@ func GetRequestMode(plan AblyRule) string {
 
 // GetAwsAuth converts AWS authentication from control SDK format to terraform format.
 // Using plan to fill in values that the api does not return.
-func GetAwsAuth(auth control.AWSAuthentication, plan *AblyRule) AwsAuth {
+func GetAwsAuth(rc *reconciler, auth control.AWSAuthentication, plan *AblyRule) AwsAuth {
 	var planAuth AwsAuth
 
 	switch p := plan.Target.(type) {
@@ -339,25 +339,29 @@ func GetAwsAuth(auth control.AWSAuthentication, plan *AblyRule) AwsAuth {
 		}
 	}
 
-	var respAwsAuth AwsAuth
+	// The API returns different fields depending on auth mode.
+	// Fields not relevant to the current mode are null in the response,
+	// so we pass types.StringNull() as the output for those — reconcile
+	// case 4 (both empty → null) or case 2 (echo plan) handles them.
+	var modeOutput, keyOutput, secretOutput, arnOutput types.String
+	modeOutput = types.StringValue(auth.AuthenticationMode)
 	switch control.AWSAuthMode(auth.AuthenticationMode) {
 	case control.AWSAuthModeCredentials:
-		respAwsAuth = AwsAuth{
-			AuthenticationMode: types.StringValue(auth.AuthenticationMode),
-			AccessKeyId:        types.StringValue(auth.AccessKeyID),
-			SecretAccessKey:    planAuth.SecretAccessKey,
-			RoleArn:            types.StringNull(),
-		}
+		keyOutput = types.StringValue(auth.AccessKeyID)
+		secretOutput = types.StringNull() // write-only, never returned
+		arnOutput = types.StringNull()
 	case control.AWSAuthModeAssumeRole:
-		respAwsAuth = AwsAuth{
-			AuthenticationMode: types.StringValue(auth.AuthenticationMode),
-			RoleArn:            types.StringValue(auth.AssumeRoleArn),
-			AccessKeyId:        types.StringNull(),
-			SecretAccessKey:    types.StringNull(),
-		}
+		keyOutput = types.StringNull()
+		secretOutput = types.StringNull()
+		arnOutput = types.StringValue(auth.AssumeRoleArn)
 	}
 
-	return respAwsAuth
+	return AwsAuth{
+		AuthenticationMode: rc.str("target.authentication.mode", planAuth.AuthenticationMode, modeOutput, false),
+		AccessKeyId:        rc.str("target.authentication.access_key_id", planAuth.AccessKeyId, keyOutput, false),
+		SecretAccessKey:    rc.str("target.authentication.secret_access_key", planAuth.SecretAccessKey, secretOutput, false),
+		RoleArn:            rc.str("target.authentication.role_arn", planAuth.RoleArn, arnOutput, false),
+	}
 }
 
 // unmarshalTarget JSON-marshals the generic target from RuleResponse and unmarshals into a typed struct.
@@ -387,8 +391,13 @@ func ToHeaders(headers []control.RuleHeader) []AblyRuleHeaders {
 // GetRuleResponse maps response body to resource schema attributes.
 // Using plan to fill in values that the api does not return.
 // Returns (AblyRule, diag.Diagnostics) so callers can check for unmarshal errors.
-func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule) (AblyRule, diag.Diagnostics) {
+func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule, reading bool) (AblyRule, diag.Diagnostics) {
 	var diags diag.Diagnostics
+	rc := newReconciler(&diags)
+	if reading {
+		rc.forRead()
+	}
+
 	var respTarget any
 
 	switch ablyRule.RuleType {
@@ -398,13 +407,17 @@ func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule) (AblyRule, 
 			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal aws/kinesis target: %s", err.Error()))
 			return AblyRule{}, diags
 		}
+		var pt *AblyRuleTargetKinesis
+		if p, ok := plan.Target.(*AblyRuleTargetKinesis); ok {
+			pt = p
+		}
 		respTarget = &AblyRuleTargetKinesis{
-			Region:       types.StringValue(target.Region),
-			StreamName:   types.StringValue(target.StreamName),
-			PartitionKey: types.StringValue(target.PartitionKey),
-			AwsAuth:      GetAwsAuth(target.Authentication, plan),
-			Enveloped:    types.BoolValue(deref(target.Enveloped)),
-			Format:       types.StringValue(target.Format),
+			Region:       rc.str("target.region", planStr(pt, func(t *AblyRuleTargetKinesis) types.String { return t.Region }), types.StringValue(target.Region), false),
+			StreamName:   rc.str("target.stream_name", planStr(pt, func(t *AblyRuleTargetKinesis) types.String { return t.StreamName }), types.StringValue(target.StreamName), false),
+			PartitionKey: rc.str("target.partition_key", planStr(pt, func(t *AblyRuleTargetKinesis) types.String { return t.PartitionKey }), types.StringValue(target.PartitionKey), false),
+			AwsAuth:      GetAwsAuth(rc, target.Authentication, plan),
+			Enveloped:    rc.boolean("target.enveloped", planBool(pt, func(t *AblyRuleTargetKinesis) types.Bool { return t.Enveloped }), optBoolValue(target.Enveloped), true),
+			Format:       rc.str("target.format", planStr(pt, func(t *AblyRuleTargetKinesis) types.String { return t.Format }), types.StringValue(target.Format), true),
 		}
 	case "aws/sqs":
 		target, err := unmarshalTarget[control.AWSSQSTarget](ablyRule.Target)
@@ -412,13 +425,17 @@ func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule) (AblyRule, 
 			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal aws/sqs target: %s", err.Error()))
 			return AblyRule{}, diags
 		}
+		var pt *AblyRuleTargetSqs
+		if p, ok := plan.Target.(*AblyRuleTargetSqs); ok {
+			pt = p
+		}
 		respTarget = &AblyRuleTargetSqs{
-			Region:       types.StringValue(target.Region),
-			AwsAccountID: types.StringValue(target.AWSAccountID),
-			QueueName:    types.StringValue(target.QueueName),
-			AwsAuth:      GetAwsAuth(target.Authentication, plan),
-			Enveloped:    types.BoolValue(deref(target.Enveloped)),
-			Format:       types.StringValue(target.Format),
+			Region:       rc.str("target.region", planStr(pt, func(t *AblyRuleTargetSqs) types.String { return t.Region }), types.StringValue(target.Region), false),
+			AwsAccountID: rc.str("target.aws_account_id", planStr(pt, func(t *AblyRuleTargetSqs) types.String { return t.AwsAccountID }), types.StringValue(target.AWSAccountID), false),
+			QueueName:    rc.str("target.queue_name", planStr(pt, func(t *AblyRuleTargetSqs) types.String { return t.QueueName }), types.StringValue(target.QueueName), false),
+			AwsAuth:      GetAwsAuth(rc, target.Authentication, plan),
+			Enveloped:    rc.boolean("target.enveloped", planBool(pt, func(t *AblyRuleTargetSqs) types.Bool { return t.Enveloped }), optBoolValue(target.Enveloped), true),
+			Format:       rc.str("target.format", planStr(pt, func(t *AblyRuleTargetSqs) types.String { return t.Format }), types.StringValue(target.Format), true),
 		}
 	case "aws/lambda":
 		target, err := unmarshalTarget[control.AWSLambdaTarget](ablyRule.Target)
@@ -426,11 +443,15 @@ func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule) (AblyRule, 
 			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal aws/lambda target: %s", err.Error()))
 			return AblyRule{}, diags
 		}
+		var pt *AblyRuleTargetLambda
+		if p, ok := plan.Target.(*AblyRuleTargetLambda); ok {
+			pt = p
+		}
 		respTarget = &AblyRuleTargetLambda{
-			Region:       types.StringValue(target.Region),
-			FunctionName: types.StringValue(target.FunctionName),
-			AwsAuth:      GetAwsAuth(target.Authentication, plan),
-			Enveloped:    types.BoolValue(deref(target.Enveloped)),
+			Region:       rc.str("target.region", planStr(pt, func(t *AblyRuleTargetLambda) types.String { return t.Region }), types.StringValue(target.Region), false),
+			FunctionName: rc.str("target.function_name", planStr(pt, func(t *AblyRuleTargetLambda) types.String { return t.FunctionName }), types.StringValue(target.FunctionName), false),
+			AwsAuth:      GetAwsAuth(rc, target.Authentication, plan),
+			Enveloped:    rc.boolean("target.enveloped", planBool(pt, func(t *AblyRuleTargetLambda) types.Bool { return t.Enveloped }), optBoolValue(target.Enveloped), true),
 		}
 	case "http/zapier":
 		target, err := unmarshalTarget[control.ZapierRuleTarget](ablyRule.Target)
@@ -438,11 +459,14 @@ func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule) (AblyRule, 
 			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http/zapier target: %s", err.Error()))
 			return AblyRule{}, diags
 		}
-		headers := ToHeaders(target.Headers)
+		var pt *AblyRuleTargetZapier
+		if p, ok := plan.Target.(*AblyRuleTargetZapier); ok {
+			pt = p
+		}
 		respTarget = &AblyRuleTargetZapier{
-			Url:          types.StringValue(target.URL),
-			SigningKeyId: optStringValue(target.SigningKeyID),
-			Headers:      headers,
+			Url:          rc.str("target.url", planStr(pt, func(t *AblyRuleTargetZapier) types.String { return t.Url }), types.StringValue(target.URL), false),
+			SigningKeyId: rc.str("target.signing_key_id", planStr(pt, func(t *AblyRuleTargetZapier) types.String { return t.SigningKeyId }), optStringValue(target.SigningKeyID), true),
+			Headers:      rcSlice(rc, "target.headers", planSlice(pt, func(t *AblyRuleTargetZapier) []AblyRuleHeaders { return t.Headers }), ToHeaders(target.Headers), false),
 		}
 	case "http/cloudflare-worker":
 		target, err := unmarshalTarget[control.CloudflareWorkerRuleTarget](ablyRule.Target)
@@ -450,11 +474,14 @@ func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule) (AblyRule, 
 			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http/cloudflare-worker target: %s", err.Error()))
 			return AblyRule{}, diags
 		}
-		headers := ToHeaders(target.Headers)
+		var pt *AblyRuleTargetCloudflareWorker
+		if p, ok := plan.Target.(*AblyRuleTargetCloudflareWorker); ok {
+			pt = p
+		}
 		respTarget = &AblyRuleTargetCloudflareWorker{
-			Url:          types.StringValue(target.URL),
-			SigningKeyId: optStringValue(target.SigningKeyID),
-			Headers:      headers,
+			Url:          rc.str("target.url", planStr(pt, func(t *AblyRuleTargetCloudflareWorker) types.String { return t.Url }), types.StringValue(target.URL), false),
+			SigningKeyId: rc.str("target.signing_key_id", planStr(pt, func(t *AblyRuleTargetCloudflareWorker) types.String { return t.SigningKeyId }), optStringValue(target.SigningKeyID), true),
+			Headers:      rcSlice(rc, "target.headers", planSlice(pt, func(t *AblyRuleTargetCloudflareWorker) []AblyRuleHeaders { return t.Headers }), ToHeaders(target.Headers), false),
 		}
 	case "pulsar":
 		target, err := unmarshalTarget[control.PulsarRuleTarget](ablyRule.Target)
@@ -462,12 +489,9 @@ func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule) (AblyRule, 
 			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal pulsar target: %s", err.Error()))
 			return AblyRule{}, diags
 		}
-		// TlsTrustCerts is write-only in the API (accepted on create/update but
-		// never returned on read), so preserve whatever the user configured in
-		// state rather than overwriting it with nil from the API response.
-		var tlsTrustCerts []types.String
-		if p, ok := plan.Target.(*AblyRuleTargetPulsar); ok && p != nil {
-			tlsTrustCerts = p.TlsTrustCerts
+		var pt *AblyRuleTargetPulsar
+		if p, ok := plan.Target.(*AblyRuleTargetPulsar); ok {
+			pt = p
 		}
 		authMode := ""
 		authToken := ""
@@ -476,16 +500,16 @@ func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule) (AblyRule, 
 			authToken = target.Authentication.Token
 		}
 		respTarget = &AblyRuleTargetPulsar{
-			RoutingKey:    types.StringValue(target.RoutingKey),
-			Topic:         types.StringValue(target.Topic),
-			ServiceURL:    types.StringValue(target.ServiceURL),
-			TlsTrustCerts: tlsTrustCerts,
+			RoutingKey:    rc.str("target.routing_key", planStr(pt, func(t *AblyRuleTargetPulsar) types.String { return t.RoutingKey }), types.StringValue(target.RoutingKey), false),
+			Topic:         rc.str("target.topic", planStr(pt, func(t *AblyRuleTargetPulsar) types.String { return t.Topic }), types.StringValue(target.Topic), false),
+			ServiceURL:    rc.str("target.service_url", planStr(pt, func(t *AblyRuleTargetPulsar) types.String { return t.ServiceURL }), types.StringValue(target.ServiceURL), false),
+			TlsTrustCerts: rcSlice(rc, "target.tls_trust_certs", planSlice(pt, func(t *AblyRuleTargetPulsar) []types.String { return t.TlsTrustCerts }), toTypedStringSlice(target.TLSTrustCerts), false),
 			Authentication: PulsarAuthentication{
-				Mode:  types.StringValue(authMode),
-				Token: types.StringValue(authToken),
+				Mode:  rc.str("target.authentication.mode", planStr(pt, func(t *AblyRuleTargetPulsar) types.String { return t.Authentication.Mode }), types.StringValue(authMode), false),
+				Token: rc.str("target.authentication.token", planStr(pt, func(t *AblyRuleTargetPulsar) types.String { return t.Authentication.Token }), types.StringValue(authToken), false),
 			},
-			Enveloped: types.BoolValue(deref(target.Enveloped)),
-			Format:    types.StringValue(target.Format),
+			Enveloped: rc.boolean("target.enveloped", planBool(pt, func(t *AblyRuleTargetPulsar) types.Bool { return t.Enveloped }), optBoolValue(target.Enveloped), true),
+			Format:    rc.str("target.format", planStr(pt, func(t *AblyRuleTargetPulsar) types.String { return t.Format }), types.StringValue(target.Format), true),
 		}
 	case "http/ifttt":
 		target, err := unmarshalTarget[control.IFTTTRuleTarget](ablyRule.Target)
@@ -493,9 +517,13 @@ func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule) (AblyRule, 
 			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http/ifttt target: %s", err.Error()))
 			return AblyRule{}, diags
 		}
+		var pt *AblyRuleTargetIFTTT
+		if p, ok := plan.Target.(*AblyRuleTargetIFTTT); ok {
+			pt = p
+		}
 		respTarget = &AblyRuleTargetIFTTT{
-			EventName:  types.StringValue(target.EventName),
-			WebhookKey: types.StringValue(target.WebhookKey),
+			EventName:  rc.str("target.event_name", planStr(pt, func(t *AblyRuleTargetIFTTT) types.String { return t.EventName }), types.StringValue(target.EventName), false),
+			WebhookKey: rc.str("target.webhook_key", planStr(pt, func(t *AblyRuleTargetIFTTT) types.String { return t.WebhookKey }), types.StringValue(target.WebhookKey), false),
 		}
 	case "http/google-cloud-function":
 		target, err := unmarshalTarget[control.GoogleCloudFunctionRuleTarget](ablyRule.Target)
@@ -503,15 +531,18 @@ func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule) (AblyRule, 
 			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http/google-cloud-function target: %s", err.Error()))
 			return AblyRule{}, diags
 		}
-		headers := ToHeaders(target.Headers)
+		var pt *AblyRuleTargetGoogleFunction
+		if p, ok := plan.Target.(*AblyRuleTargetGoogleFunction); ok {
+			pt = p
+		}
 		respTarget = &AblyRuleTargetGoogleFunction{
-			Region:       types.StringValue(target.Region),
-			ProjectID:    types.StringValue(target.ProjectID),
-			FunctionName: types.StringValue(target.FunctionName),
-			Headers:      headers,
-			SigningKeyId: optStringValue(target.SigningKeyID),
-			Enveloped:    types.BoolValue(deref(target.Enveloped)),
-			Format:       types.StringValue(target.Format),
+			Region:       rc.str("target.region", planStr(pt, func(t *AblyRuleTargetGoogleFunction) types.String { return t.Region }), types.StringValue(target.Region), false),
+			ProjectID:    rc.str("target.project_id", planStr(pt, func(t *AblyRuleTargetGoogleFunction) types.String { return t.ProjectID }), types.StringValue(target.ProjectID), false),
+			FunctionName: rc.str("target.function_name", planStr(pt, func(t *AblyRuleTargetGoogleFunction) types.String { return t.FunctionName }), types.StringValue(target.FunctionName), false),
+			Headers:      rcSlice(rc, "target.headers", planSlice(pt, func(t *AblyRuleTargetGoogleFunction) []AblyRuleHeaders { return t.Headers }), ToHeaders(target.Headers), false),
+			SigningKeyId: rc.str("target.signing_key_id", planStr(pt, func(t *AblyRuleTargetGoogleFunction) types.String { return t.SigningKeyId }), optStringValue(target.SigningKeyID), true),
+			Enveloped:    rc.boolean("target.enveloped", planBool(pt, func(t *AblyRuleTargetGoogleFunction) types.Bool { return t.Enveloped }), optBoolValue(target.Enveloped), true),
+			Format:       rc.str("target.format", planStr(pt, func(t *AblyRuleTargetGoogleFunction) types.String { return t.Format }), types.StringValue(target.Format), true),
 		}
 	case "http/azure-function":
 		target, err := unmarshalTarget[control.AzureFunctionRuleTarget](ablyRule.Target)
@@ -519,14 +550,17 @@ func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule) (AblyRule, 
 			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http/azure-function target: %s", err.Error()))
 			return AblyRule{}, diags
 		}
-		headers := ToHeaders(target.Headers)
+		var pt *AblyRuleTargetAzureFunction
+		if p, ok := plan.Target.(*AblyRuleTargetAzureFunction); ok {
+			pt = p
+		}
 		respTarget = &AblyRuleTargetAzureFunction{
-			AzureAppID:        types.StringValue(target.AzureAppID),
-			AzureFunctionName: types.StringValue(target.AzureFunctionName),
-			Headers:           headers,
-			SigningKeyID:      optStringValue(target.SigningKeyID),
-			Enveloped:         types.BoolValue(deref(target.Enveloped)),
-			Format:            types.StringValue(target.Format),
+			AzureAppID:        rc.str("target.azure_app_id", planStr(pt, func(t *AblyRuleTargetAzureFunction) types.String { return t.AzureAppID }), types.StringValue(target.AzureAppID), false),
+			AzureFunctionName: rc.str("target.function_name", planStr(pt, func(t *AblyRuleTargetAzureFunction) types.String { return t.AzureFunctionName }), types.StringValue(target.AzureFunctionName), false),
+			Headers:           rcSlice(rc, "target.headers", planSlice(pt, func(t *AblyRuleTargetAzureFunction) []AblyRuleHeaders { return t.Headers }), ToHeaders(target.Headers), false),
+			SigningKeyID:      rc.str("target.signing_key_id", planStr(pt, func(t *AblyRuleTargetAzureFunction) types.String { return t.SigningKeyID }), optStringValue(target.SigningKeyID), true),
+			Enveloped:         rc.boolean("target.enveloped", planBool(pt, func(t *AblyRuleTargetAzureFunction) types.Bool { return t.Enveloped }), optBoolValue(target.Enveloped), true),
+			Format:            rc.str("target.format", planStr(pt, func(t *AblyRuleTargetAzureFunction) types.String { return t.Format }), types.StringValue(target.Format), true),
 		}
 	case "http":
 		target, err := unmarshalTarget[control.HTTPRuleTarget](ablyRule.Target)
@@ -534,19 +568,26 @@ func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule) (AblyRule, 
 			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http target: %s", err.Error()))
 			return AblyRule{}, diags
 		}
-		headers := ToHeaders(target.Headers)
+		var pt *AblyRuleTargetHTTP
+		if p, ok := plan.Target.(*AblyRuleTargetHTTP); ok {
+			pt = p
+		}
 		respTarget = &AblyRuleTargetHTTP{
-			Url:          types.StringValue(target.URL),
-			Headers:      headers,
-			SigningKeyId: optStringValue(target.SigningKeyID),
-			Format:       types.StringValue(target.Format),
-			Enveloped:    types.BoolValue(deref(target.Enveloped)),
+			Url:          rc.str("target.url", planStr(pt, func(t *AblyRuleTargetHTTP) types.String { return t.Url }), types.StringValue(target.URL), false),
+			Headers:      rcSlice(rc, "target.headers", planSlice(pt, func(t *AblyRuleTargetHTTP) []AblyRuleHeaders { return t.Headers }), ToHeaders(target.Headers), false),
+			SigningKeyId: rc.str("target.signing_key_id", planStr(pt, func(t *AblyRuleTargetHTTP) types.String { return t.SigningKeyId }), optStringValue(target.SigningKeyID), true),
+			Format:       rc.str("target.format", planStr(pt, func(t *AblyRuleTargetHTTP) types.String { return t.Format }), types.StringValue(target.Format), true),
+			Enveloped:    rc.boolean("target.enveloped", planBool(pt, func(t *AblyRuleTargetHTTP) types.Bool { return t.Enveloped }), optBoolValue(target.Enveloped), true),
 		}
 	case "kafka":
 		target, err := unmarshalTarget[control.KafkaRuleTarget](ablyRule.Target)
 		if err != nil {
 			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal kafka target: %s", err.Error()))
 			return AblyRule{}, diags
+		}
+		var pt *AblyRuleTargetKafka
+		if p, ok := plan.Target.(*AblyRuleTargetKafka); ok {
+			pt = p
 		}
 		saslMechanism := ""
 		saslUsername := ""
@@ -557,17 +598,17 @@ func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule) (AblyRule, 
 			saslPassword = target.Auth.SASL.Password
 		}
 		respTarget = &AblyRuleTargetKafka{
-			RoutingKey: types.StringValue(target.RoutingKey),
-			Brokers:    toTypedStringSlice(target.Brokers),
+			RoutingKey: rc.str("target.routing_key", planStr(pt, func(t *AblyRuleTargetKafka) types.String { return t.RoutingKey }), types.StringValue(target.RoutingKey), false),
+			Brokers:    rcSlice(rc, "target.brokers", planSlice(pt, func(t *AblyRuleTargetKafka) []types.String { return t.Brokers }), toTypedStringSlice(target.Brokers), false),
 			KafkaAuthentication: KafkaAuthentication{
 				Sasl{
-					Mechanism: types.StringValue(saslMechanism),
-					Username:  types.StringValue(saslUsername),
-					Password:  types.StringValue(saslPassword),
+					Mechanism: rc.str("target.auth.sasl.mechanism", planStr(pt, func(t *AblyRuleTargetKafka) types.String { return t.KafkaAuthentication.Sasl.Mechanism }), types.StringValue(saslMechanism), false),
+					Username:  rc.str("target.auth.sasl.username", planStr(pt, func(t *AblyRuleTargetKafka) types.String { return t.KafkaAuthentication.Sasl.Username }), types.StringValue(saslUsername), false),
+					Password:  rc.str("target.auth.sasl.password", planStr(pt, func(t *AblyRuleTargetKafka) types.String { return t.KafkaAuthentication.Sasl.Password }), types.StringValue(saslPassword), false),
 				},
 			},
-			Enveloped: types.BoolValue(deref(target.Enveloped)),
-			Format:    types.StringValue(target.Format),
+			Enveloped: rc.boolean("target.enveloped", planBool(pt, func(t *AblyRuleTargetKafka) types.Bool { return t.Enveloped }), optBoolValue(target.Enveloped), true),
+			Format:    rc.str("target.format", planStr(pt, func(t *AblyRuleTargetKafka) types.String { return t.Format }), types.StringValue(target.Format), true),
 		}
 	case "amqp":
 		target, err := unmarshalTarget[control.AMQPRuleTarget](ablyRule.Target)
@@ -575,12 +616,15 @@ func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule) (AblyRule, 
 			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal amqp target: %s", err.Error()))
 			return AblyRule{}, diags
 		}
-		headers := ToHeaders(target.Headers)
+		var pt *AblyRuleTargetAMQP
+		if p, ok := plan.Target.(*AblyRuleTargetAMQP); ok {
+			pt = p
+		}
 		respTarget = &AblyRuleTargetAMQP{
-			QueueID:   types.StringValue(target.QueueID),
-			Headers:   headers,
-			Enveloped: types.BoolValue(deref(target.Enveloped)),
-			Format:    types.StringValue(target.Format),
+			QueueID:   rc.str("target.queue_id", planStr(pt, func(t *AblyRuleTargetAMQP) types.String { return t.QueueID }), types.StringValue(target.QueueID), false),
+			Headers:   rcSlice(rc, "target.headers", planSlice(pt, func(t *AblyRuleTargetAMQP) []AblyRuleHeaders { return t.Headers }), ToHeaders(target.Headers), false),
+			Enveloped: rc.boolean("target.enveloped", planBool(pt, func(t *AblyRuleTargetAMQP) types.Bool { return t.Enveloped }), optBoolValue(target.Enveloped), true),
+			Format:    rc.str("target.format", planStr(pt, func(t *AblyRuleTargetAMQP) types.String { return t.Format }), types.StringValue(target.Format), true),
 		}
 	case "amqp/external":
 		target, err := unmarshalTarget[control.AMQPExternalRuleTarget](ablyRule.Target)
@@ -588,43 +632,20 @@ func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule) (AblyRule, 
 			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal amqp/external target: %s", err.Error()))
 			return AblyRule{}, diags
 		}
-		headers := ToHeaders(target.Headers)
-
-		// Several target fields are not required in the API response and may
-		// be omitted. When the plan provided values for these fields, preserve
-		// them so Terraform doesn't see a diff (the target block contains the
-		// sensitive "url" field, so ANY field mismatch triggers the opaque
-		// "inconsistent values for sensitive attribute" error).
-		url := types.StringValue(target.URL)
-		exchange := types.StringNull()
-		if target.Exchange != "" {
-			exchange = types.StringValue(target.Exchange)
-		}
-		ttl := types.Int64Null()
-		if target.MessageTTL != nil && *target.MessageTTL != 0 {
-			ttl = types.Int64Value(int64(*target.MessageTTL))
-		}
-		if p, ok := plan.Target.(*AblyRuleTargetAMQPExternal); ok && p != nil {
-			if !p.Url.IsNull() {
-				url = p.Url
-			}
-			if target.Exchange == "" {
-				exchange = p.Exchange
-			}
-			if ttl.IsNull() && !p.MessageTtl.IsNull() {
-				ttl = p.MessageTtl
-			}
+		var pt *AblyRuleTargetAMQPExternal
+		if p, ok := plan.Target.(*AblyRuleTargetAMQPExternal); ok {
+			pt = p
 		}
 		respTarget = &AblyRuleTargetAMQPExternal{
-			Url:                url,
-			RoutingKey:         types.StringValue(target.RoutingKey),
-			Exchange:           exchange,
-			MandatoryRoute:     types.BoolValue(deref(target.MandatoryRoute)),
-			PersistentMessages: types.BoolValue(deref(target.PersistentMessages)),
-			MessageTtl:         ttl,
-			Headers:            headers,
-			Enveloped:          types.BoolValue(deref(target.Enveloped)),
-			Format:             types.StringValue(target.Format),
+			Url:                rc.str("target.url", planStr(pt, func(t *AblyRuleTargetAMQPExternal) types.String { return t.Url }), types.StringValue(target.URL), false),
+			RoutingKey:         rc.str("target.routing_key", planStr(pt, func(t *AblyRuleTargetAMQPExternal) types.String { return t.RoutingKey }), types.StringValue(target.RoutingKey), false),
+			Exchange:           rc.str("target.exchange", planStr(pt, func(t *AblyRuleTargetAMQPExternal) types.String { return t.Exchange }), optStringValue(&target.Exchange), false),
+			MandatoryRoute:     rc.boolean("target.mandatory_route", planBool(pt, func(t *AblyRuleTargetAMQPExternal) types.Bool { return t.MandatoryRoute }), optBoolValue(target.MandatoryRoute), false),
+			PersistentMessages: rc.boolean("target.persistent_messages", planBool(pt, func(t *AblyRuleTargetAMQPExternal) types.Bool { return t.PersistentMessages }), optBoolValue(target.PersistentMessages), false),
+			MessageTtl:         rc.int64val("target.message_ttl", planInt64(pt, func(t *AblyRuleTargetAMQPExternal) types.Int64 { return t.MessageTtl }), optIntFromIntPtr(target.MessageTTL), false),
+			Headers:            rcSlice(rc, "target.headers", planSlice(pt, func(t *AblyRuleTargetAMQPExternal) []AblyRuleHeaders { return t.Headers }), ToHeaders(target.Headers), false),
+			Enveloped:          rc.boolean("target.enveloped", planBool(pt, func(t *AblyRuleTargetAMQPExternal) types.Bool { return t.Enveloped }), optBoolValue(target.Enveloped), true),
+			Format:             rc.str("target.format", planStr(pt, func(t *AblyRuleTargetAMQPExternal) types.String { return t.Format }), types.StringValue(target.Format), true),
 		}
 	default:
 		diags.AddError(
@@ -632,6 +653,11 @@ func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule) (AblyRule, 
 			fmt.Sprintf("Received unrecognized rule type from API: %q", ablyRule.RuleType),
 		)
 		return AblyRule{}, diags
+	}
+
+	var planSource *AblyRuleSource
+	if plan.Source != nil {
+		planSource = plan.Source
 	}
 
 	channelFilter := types.StringNull()
@@ -645,17 +671,16 @@ func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule) (AblyRule, 
 	}
 
 	respSource := AblyRuleSource{
-		ChannelFilter: channelFilter,
-		Type:          types.StringValue(sourceType),
+		ChannelFilter: rc.str("source.channel_filter", planStr(planSource, func(s *AblyRuleSource) types.String { return s.ChannelFilter }), channelFilter, false),
+		Type:          rc.str("source.type", planStr(planSource, func(s *AblyRuleSource) types.String { return s.Type }), types.StringValue(sourceType), false),
 	}
-
 	respRule := AblyRule{
-		ID:          types.StringValue(ablyRule.ID),
-		AppID:       types.StringValue(ablyRule.AppID),
-		Status:      types.StringValue(ablyRule.Status),
+		ID:          rc.str("id", plan.ID, types.StringValue(ablyRule.ID), true),
+		AppID:       rc.str("app_id", plan.AppID, types.StringValue(ablyRule.AppID), false),
+		Status:      rc.str("status", plan.Status, types.StringValue(ablyRule.Status), true),
 		Source:      &respSource,
 		Target:      respTarget,
-		RequestMode: types.StringValue(ablyRule.RequestMode),
+		RequestMode: rc.str("request_mode", plan.RequestMode, types.StringValue(ablyRule.RequestMode), true),
 	}
 
 	return respRule, diags
@@ -835,7 +860,7 @@ func CreateRule[T any](r Rule, ctx context.Context, req resource.CreateRequest, 
 		return
 	}
 
-	responseValues, respDiags := GetRuleResponse(&rule, &plan)
+	responseValues, respDiags := GetRuleResponse(&rule, &plan, false)
 	resp.Diagnostics.Append(respDiags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -881,7 +906,7 @@ func ReadRule[T any](r Rule, ctx context.Context, req resource.ReadRequest, resp
 		return
 	}
 
-	responseValues, respDiags := GetRuleResponse(&rule, &state)
+	responseValues, respDiags := GetRuleResponse(&rule, &state, true)
 	resp.Diagnostics.Append(respDiags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -930,7 +955,7 @@ func UpdateRule[T any](r Rule, ctx context.Context, req resource.UpdateRequest, 
 		return
 	}
 
-	responseValues, respDiags := GetRuleResponse(&rule, &plan)
+	responseValues, respDiags := GetRuleResponse(&rule, &plan, false)
 	resp.Diagnostics.Append(respDiags...)
 	if resp.Diagnostics.HasError() {
 		return

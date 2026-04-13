@@ -106,6 +106,44 @@ resource "ably_queue" "queue0" {
 `, appName, queue.Name, queue.TTL, queue.MaxLength, queue.Region)
 }
 
+func TestAccAblyQueue_Minimal(t *testing.T) {
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	config := fmt.Sprintf(`%s
+resource "ably_app" "app0" {
+	name = %q
+}
+
+resource "ably_queue" "q0" {
+	app_id     = ably_app.app0.id
+	name       = "minimal-queue"
+	ttl        = 60
+	max_length = 10000
+	region     = "us-east-1-a"
+}
+`, tfProvider, appName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("ably_queue.q0", "id"),
+					resource.TestCheckResourceAttr("ably_queue.q0", "name", "minimal-queue"),
+					resource.TestCheckResourceAttr("ably_queue.q0", "ttl", "60"),
+					resource.TestCheckResourceAttr("ably_queue.q0", "max_length", "10000"),
+					resource.TestCheckResourceAttr("ably_queue.q0", "region", "us-east-1-a"),
+				),
+			},
+			{
+				Config:   config,
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 func TestAccAblyQueue_InvalidTTL(t *testing.T) {
 	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
 	resource.Test(t, resource.TestCase{

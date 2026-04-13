@@ -25,13 +25,12 @@ func (m defaultBoolModifier) MarkdownDescription(ctx context.Context) string {
 }
 
 func (m defaultBoolModifier) PlanModifyBool(_ context.Context, req planmodifier.BoolRequest, resp *planmodifier.BoolResponse) {
-	if resp.PlanValue.IsUnknown() || req.ConfigValue.IsUnknown() {
+	if req.ConfigValue.IsUnknown() {
 		return
 	}
-	if !req.ConfigValue.IsNull() || !req.PlanValue.IsNull() {
-		return
+	if req.ConfigValue.IsNull() && (resp.PlanValue.IsNull() || resp.PlanValue.IsUnknown()) {
+		resp.PlanValue = m.value
 	}
-	resp.PlanValue = m.value
 }
 
 // DefaultBoolAttribute returns a plan modifier that sets a default bool value.
@@ -109,13 +108,12 @@ func (m defaultInt64Modifier) MarkdownDescription(ctx context.Context) string {
 }
 
 func (m defaultInt64Modifier) PlanModifyInt64(_ context.Context, req planmodifier.Int64Request, resp *planmodifier.Int64Response) {
-	if resp.PlanValue.IsUnknown() || req.ConfigValue.IsUnknown() {
+	if req.ConfigValue.IsUnknown() {
 		return
 	}
-	if !req.ConfigValue.IsNull() || !req.PlanValue.IsNull() {
-		return
+	if req.ConfigValue.IsNull() && (resp.PlanValue.IsNull() || resp.PlanValue.IsUnknown()) {
+		resp.PlanValue = m.value
 	}
-	resp.PlanValue = m.value
 }
 
 // DefaultInt64Attribute returns a plan modifier that sets a default int64 value.
@@ -137,13 +135,15 @@ func (m defaultStringModifier) MarkdownDescription(ctx context.Context) string {
 }
 
 func (m defaultStringModifier) PlanModifyString(_ context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
-	if resp.PlanValue.IsUnknown() || req.ConfigValue.IsUnknown() {
+	if req.ConfigValue.IsUnknown() {
 		return
 	}
-	if !req.ConfigValue.IsNull() || !req.PlanValue.IsNull() {
-		return
+	// Set default when config is null and the plan doesn't already carry
+	// a concrete value (e.g. from prior state). This covers both Create
+	// (PlanValue is Unknown for Computed fields) and Update with null state.
+	if req.ConfigValue.IsNull() && (resp.PlanValue.IsNull() || resp.PlanValue.IsUnknown()) {
+		resp.PlanValue = m.value
 	}
-	resp.PlanValue = m.value
 }
 
 // DefaultStringAttribute returns a plan modifier that sets a default string value.
