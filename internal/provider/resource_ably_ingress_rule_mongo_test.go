@@ -86,6 +86,37 @@ func TestAccAblyIngressRuleMongo(t *testing.T) {
 	})
 }
 
+func TestAccAblyIngressRuleMongo_Minimal(t *testing.T) {
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	config := minimalIngressRuleConfig(appName, "ably_ingress_rule_mongodb", `target = {
+		url                          = "mongodb://user:pass@example.com:27017"
+		database                     = "testdb"
+		collection                   = "testcol"
+		pipeline                     = "[]"
+		full_document                = "updateLookup"
+		full_document_before_change  = "off"
+		primary_site                 = "us-east-1-A"
+	}`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("ably_ingress_rule_mongodb.rule0", "id"),
+					resource.TestCheckResourceAttr("ably_ingress_rule_mongodb.rule0", "status", "enabled"),
+				),
+			},
+			{
+				Config:   config,
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 // Function with inline HCL to provision an ably_app resource
 func testAccAblyIngressRuleMongoConfig(
 	appName string,

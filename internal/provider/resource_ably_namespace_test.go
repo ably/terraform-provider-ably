@@ -302,6 +302,49 @@ resource "ably_namespace" "namespace0" {
 	)
 }
 
+func TestAccAblyNamespace_Minimal(t *testing.T) {
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	config := fmt.Sprintf(`%s
+resource "ably_app" "app0" {
+	name = %q
+}
+
+resource "ably_namespace" "ns0" {
+	app_id = ably_app.app0.id
+	id     = "minimal-ns"
+}
+`, tfProvider, appName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("ably_namespace.ns0", "app_id"),
+					resource.TestCheckResourceAttr("ably_namespace.ns0", "id", "minimal-ns"),
+					// Optional+Computed defaults (all false)
+					resource.TestCheckResourceAttr("ably_namespace.ns0", "authenticated", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.ns0", "persisted", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.ns0", "persist_last", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.ns0", "push_enabled", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.ns0", "tls_only", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.ns0", "expose_timeserial", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.ns0", "mutable_messages", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.ns0", "populate_channel_registry", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.ns0", "batching_enabled", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.ns0", "conflation_enabled", "false"),
+				),
+			},
+			{
+				Config:   config,
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 func TestAccAblyNamespace_InvalidBatchingInterval(t *testing.T) {
 	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
 	resource.Test(t, resource.TestCase{
