@@ -7,6 +7,7 @@ import (
 	"github.com/ably/terraform-provider-ably/control"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -63,14 +64,14 @@ func (r *ResourceKey) Schema(ctx context.Context, req resource.SchemaRequest, re
 				Computed:    true,
 				Description: "The status of the key. 0 is enabled, 1 is revoked.",
 				PlanModifiers: []planmodifier.Int64{
-					DefaultInt64Attribute(types.Int64Value(0)),
+					int64planmodifier.UseStateForUnknown(),
 				},
 			},
 			"created": schema.Int64Attribute{
 				Computed:    true,
 				Description: "The timestamp of when the key was created.",
 				PlanModifiers: []planmodifier.Int64{
-					DefaultInt64Attribute(types.Int64Value(0)),
+					int64planmodifier.UseStateForUnknown(),
 				},
 			},
 			"key": schema.StringAttribute{
