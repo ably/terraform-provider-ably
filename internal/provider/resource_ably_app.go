@@ -93,7 +93,7 @@ func (r ResourceApp) Schema(ctx context.Context, req resource.SchemaRequest, res
 				Description: "Enforce TLS for all connections. This setting overrides any channel setting.",
 				Computed:    true,
 				PlanModifiers: []planmodifier.Bool{
-					DefaultBoolAttribute(types.BoolValue(false)),
+					DefaultBoolAttribute(types.BoolValue(true)),
 				},
 			},
 			"fcm_key": schema.StringAttribute{
@@ -189,6 +189,34 @@ func (r ResourceApp) Metadata(ctx context.Context, req resource.MetadataRequest,
 	resp.TypeName = "ably_app"
 }
 
+// buildAppState reconciles plan/state input with an API response into an AblyAppState.
+// For Create/Update, pass the plan as input. For Read, pass the prior state.
+func buildAppState(rc *reconciler, input AblyAppState, api control.AppResponse) AblyAppState {
+	return AblyAppState{
+		AccountID:                   rc.str("account_id", input.AccountID, types.StringValue(api.AccountID), true),
+		ID:                          rc.str("id", input.ID, types.StringValue(api.ID), true),
+		Name:                        rc.str("name", input.Name, types.StringValue(api.Name), false),
+		Status:                      rc.str("status", input.Status, types.StringValue(api.Status), true),
+		TLSOnly:                     rc.boolean("tls_only", input.TLSOnly, optBoolValue(api.TLSOnly), true),
+		FcmKey:                      rc.str("fcm_key", input.FcmKey, types.StringNull(), false),
+		FcmServiceAccount:           rc.str("fcm_service_account", input.FcmServiceAccount, types.StringNull(), false),
+		FcmProjectId:                rc.str("fcm_project_id", input.FcmProjectId, optStringValue(api.FCMProjectID), false),
+		FcmServiceAccountConfigured: rc.boolean("fcm_service_account_configured", input.FcmServiceAccountConfigured, optBoolValue(api.FCMServiceAccountConfigured), true),
+		ApnsCertificate:             rc.str("apns_certificate", input.ApnsCertificate, types.StringNull(), false),
+		ApnsPrivateKey:              rc.str("apns_private_key", input.ApnsPrivateKey, types.StringNull(), false),
+		ApnsUseSandboxEndpoint:      rc.boolean("apns_use_sandbox_endpoint", input.ApnsUseSandboxEndpoint, optBoolValue(api.APNSUseSandboxEndpoint), true),
+		ApnsAuthType:                rc.str("apns_auth_type", input.ApnsAuthType, optStringValue(api.APNSAuthType), true),
+		ApnsSigningKey:              rc.str("apns_signing_key", input.ApnsSigningKey, types.StringNull(), false),
+		ApnsSigningKeyId:            rc.str("apns_signing_key_id", input.ApnsSigningKeyId, optStringValue(api.APNSSigningKeyID), true),
+		ApnsIssuerKey:               rc.str("apns_issuer_key", input.ApnsIssuerKey, optStringValue(api.APNSIssuerKey), true),
+		ApnsTopicHeader:             rc.str("apns_topic_header", input.ApnsTopicHeader, optStringValue(api.APNSTopicHeader), true),
+		ApnsCertificateConfigured:   rc.boolean("apns_certificate_configured", input.ApnsCertificateConfigured, optBoolValue(api.APNSCertificateConfigured), true),
+		ApnsSigningKeyConfigured:    rc.boolean("apns_signing_key_configured", input.ApnsSigningKeyConfigured, optBoolValue(api.APNSSigningKeyConfigured), true),
+		Created:                     rc.str("created", input.Created, types.StringValue(formatTimestamp(api.Created)), true),
+		Modified:                    rc.str("modified", input.Modified, types.StringValue(formatTimestamp(api.Modified)), true),
+	}
+}
+
 // Create creates a new resource.
 func (r ResourceApp) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.ensureConfigured(&resp.Diagnostics) {
@@ -259,33 +287,11 @@ func (r ResourceApp) Create(ctx context.Context, req resource.CreateRequest, res
 	}
 
 	// Maps response body to resource schema attributes.
-	respApps := AblyAppState{
-		AccountID:                   types.StringValue(ablyApp.AccountID),
-		ID:                          types.StringValue(ablyApp.ID),
-		Name:                        types.StringValue(ablyApp.Name),
-		Status:                      types.StringValue(ablyApp.Status),
-		TLSOnly:                     types.BoolValue(deref(ablyApp.TLSOnly)),
-		FcmKey:                      plan.FcmKey,
-		FcmServiceAccount:           plan.FcmServiceAccount,
-		FcmProjectId:                optStringValue(ablyApp.FCMProjectID),
-		FcmServiceAccountConfigured: types.BoolValue(deref(ablyApp.FCMServiceAccountConfigured)),
-		ApnsCertificate:             plan.ApnsCertificate,
-		ApnsPrivateKey:              plan.ApnsPrivateKey,
-		ApnsUseSandboxEndpoint:      types.BoolValue(deref(ablyApp.APNSUseSandboxEndpoint)),
-		ApnsAuthType:                optStringValue(ablyApp.APNSAuthType),
-		ApnsSigningKey:              plan.ApnsSigningKey,
-		ApnsSigningKeyId:            optStringValue(ablyApp.APNSSigningKeyID),
-		ApnsIssuerKey:               optStringValue(ablyApp.APNSIssuerKey),
-		ApnsTopicHeader:             optStringValue(ablyApp.APNSTopicHeader),
-		ApnsCertificateConfigured:   types.BoolValue(deref(ablyApp.APNSCertificateConfigured)),
-		ApnsSigningKeyConfigured:    types.BoolValue(deref(ablyApp.APNSSigningKeyConfigured)),
-		Created:                     types.StringValue(formatTimestamp(ablyApp.Created)),
-		Modified:                    types.StringValue(formatTimestamp(ablyApp.Modified)),
+	rc := newReconciler(&resp.Diagnostics)
+	respApps := buildAppState(rc, plan, ablyApp)
+	if resp.Diagnostics.HasError() {
+		return
 	}
-	emptyStringToNull(&respApps.FcmKey)
-	emptyStringToNull(&respApps.ApnsCertificate)
-	emptyStringToNull(&respApps.ApnsPrivateKey)
-	emptyStringToNull(&respApps.ApnsSigningKey)
 
 	// Sets state for the new Ably App.
 	diags = resp.State.Set(ctx, respApps)
@@ -328,33 +334,11 @@ func (r ResourceApp) Read(ctx context.Context, req resource.ReadRequest, resp *r
 	// Loops through apps and if account id matches, sets state.
 	for _, v := range apps {
 		if v.ID == appID {
-			respApps := AblyAppState{
-				AccountID:                   types.StringValue(v.AccountID),
-				ID:                          types.StringValue(v.ID),
-				Name:                        types.StringValue(v.Name),
-				Status:                      types.StringValue(v.Status),
-				TLSOnly:                     types.BoolValue(deref(v.TLSOnly)),
-				FcmKey:                      state.FcmKey,
-				FcmServiceAccount:           state.FcmServiceAccount,
-				FcmProjectId:                optStringValue(v.FCMProjectID),
-				FcmServiceAccountConfigured: types.BoolValue(deref(v.FCMServiceAccountConfigured)),
-				ApnsCertificate:             state.ApnsCertificate,
-				ApnsPrivateKey:              state.ApnsPrivateKey,
-				ApnsUseSandboxEndpoint:      types.BoolValue(deref(v.APNSUseSandboxEndpoint)),
-				ApnsAuthType:                optStringValue(v.APNSAuthType),
-				ApnsSigningKey:              state.ApnsSigningKey,
-				ApnsSigningKeyId:            optStringValue(v.APNSSigningKeyID),
-				ApnsIssuerKey:               optStringValue(v.APNSIssuerKey),
-				ApnsTopicHeader:             optStringValue(v.APNSTopicHeader),
-				ApnsCertificateConfigured:   types.BoolValue(deref(v.APNSCertificateConfigured)),
-				ApnsSigningKeyConfigured:    types.BoolValue(deref(v.APNSSigningKeyConfigured)),
-				Created:                     types.StringValue(formatTimestamp(v.Created)),
-				Modified:                    types.StringValue(formatTimestamp(v.Modified)),
+			rc := newReconciler(&resp.Diagnostics).forRead()
+			respApps := buildAppState(rc, state, v)
+			if resp.Diagnostics.HasError() {
+				return
 			}
-			emptyStringToNull(&respApps.FcmKey)
-			emptyStringToNull(&respApps.ApnsCertificate)
-			emptyStringToNull(&respApps.ApnsPrivateKey)
-			emptyStringToNull(&respApps.ApnsSigningKey)
 			found = true
 
 			// Sets state to app values.
@@ -453,33 +437,11 @@ func (r ResourceApp) Update(ctx context.Context, req resource.UpdateRequest, res
 		return
 	}
 
-	respApps := AblyAppState{
-		ID:                          types.StringValue(ablyApp.ID),
-		AccountID:                   types.StringValue(ablyApp.AccountID),
-		Name:                        types.StringValue(ablyApp.Name),
-		Status:                      types.StringValue(ablyApp.Status),
-		TLSOnly:                     types.BoolValue(deref(ablyApp.TLSOnly)),
-		FcmKey:                      plan.FcmKey,
-		FcmServiceAccount:           plan.FcmServiceAccount,
-		FcmProjectId:                optStringValue(ablyApp.FCMProjectID),
-		FcmServiceAccountConfigured: types.BoolValue(deref(ablyApp.FCMServiceAccountConfigured)),
-		ApnsCertificate:             plan.ApnsCertificate,
-		ApnsPrivateKey:              plan.ApnsPrivateKey,
-		ApnsUseSandboxEndpoint:      types.BoolValue(deref(ablyApp.APNSUseSandboxEndpoint)),
-		ApnsAuthType:                optStringValue(ablyApp.APNSAuthType),
-		ApnsSigningKey:              plan.ApnsSigningKey,
-		ApnsSigningKeyId:            optStringValue(ablyApp.APNSSigningKeyID),
-		ApnsIssuerKey:               optStringValue(ablyApp.APNSIssuerKey),
-		ApnsTopicHeader:             optStringValue(ablyApp.APNSTopicHeader),
-		ApnsCertificateConfigured:   types.BoolValue(deref(ablyApp.APNSCertificateConfigured)),
-		ApnsSigningKeyConfigured:    types.BoolValue(deref(ablyApp.APNSSigningKeyConfigured)),
-		Created:                     types.StringValue(formatTimestamp(ablyApp.Created)),
-		Modified:                    types.StringValue(formatTimestamp(ablyApp.Modified)),
+	rc := newReconciler(&resp.Diagnostics)
+	respApps := buildAppState(rc, plan, ablyApp)
+	if resp.Diagnostics.HasError() {
+		return
 	}
-	emptyStringToNull(&respApps.FcmKey)
-	emptyStringToNull(&respApps.ApnsCertificate)
-	emptyStringToNull(&respApps.ApnsPrivateKey)
-	emptyStringToNull(&respApps.ApnsSigningKey)
 
 	// Sets state to new app.
 	diags = resp.State.Set(ctx, respApps)

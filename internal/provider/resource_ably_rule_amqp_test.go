@@ -109,6 +109,54 @@ func TestAccAblyRuleAMQP(t *testing.T) {
 	})
 }
 
+func TestAccAblyRuleAMQP_Minimal(t *testing.T) {
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	config := fmt.Sprintf(`%s
+resource "ably_app" "app0" {
+	name = %q
+}
+
+resource "ably_queue" "q0" {
+	app_id     = ably_app.app0.id
+	name       = "minimal-amqp-queue"
+	ttl        = 60
+	max_length = 10000
+	region     = "us-east-1-a"
+}
+
+resource "ably_rule_amqp" "rule0" {
+	app_id = ably_app.app0.id
+
+	source = {
+		type = "channel.message"
+	}
+
+	target = {
+		queue_id = ably_queue.q0.id
+	}
+}
+`, tfProvider, appName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("ably_rule_amqp.rule0", "id"),
+					resource.TestCheckResourceAttr("ably_rule_amqp.rule0", "status", "enabled"),
+					resource.TestCheckResourceAttr("ably_rule_amqp.rule0", "request_mode", "single"),
+				),
+			},
+			{
+				Config:   config,
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 // Function with inline HCL to provision an ably_app resource
 func testAccAblyRuleAMQPConfig(
 	appName string,

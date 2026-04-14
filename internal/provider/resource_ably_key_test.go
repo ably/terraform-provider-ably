@@ -108,3 +108,41 @@ resource "ably_api_key" "key0" {
   }
 `, appName, keyName, keyCapabilityName0, keyCapabilityCap0, revocableTokens)
 }
+
+func TestAccAblyKey_Minimal(t *testing.T) {
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	config := fmt.Sprintf(`%s
+resource "ably_app" "app0" {
+	name = %q
+}
+
+resource "ably_api_key" "key0" {
+	app_id = ably_app.app0.id
+	name   = "minimal-key"
+	capabilities = {
+		"channel" = ["publish"]
+	}
+}
+`, tfProvider, appName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("ably_api_key.key0", "id"),
+					resource.TestCheckResourceAttrSet("ably_api_key.key0", "key"),
+					resource.TestCheckResourceAttr("ably_api_key.key0", "name", "minimal-key"),
+					// Optional+Computed default
+					resource.TestCheckResourceAttr("ably_api_key.key0", "revocable_tokens", "false"),
+				),
+			},
+			{
+				Config:   config,
+				PlanOnly: true,
+			},
+		},
+	})
+}
