@@ -154,6 +154,35 @@ func (r ResourceNamespace) Schema(_ context.Context, _ resource.SchemaRequest, r
 	}
 }
 
+// buildNamespaceState reconciles plan/state input with an API response.
+func buildNamespaceState(rc *reconciler, input AblyNamespace, api control.NamespaceResponse) AblyNamespace {
+	ns := AblyNamespace{
+		AppID:                   rc.str("app_id", input.AppID, types.StringValue(api.AppID), false),
+		ID:                      rc.str("id", input.ID, types.StringValue(api.ID), false),
+		Authenticated:           rc.boolean("authenticated", input.Authenticated, types.BoolValue(api.Authenticated), true),
+		Persisted:               rc.boolean("persisted", input.Persisted, types.BoolValue(api.Persisted), true),
+		PersistLast:             rc.boolean("persist_last", input.PersistLast, types.BoolValue(api.PersistLast), true),
+		PushEnabled:             rc.boolean("push_enabled", input.PushEnabled, types.BoolValue(api.PushEnabled), true),
+		TlsOnly:                 rc.boolean("tls_only", input.TlsOnly, types.BoolValue(api.TLSOnly), true),
+		ExposeTimeserial:        rc.boolean("expose_timeserial", input.ExposeTimeserial, types.BoolValue(api.ExposeTimeserial), true),
+		MutableMessages:         rc.boolean("mutable_messages", input.MutableMessages, types.BoolValue(api.MutableMessages), true),
+		PopulateChannelRegistry: rc.boolean("populate_channel_registry", input.PopulateChannelRegistry, types.BoolValue(api.PopulateChannelRegistry), true),
+		BatchingEnabled:         rc.boolean("batching_enabled", input.BatchingEnabled, optBoolValue(api.BatchingEnabled), true),
+		ConflationEnabled:       rc.boolean("conflation_enabled", input.ConflationEnabled, optBoolValue(api.ConflationEnabled), true),
+	}
+
+	if api.BatchingEnabled != nil && *api.BatchingEnabled {
+		ns.BatchingInterval = rc.int64val("batching_interval", input.BatchingInterval, optIntValue(api.BatchingInterval), true)
+	}
+
+	if api.ConflationEnabled != nil && *api.ConflationEnabled {
+		ns.ConflationInterval = rc.int64val("conflation_interval", input.ConflationInterval, optIntValue(api.ConflationInterval), true)
+		ns.ConflationKey = rc.str("conflation_key", input.ConflationKey, optStringValue(api.ConflationKey), true)
+	}
+
+	return ns
+}
+
 // Create creates a new resource.
 func (r ResourceNamespace) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.ensureConfigured(&resp.Diagnostics) {
@@ -210,32 +239,14 @@ func (r ResourceNamespace) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	// Maps response body to resource schema attributes.
-	respApps := AblyNamespace{
-		AppID:                   types.StringValue(plan.AppID.ValueString()),
-		ID:                      types.StringValue(ablyNamespace.ID),
-		Authenticated:           types.BoolValue(ablyNamespace.Authenticated),
-		Persisted:               types.BoolValue(ablyNamespace.Persisted),
-		PersistLast:             types.BoolValue(ablyNamespace.PersistLast),
-		PushEnabled:             types.BoolValue(ablyNamespace.PushEnabled),
-		TlsOnly:                 types.BoolValue(ablyNamespace.TLSOnly),
-		ExposeTimeserial:        types.BoolValue(ablyNamespace.ExposeTimeserial),
-		MutableMessages:         types.BoolValue(ablyNamespace.MutableMessages),
-		PopulateChannelRegistry: types.BoolValue(ablyNamespace.PopulateChannelRegistry),
-		BatchingEnabled:         optBoolValue(ablyNamespace.BatchingEnabled),
-		ConflationEnabled:       optBoolValue(ablyNamespace.ConflationEnabled),
+	rc := newReconciler(&resp.Diagnostics)
+	respNs := buildNamespaceState(rc, plan, ablyNamespace)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	if ablyNamespace.BatchingEnabled != nil && *ablyNamespace.BatchingEnabled {
-		respApps.BatchingInterval = optIntValue(ablyNamespace.BatchingInterval)
-	}
-
-	if ablyNamespace.ConflationEnabled != nil && *ablyNamespace.ConflationEnabled {
-		respApps.ConflationInterval = optIntValue(ablyNamespace.ConflationInterval)
-		respApps.ConflationKey = optStringValue(ablyNamespace.ConflationKey)
-	}
-
-	// Sets state for the new Ably App.
-	diags = resp.State.Set(ctx, respApps)
+	// Sets state for the new Ably namespace.
+	diags = resp.State.Set(ctx, respNs)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -284,32 +295,14 @@ func (r ResourceNamespace) Read(ctx context.Context, req resource.ReadRequest, r
 	// Loops through namespaces and if id matches, sets state.
 	for _, v := range namespaces {
 		if v.ID == namespaceID {
-			respNamespaces := AblyNamespace{
-				AppID:                   types.StringValue(appID),
-				ID:                      types.StringValue(namespaceID),
-				Authenticated:           types.BoolValue(v.Authenticated),
-				Persisted:               types.BoolValue(v.Persisted),
-				PersistLast:             types.BoolValue(v.PersistLast),
-				PushEnabled:             types.BoolValue(v.PushEnabled),
-				TlsOnly:                 types.BoolValue(v.TLSOnly),
-				ExposeTimeserial:        types.BoolValue(v.ExposeTimeserial),
-				MutableMessages:         types.BoolValue(v.MutableMessages),
-				PopulateChannelRegistry: types.BoolValue(v.PopulateChannelRegistry),
-				BatchingEnabled:         optBoolValue(v.BatchingEnabled),
-				ConflationEnabled:       optBoolValue(v.ConflationEnabled),
-			}
-
-			if v.BatchingEnabled != nil && *v.BatchingEnabled {
-				respNamespaces.BatchingInterval = optIntValue(v.BatchingInterval)
-			}
-
-			if v.ConflationEnabled != nil && *v.ConflationEnabled {
-				respNamespaces.ConflationInterval = optIntValue(v.ConflationInterval)
-				respNamespaces.ConflationKey = optStringValue(v.ConflationKey)
+			rc := newReconciler(&resp.Diagnostics).forRead()
+			respNs := buildNamespaceState(rc, state, v)
+			if resp.Diagnostics.HasError() {
+				return
 			}
 
 			// Sets state to namespace values.
-			diags = resp.State.Set(ctx, &respNamespaces)
+			diags = resp.State.Set(ctx, &respNs)
 			found = true
 
 			resp.Diagnostics.Append(diags...)
@@ -385,32 +378,14 @@ func (r ResourceNamespace) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	respNamespaces := AblyNamespace{
-		AppID:                   types.StringValue(appID),
-		ID:                      types.StringValue(ablyNamespace.ID),
-		Authenticated:           types.BoolValue(ablyNamespace.Authenticated),
-		Persisted:               types.BoolValue(ablyNamespace.Persisted),
-		PersistLast:             types.BoolValue(ablyNamespace.PersistLast),
-		PushEnabled:             types.BoolValue(ablyNamespace.PushEnabled),
-		TlsOnly:                 types.BoolValue(ablyNamespace.TLSOnly),
-		ExposeTimeserial:        types.BoolValue(ablyNamespace.ExposeTimeserial),
-		MutableMessages:         types.BoolValue(ablyNamespace.MutableMessages),
-		PopulateChannelRegistry: types.BoolValue(ablyNamespace.PopulateChannelRegistry),
-		BatchingEnabled:         optBoolValue(ablyNamespace.BatchingEnabled),
-		ConflationEnabled:       optBoolValue(ablyNamespace.ConflationEnabled),
-	}
-
-	if ablyNamespace.BatchingEnabled != nil && *ablyNamespace.BatchingEnabled {
-		respNamespaces.BatchingInterval = optIntValue(ablyNamespace.BatchingInterval)
-	}
-
-	if ablyNamespace.ConflationEnabled != nil && *ablyNamespace.ConflationEnabled {
-		respNamespaces.ConflationInterval = optIntValue(ablyNamespace.ConflationInterval)
-		respNamespaces.ConflationKey = optStringValue(ablyNamespace.ConflationKey)
+	rc := newReconciler(&resp.Diagnostics)
+	respNs := buildNamespaceState(rc, plan, ablyNamespace)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	// Sets state to new namespace.
-	diags = resp.State.Set(ctx, respNamespaces)
+	diags = resp.State.Set(ctx, respNs)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return

@@ -80,6 +80,33 @@ func TestAccAblyRuleIFTTT(t *testing.T) {
 	})
 }
 
+func TestAccAblyRuleIFTTT_Minimal(t *testing.T) {
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	config := minimalRuleConfig(appName, "ably_rule_ifttt", `target = {
+		webhook_key = "test-key"
+		event_name  = "test-event"
+	}`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("ably_rule_ifttt.rule0", "id"),
+					resource.TestCheckResourceAttr("ably_rule_ifttt.rule0", "status", "enabled"),
+					resource.TestCheckResourceAttr("ably_rule_ifttt.rule0", "request_mode", "single"),
+				),
+			},
+			{
+				Config:   config,
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 // Function with inline HCL to provision an ably_app resource
 func testAccAblyRuleIFTTTConfig(
 	appName string,

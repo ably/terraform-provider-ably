@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/ably/terraform-provider-ably/control"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -196,13 +197,18 @@ func TestGetAwsAuth_ImportWithNilPlan(t *testing.T) {
 		AccessKeyID:        "AKID",
 	}
 
-	// Simulate import: plan target is a typed nil.
+	// Simulate import: plan target is a typed nil, reconciler in read mode.
+	var diags diag.Diagnostics
+	rc := newReconciler(&diags).forRead()
 	plan := &AblyRule{
 		Target: (*AblyRuleTargetLambda)(nil),
 	}
 
-	result := GetAwsAuth(auth, plan)
+	result := GetAwsAuth(rc, auth, plan)
 
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %s", diags.Errors()[0].Detail())
+	}
 	if result.AuthenticationMode.ValueString() != "credentials" {
 		t.Fatalf("expected mode=credentials, got %q", result.AuthenticationMode.ValueString())
 	}
@@ -219,12 +225,17 @@ func TestGetAwsAuth_AssumeRoleImport(t *testing.T) {
 		AssumeRoleArn:      "arn:aws:iam::123:role/test",
 	}
 
+	var diags diag.Diagnostics
+	rc := newReconciler(&diags).forRead()
 	plan := &AblyRule{
 		Target: (*AblyRuleTargetLambda)(nil),
 	}
 
-	result := GetAwsAuth(auth, plan)
+	result := GetAwsAuth(rc, auth, plan)
 
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %s", diags.Errors()[0].Detail())
+	}
 	if result.AuthenticationMode.ValueString() != "assumeRole" {
 		t.Fatalf("expected mode=assumeRole, got %q", result.AuthenticationMode.ValueString())
 	}

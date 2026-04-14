@@ -230,3 +230,45 @@ resource "ably_app" "app0" {
 		},
 	})
 }
+
+func TestAccAblyApp_Minimal(t *testing.T) {
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	config := fmt.Sprintf(`%s
+resource "ably_app" "app0" {
+	name = %q
+}
+`, tfProvider, appName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
+					// Computed-only fields are populated
+					resource.TestCheckResourceAttrSet("ably_app.app0", "id"),
+					resource.TestCheckResourceAttrSet("ably_app.app0", "account_id"),
+					resource.TestCheckResourceAttrSet("ably_app.app0", "created"),
+					resource.TestCheckResourceAttrSet("ably_app.app0", "modified"),
+					// Optional+Computed defaults
+					resource.TestCheckResourceAttr("ably_app.app0", "status", "enabled"),
+					resource.TestCheckResourceAttr("ably_app.app0", "tls_only", "true"),
+					resource.TestCheckResourceAttr("ably_app.app0", "apns_use_sandbox_endpoint", "false"),
+					// Optional-only fields should not be in state
+					resource.TestCheckNoResourceAttr("ably_app.app0", "fcm_key"),
+					resource.TestCheckNoResourceAttr("ably_app.app0", "fcm_service_account"),
+					resource.TestCheckNoResourceAttr("ably_app.app0", "fcm_project_id"),
+					resource.TestCheckNoResourceAttr("ably_app.app0", "apns_certificate"),
+					resource.TestCheckNoResourceAttr("ably_app.app0", "apns_private_key"),
+					resource.TestCheckNoResourceAttr("ably_app.app0", "apns_signing_key"),
+				),
+			},
+			{
+				Config:   config,
+				PlanOnly: true,
+			},
+		},
+	})
+}
