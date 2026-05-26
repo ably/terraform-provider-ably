@@ -46,6 +46,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Detect unreleased tags
         id: detect
@@ -93,6 +94,7 @@ jobs:
         with:
           ref: ${{ needs.detect.outputs.provider_tag }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -132,6 +134,7 @@ jobs:
         with:
           ref: ${{ needs.detect.outputs.control_tag }}
           fetch-depth: 0
+          persist-credentials: false
 
       # Build release notes from PRs that touch control/ paths only,
       # so provider-only changes don't leak into the control changelog.
