@@ -29,14 +29,15 @@ name: Release
 on:
   workflow_dispatch: {}
 
-permissions:
-  contents: write
+permissions: {}
 
 # ─── Detect which components need releasing ──────────────────────────
 
 jobs:
   detect:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       provider_tag: ${{ steps.detect.outputs.provider_tag }}
       control_tag: ${{ steps.detect.outputs.control_tag }}
@@ -87,6 +88,8 @@ jobs:
     needs: detect
     if: needs.detect.outputs.provider_tag != ''
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       # Check out the exact commit the provider tag points to,
       # so GoReleaser builds the right code.
@@ -129,6 +132,9 @@ jobs:
     needs: detect
     if: needs.detect.outputs.control_tag != ''
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
         with:
