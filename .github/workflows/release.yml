@@ -152,9 +152,11 @@ jobs:
       - name: Generate scoped release notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CONTROL_TAG: ${{ needs.detect.outputs.control_tag }}
+          CONTROL_PREV: ${{ needs.detect.outputs.control_prev }}
         run: |
-          tag="${{ needs.detect.outputs.control_tag }}"
-          prev="${{ needs.detect.outputs.control_prev }}"
+          tag="$CONTROL_TAG"
+          prev="$CONTROL_PREV"
           since=$([ -n "$prev" ] && git log -1 --format=%aI "$prev" || echo "1970-01-01T00:00:00Z")
 
           gh pr list --repo "$GITHUB_REPOSITORY" \
@@ -185,8 +187,9 @@ jobs:
       - name: Create release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CONTROL_TAG: ${{ needs.detect.outputs.control_tag }}
         run: |
-          gh release create "${{ needs.detect.outputs.control_tag }}" \
-            --title "Release ${{ needs.detect.outputs.control_tag }}" \
+          gh release create "$CONTROL_TAG" \
+            --title "Release $CONTROL_TAG" \
             --notes-file "$RUNNER_TEMP/notes.md" \
             --draft
