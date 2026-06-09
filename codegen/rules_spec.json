@@ -1,0 +1,704 @@
+{
+  "provider": {
+    "name": "ably"
+  },
+  "resources": [
+    {
+      "name": "rule_bodyguard",
+      "schema": {
+        "attributes": [
+          {
+            "name": "id",
+            "string": {
+              "computed_optional_required": "computed",
+              "description": "The rule ID."
+            }
+          },
+          {
+            "name": "app_id",
+            "string": {
+              "computed_optional_required": "required",
+              "description": "The Ably application ID."
+            }
+          },
+          {
+            "name": "status",
+            "string": {
+              "computed_optional_required": "optional"
+            }
+          },
+          {
+            "name": "before_publish_config",
+            "single_nested": {
+              "attributes": [
+                {
+                  "int64": {
+                    "computed_optional_required": "required"
+                  },
+                  "name": "retry_timeout"
+                },
+                {
+                  "int64": {
+                    "computed_optional_required": "required"
+                  },
+                  "name": "max_retries"
+                },
+                {
+                  "name": "failed_action",
+                  "string": {
+                    "computed_optional_required": "required"
+                  }
+                },
+                {
+                  "name": "too_many_requests_action",
+                  "string": {
+                    "computed_optional_required": "required"
+                  }
+                }
+              ],
+              "computed_optional_required": "required"
+            }
+          },
+          {
+            "name": "invocation_mode",
+            "string": {
+              "computed_optional_required": "required"
+            }
+          },
+          {
+            "name": "chat_room_filter",
+            "string": {
+              "computed_optional_required": "optional"
+            }
+          },
+          {
+            "name": "target",
+            "single_nested": {
+              "attributes": [
+                {
+                  "name": "api_key",
+                  "string": {
+                    "computed_optional_required": "required",
+                    "sensitive": true
+                  }
+                },
+                {
+                  "name": "channel_id",
+                  "string": {
+                    "computed_optional_required": "optional"
+                  }
+                },
+                {
+                  "name": "api_url",
+                  "string": {
+                    "computed_optional_required": "optional"
+                  }
+                },
+                {
+                  "name": "default_language",
+                  "string": {
+                    "computed_optional_required": "optional"
+                  }
+                }
+              ],
+              "computed_optional_required": "required"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "rule_tisane",
+      "schema": {
+        "attributes": [
+          {
+            "name": "id",
+            "string": {
+              "computed_optional_required": "computed",
+              "description": "The rule ID."
+            }
+          },
+          {
+            "name": "app_id",
+            "string": {
+              "computed_optional_required": "required",
+              "description": "The Ably application ID."
+            }
+          },
+          {
+            "name": "status",
+            "string": {
+              "computed_optional_required": "optional"
+            }
+          },
+          {
+            "name": "before_publish_config",
+            "single_nested": {
+              "attributes": [
+                {
+                  "int64": {
+                    "computed_optional_required": "required"
+                  },
+                  "name": "retry_timeout"
+                },
+                {
+                  "int64": {
+                    "computed_optional_required": "required"
+                  },
+                  "name": "max_retries"
+                },
+                {
+                  "name": "failed_action",
+                  "string": {
+                    "computed_optional_required": "required"
+                  }
+                },
+                {
+                  "name": "too_many_requests_action",
+                  "string": {
+                    "computed_optional_required": "required"
+                  }
+                }
+              ],
+              "computed_optional_required": "required"
+            }
+          },
+          {
+            "name": "invocation_mode",
+            "string": {
+              "computed_optional_required": "required"
+            }
+          },
+          {
+            "name": "chat_room_filter",
+            "string": {
+              "computed_optional_required": "optional"
+            }
+          },
+          {
+            "name": "target",
+            "single_nested": {
+              "attributes": [
+                {
+                  "name": "api_key",
+                  "string": {
+                    "computed_optional_required": "required",
+                    "sensitive": true
+                  }
+                },
+                {
+                  "name": "model_url",
+                  "string": {
+                    "computed_optional_required": "optional"
+                  }
+                },
+                {
+                  "name": "default_language",
+                  "string": {
+                    "computed_optional_required": "required"
+                  }
+                }
+              ],
+              "computed_optional_required": "required"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "rule_azure_moderation",
+      "schema": {
+        "attributes": [
+          {
+            "name": "id",
+            "string": {
+              "computed_optional_required": "computed",
+              "description": "The rule ID."
+            }
+          },
+          {
+            "name": "app_id",
+            "string": {
+              "computed_optional_required": "required",
+              "description": "The Ably application ID."
+            }
+          },
+          {
+            "name": "status",
+            "string": {
+              "computed_optional_required": "optional"
+            }
+          },
+          {
+            "name": "before_publish_config",
+            "single_nested": {
+              "attributes": [
+                {
+                  "int64": {
+                    "computed_optional_required": "required"
+                  },
+                  "name": "retry_timeout"
+                },
+                {
+                  "int64": {
+                    "computed_optional_required": "required"
+                  },
+                  "name": "max_retries"
+                },
+                {
+                  "name": "failed_action",
+                  "string": {
+                    "computed_optional_required": "required"
+                  }
+                },
+                {
+                  "name": "too_many_requests_action",
+                  "string": {
+                    "computed_optional_required": "required"
+                  }
+                }
+              ],
+              "computed_optional_required": "required"
+            }
+          },
+          {
+            "name": "invocation_mode",
+            "string": {
+              "computed_optional_required": "required"
+            }
+          },
+          {
+            "name": "chat_room_filter",
+            "string": {
+              "computed_optional_required": "optional"
+            }
+          },
+          {
+            "name": "target",
+            "single_nested": {
+              "attributes": [
+                {
+                  "name": "api_key",
+                  "string": {
+                    "computed_optional_required": "required",
+                    "sensitive": true
+                  }
+                },
+                {
+                  "name": "endpoint",
+                  "string": {
+                    "computed_optional_required": "required"
+                  }
+                }
+              ],
+              "computed_optional_required": "required"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "rule_hive_text",
+      "schema": {
+        "attributes": [
+          {
+            "name": "id",
+            "string": {
+              "computed_optional_required": "computed",
+              "description": "The rule ID."
+            }
+          },
+          {
+            "name": "app_id",
+            "string": {
+              "computed_optional_required": "required",
+              "description": "The Ably application ID."
+            }
+          },
+          {
+            "name": "status",
+            "string": {
+              "computed_optional_required": "optional"
+            }
+          },
+          {
+            "name": "before_publish_config",
+            "single_nested": {
+              "attributes": [
+                {
+                  "int64": {
+                    "computed_optional_required": "required"
+                  },
+                  "name": "retry_timeout"
+                },
+                {
+                  "int64": {
+                    "computed_optional_required": "required"
+                  },
+                  "name": "max_retries"
+                },
+                {
+                  "name": "failed_action",
+                  "string": {
+                    "computed_optional_required": "required"
+                  }
+                },
+                {
+                  "name": "too_many_requests_action",
+                  "string": {
+                    "computed_optional_required": "required"
+                  }
+                }
+              ],
+              "computed_optional_required": "required"
+            }
+          },
+          {
+            "name": "chat_room_filter",
+            "string": {
+              "computed_optional_required": "optional"
+            }
+          },
+          {
+            "name": "invocation_mode",
+            "string": {
+              "computed_optional_required": "required"
+            }
+          },
+          {
+            "name": "target",
+            "single_nested": {
+              "attributes": [
+                {
+                  "name": "api_key",
+                  "string": {
+                    "computed_optional_required": "required",
+                    "sensitive": true
+                  }
+                },
+                {
+                  "name": "model_url",
+                  "string": {
+                    "computed_optional_required": "optional"
+                  }
+                }
+              ],
+              "computed_optional_required": "required"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "rule_hive_dashboard",
+      "schema": {
+        "attributes": [
+          {
+            "name": "id",
+            "string": {
+              "computed_optional_required": "computed",
+              "description": "The rule ID."
+            }
+          },
+          {
+            "name": "app_id",
+            "string": {
+              "computed_optional_required": "required",
+              "description": "The Ably application ID."
+            }
+          },
+          {
+            "name": "status",
+            "string": {
+              "computed_optional_required": "optional"
+            }
+          },
+          {
+            "name": "invocation_mode",
+            "string": {
+              "computed_optional_required": "required"
+            }
+          },
+          {
+            "name": "chat_room_filter",
+            "string": {
+              "computed_optional_required": "optional"
+            }
+          },
+          {
+            "name": "target",
+            "single_nested": {
+              "attributes": [
+                {
+                  "name": "api_key",
+                  "string": {
+                    "computed_optional_required": "required",
+                    "sensitive": true
+                  }
+                },
+                {
+                  "bool": {
+                    "computed_optional_required": "optional"
+                  },
+                  "name": "check_watch_lists"
+                }
+              ],
+              "computed_optional_required": "required"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "rule_before_publish_webhook",
+      "schema": {
+        "attributes": [
+          {
+            "name": "id",
+            "string": {
+              "computed_optional_required": "computed",
+              "description": "The rule ID."
+            }
+          },
+          {
+            "name": "app_id",
+            "string": {
+              "computed_optional_required": "required",
+              "description": "The Ably application ID."
+            }
+          },
+          {
+            "name": "status",
+            "string": {
+              "computed_optional_required": "optional"
+            }
+          },
+          {
+            "name": "before_publish_config",
+            "single_nested": {
+              "attributes": [
+                {
+                  "int64": {
+                    "computed_optional_required": "required"
+                  },
+                  "name": "retry_timeout"
+                },
+                {
+                  "int64": {
+                    "computed_optional_required": "required"
+                  },
+                  "name": "max_retries"
+                },
+                {
+                  "name": "failed_action",
+                  "string": {
+                    "computed_optional_required": "required"
+                  }
+                },
+                {
+                  "name": "too_many_requests_action",
+                  "string": {
+                    "computed_optional_required": "required"
+                  }
+                }
+              ],
+              "computed_optional_required": "required"
+            }
+          },
+          {
+            "name": "invocation_mode",
+            "string": {
+              "computed_optional_required": "required"
+            }
+          },
+          {
+            "name": "chat_room_filter",
+            "string": {
+              "computed_optional_required": "optional"
+            }
+          },
+          {
+            "name": "target",
+            "single_nested": {
+              "attributes": [
+                {
+                  "name": "url",
+                  "string": {
+                    "computed_optional_required": "required"
+                  }
+                },
+                {
+                  "list_nested": {
+                    "computed_optional_required": "optional",
+                    "nested_object": {
+                      "attributes": [
+                        {
+                          "name": "name",
+                          "string": {
+                            "computed_optional_required": "optional"
+                          }
+                        },
+                        {
+                          "name": "value",
+                          "string": {
+                            "computed_optional_required": "optional"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "name": "headers"
+                }
+              ],
+              "computed_optional_required": "required"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "rule_before_publish_lambda",
+      "schema": {
+        "attributes": [
+          {
+            "name": "id",
+            "string": {
+              "computed_optional_required": "computed",
+              "description": "The rule ID."
+            }
+          },
+          {
+            "name": "app_id",
+            "string": {
+              "computed_optional_required": "required",
+              "description": "The Ably application ID."
+            }
+          },
+          {
+            "name": "status",
+            "string": {
+              "computed_optional_required": "optional"
+            }
+          },
+          {
+            "name": "before_publish_config",
+            "single_nested": {
+              "attributes": [
+                {
+                  "int64": {
+                    "computed_optional_required": "required"
+                  },
+                  "name": "retry_timeout"
+                },
+                {
+                  "int64": {
+                    "computed_optional_required": "required"
+                  },
+                  "name": "max_retries"
+                },
+                {
+                  "name": "failed_action",
+                  "string": {
+                    "computed_optional_required": "required"
+                  }
+                },
+                {
+                  "name": "too_many_requests_action",
+                  "string": {
+                    "computed_optional_required": "required"
+                  }
+                }
+              ],
+              "computed_optional_required": "required"
+            }
+          },
+          {
+            "name": "invocation_mode",
+            "string": {
+              "computed_optional_required": "required"
+            }
+          },
+          {
+            "name": "chat_room_filter",
+            "string": {
+              "computed_optional_required": "optional"
+            }
+          },
+          {
+            "name": "source",
+            "single_nested": {
+              "attributes": [
+                {
+                  "name": "channel_filter",
+                  "string": {
+                    "computed_optional_required": "required"
+                  }
+                },
+                {
+                  "name": "type",
+                  "string": {
+                    "computed_optional_required": "required"
+                  }
+                }
+              ],
+              "computed_optional_required": "optional"
+            }
+          },
+          {
+            "name": "target",
+            "single_nested": {
+              "attributes": [
+                {
+                  "name": "region",
+                  "string": {
+                    "computed_optional_required": "required"
+                  }
+                },
+                {
+                  "name": "function_name",
+                  "string": {
+                    "computed_optional_required": "required"
+                  }
+                },
+                {
+                  "name": "authentication",
+                  "single_nested": {
+                    "attributes": [
+                      {
+                        "name": "authentication_mode",
+                        "string": {
+                          "computed_optional_required": "required"
+                        }
+                      },
+                      {
+                        "name": "access_key_id",
+                        "string": {
+                          "computed_optional_required": "optional"
+                        }
+                      },
+                      {
+                        "name": "secret_access_key",
+                        "string": {
+                          "computed_optional_required": "optional"
+                        }
+                      },
+                      {
+                        "name": "assume_role_arn",
+                        "string": {
+                          "computed_optional_required": "optional"
+                        }
+                      }
+                    ],
+                    "computed_optional_required": "required"
+                  }
+                }
+              ],
+              "computed_optional_required": "required"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "version": "0.1"
+}
