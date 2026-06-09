@@ -4,18 +4,12 @@ package provider
 import (
 	"context"
 	"fmt"
-	"regexp"
 
 	"github.com/ably/terraform-provider-ably/control"
 	"github.com/ably/terraform-provider-ably/internal/provider/codegen/resource_rule_bodyguard"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -67,60 +61,19 @@ var _ resource.ResourceWithImportState = &ResourceRuleBodyguard{}
 
 // Schema defines the schema for the resource.
 //
-// PILOT PORT (see DEVELOPMENT.md "Porting a resource onto generated code"):
-// the attribute set, types, nesting and sensitivity come from the generated
-// schema in internal/provider/codegen (produced by `make generate` from the
-// in-repo control rule types). We then patch in the metadata the rule-family
-// generator cannot derive from the Go structs, the enum validators, defaults
-// and plan modifiers, and strip the generated CustomType wrappers so the
-// hand-written model below reflects cleanly.
-//
-// Known gap, captured in the runbook: the rule-family emitter reflects Go
-// structs, which carry no field descriptions, so only id/app_id are documented
-// here. Sourcing descriptions and enums from the docs spec in the emitter is
-// the next enhancement that shrinks these patches (see CODEGEN_STRATEGY.md).
+// PORTED ONTO GENERATED CODE (see DEVELOPMENT.md "Porting a resource onto
+// generated code"). The entire schema, attributes, types, nesting,
+// sensitivity, descriptions, validators, defaults and plan modifiers, comes
+// from the generated schema in internal/provider/codegen, produced by `make
+// generate` from the in-repo control rule types plus the overrides table in
+// codegen/ruletypesgen. The only hand-work left is stripping the generated
+// CustomType from the nested blocks so the hand-written plain-struct model
+// reflects cleanly, and setting the resource-level description.
 func (r ResourceRuleBodyguard) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	s := resource_rule_bodyguard.RuleBodyguardResourceSchema(ctx)
 
-	id := s.Attributes["id"].(schema.StringAttribute)
-	id.PlanModifiers = []planmodifier.String{stringplanmodifier.UseStateForUnknown()}
-	s.Attributes["id"] = id
-
-	appID := s.Attributes["app_id"].(schema.StringAttribute)
-	appID.PlanModifiers = []planmodifier.String{stringplanmodifier.RequiresReplace()}
-	s.Attributes["app_id"] = appID
-
-	status := s.Attributes["status"].(schema.StringAttribute)
-	status.Optional = true
-	status.Computed = true
-	status.Default = stringdefault.StaticString("enabled")
-	status.Validators = []validator.String{stringvalidator.OneOf("enabled", "disabled")}
-	s.Attributes["status"] = status
-
-	invocationMode := s.Attributes["invocation_mode"].(schema.StringAttribute)
-	invocationMode.Required = false
-	invocationMode.Optional = true
-	invocationMode.Computed = true
-	invocationMode.Default = stringdefault.StaticString("BEFORE_PUBLISH")
-	invocationMode.Validators = []validator.String{stringvalidator.OneOf("BEFORE_PUBLISH")}
-	s.Attributes["invocation_mode"] = invocationMode
-
-	chatRoomFilter := s.Attributes["chat_room_filter"].(schema.StringAttribute)
-	chatRoomFilter.Validators = []validator.String{
-		stringvalidator.RegexMatches(regexp.MustCompile(`^/.*/$`), "must be a slash-delimited regular expression, e.g. /room-.*/"),
-	}
-	s.Attributes["chat_room_filter"] = chatRoomFilter
-
-	// Strip the generated CustomType from the nested blocks so the plain-struct
-	// model reflects, and add the enum validators the generator can't derive.
 	bpc := s.Attributes["before_publish_config"].(schema.SingleNestedAttribute)
 	bpc.CustomType = nil
-	failedAction := bpc.Attributes["failed_action"].(schema.StringAttribute)
-	failedAction.Validators = []validator.String{stringvalidator.OneOf("REJECT", "PUBLISH")}
-	bpc.Attributes["failed_action"] = failedAction
-	tooMany := bpc.Attributes["too_many_requests_action"].(schema.StringAttribute)
-	tooMany.Validators = []validator.String{stringvalidator.OneOf("RETRY", "FAIL")}
-	bpc.Attributes["too_many_requests_action"] = tooMany
 	s.Attributes["before_publish_config"] = bpc
 
 	tgt := s.Attributes["target"].(schema.SingleNestedAttribute)

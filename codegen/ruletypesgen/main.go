@@ -55,6 +55,87 @@ var sensitive = map[string]bool{
 	"password": true,
 }
 
+// customExpr is a code expression plus the imports it needs, used to emit
+// validators, defaults and plan modifiers into the Provider Code Spec.
+type customExpr struct {
+	imports []string
+	expr    string
+}
+
+// override augments a generated attribute with metadata the Go types can't
+// express. Keyed by snake_case attribute name (top-level or nested).
+type override struct {
+	mode          string // overrides computed_optional_required when set
+	staticDefault any    // sets a static default when non-nil
+	validators    []customExpr
+	planModifiers []customExpr
+}
+
+const (
+	pkgStringValidator    = "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	pkgStringPlanModifier = "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	pkgRegexp             = "regexp"
+)
+
+// attrOverrides supplies the metadata that previously had to be hand-patched in
+// each resource's Schema(): enum validators, defaults and plan modifiers.
+// Emitting them here keeps ports near-mechanical. Keyed by snake_case attribute
+// name; the moderation/before-publish families share these names and semantics.
+var attrOverrides = map[string]override{
+	"id":     {planModifiers: []customExpr{{[]string{pkgStringPlanModifier}, "stringplanmodifier.UseStateForUnknown()"}}},
+	"app_id": {planModifiers: []customExpr{{[]string{pkgStringPlanModifier}, "stringplanmodifier.RequiresReplace()"}}},
+	"status": {
+		mode:          "computed_optional",
+		staticDefault: "enabled",
+		validators:    []customExpr{{[]string{pkgStringValidator}, `stringvalidator.OneOf("enabled", "disabled")`}},
+	},
+	"invocation_mode": {
+		mode:          "computed_optional",
+		staticDefault: "BEFORE_PUBLISH",
+		validators:    []customExpr{{[]string{pkgStringValidator}, `stringvalidator.OneOf("BEFORE_PUBLISH")`}},
+	},
+	"chat_room_filter":         {validators: []customExpr{{[]string{pkgStringValidator, pkgRegexp}, `stringvalidator.RegexMatches(regexp.MustCompile("^/.*/$"), "must be a slash-delimited regular expression, e.g. /room-.*/")`}}},
+	"failed_action":            {validators: []customExpr{{[]string{pkgStringValidator}, `stringvalidator.OneOf("REJECT", "PUBLISH")`}}},
+	"too_many_requests_action": {validators: []customExpr{{[]string{pkgStringValidator}, `stringvalidator.OneOf("RETRY", "FAIL")`}}},
+}
+
+// applyOverride mutates an attribute's type map with any configured metadata.
+func applyOverride(name string, m map[string]any) {
+	ov, ok := attrOverrides[name]
+	if !ok {
+		return
+	}
+	if ov.mode != "" {
+		m["computed_optional_required"] = ov.mode
+	}
+	if ov.staticDefault != nil {
+		m["default"] = map[string]any{"static": ov.staticDefault}
+	}
+	if len(ov.validators) > 0 {
+		m["validators"] = customList(ov.validators)
+	}
+	if len(ov.planModifiers) > 0 {
+		m["plan_modifiers"] = customList(ov.planModifiers)
+	}
+}
+
+func customList(exprs []customExpr) []map[string]any {
+	out := make([]map[string]any, 0, len(exprs))
+	for _, e := range exprs {
+		imports := make([]map[string]any, 0, len(e.imports))
+		for _, p := range e.imports {
+			imports = append(imports, map[string]any{"path": p})
+		}
+		out = append(out, map[string]any{
+			"custom": map[string]any{
+				"imports":           imports,
+				"schema_definition": e.expr,
+			},
+		})
+	}
+	return out
+}
+
 func main() {
 	schemas := loadSpecSchemas("codegen/control-api.yaml")
 
@@ -64,15 +145,13 @@ func main() {
 		attrs := attrsFromStruct(reflect.TypeOf(r.post), props)
 		// Every rule resource carries the same envelope: a computed id and the
 		// required parent app_id. These are not on the create body.
+		idMap := map[string]any{"computed_optional_required": "computed", "description": "The rule ID."}
+		applyOverride("id", idMap)
+		appIDMap := map[string]any{"computed_optional_required": "required", "description": "The Ably application ID."}
+		applyOverride("app_id", appIDMap)
 		envelope := []map[string]any{
-			{"name": "id", "string": map[string]any{
-				"computed_optional_required": "computed",
-				"description":                "The rule ID.",
-			}},
-			{"name": "app_id", "string": map[string]any{
-				"computed_optional_required": "required",
-				"description":                "The Ably application ID.",
-			}},
+			{"name": "id", "string": idMap},
+			{"name": "app_id", "string": appIDMap},
 		}
 		attrs = append(envelope, attrs...)
 		resources = append(resources, map[string]any{
@@ -152,6 +231,7 @@ func attrsFromStruct(t reflect.Type, props map[string]any) []map[string]any {
 			if sensitive[name] {
 				s["sensitive"] = true
 			}
+			applyOverride(name, s)
 			attr["string"] = s
 		case reflect.Bool:
 			b := map[string]any{"computed_optional_required": mode}
