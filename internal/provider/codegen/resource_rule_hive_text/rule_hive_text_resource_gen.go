@@ -5,11 +5,17 @@ package resource_rule_hive_text
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
+	"regexp"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -22,6 +28,9 @@ func RuleHiveTextResourceSchema(ctx context.Context) schema.Schema {
 				Required:            true,
 				Description:         "The Ably application ID.",
 				MarkdownDescription: "The Ably application ID.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"before_publish_config": schema.SingleNestedAttribute{
 				Attributes: map[string]schema.Attribute{
@@ -29,6 +38,9 @@ func RuleHiveTextResourceSchema(ctx context.Context) schema.Schema {
 						Required:            true,
 						Description:         "The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through.",
 						MarkdownDescription: "The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through.",
+						Validators: []validator.String{
+							stringvalidator.OneOf("REJECT", "PUBLISH"),
+						},
 					},
 					"max_retries": schema.Int64Attribute{
 						Required:            true,
@@ -44,6 +56,9 @@ func RuleHiveTextResourceSchema(ctx context.Context) schema.Schema {
 						Required:            true,
 						Description:         "The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`.",
 						MarkdownDescription: "The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`.",
+						Validators: []validator.String{
+							stringvalidator.OneOf("RETRY", "FAIL"),
+						},
 					},
 				},
 				CustomType: BeforePublishConfigType{
@@ -59,21 +74,37 @@ func RuleHiveTextResourceSchema(ctx context.Context) schema.Schema {
 				Optional:            true,
 				Description:         "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
 				MarkdownDescription: "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
+				Validators: []validator.String{
+					stringvalidator.RegexMatches(regexp.MustCompile("^/.*/$"), "must be a slash-delimited regular expression, e.g. /room-.*/"),
+				},
 			},
 			"id": schema.StringAttribute{
 				Computed:            true,
 				Description:         "The rule ID.",
 				MarkdownDescription: "The rule ID.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"invocation_mode": schema.StringAttribute{
-				Required:            true,
+				Optional:            true,
+				Computed:            true,
 				Description:         "The invocation mode for this rule. Before-publish rules are invoked before a message is published.",
 				MarkdownDescription: "The invocation mode for this rule. Before-publish rules are invoked before a message is published.",
+				Validators: []validator.String{
+					stringvalidator.OneOf("BEFORE_PUBLISH"),
+				},
+				Default: stringdefault.StaticString("BEFORE_PUBLISH"),
 			},
 			"status": schema.StringAttribute{
 				Optional:            true,
+				Computed:            true,
 				Description:         "The status of the rule. Rules can be enabled or disabled.",
 				MarkdownDescription: "The status of the rule. Rules can be enabled or disabled.",
+				Validators: []validator.String{
+					stringvalidator.OneOf("enabled", "disabled"),
+				},
+				Default: stringdefault.StaticString("enabled"),
 			},
 			"target": schema.SingleNestedAttribute{
 				Attributes: map[string]schema.Attribute{

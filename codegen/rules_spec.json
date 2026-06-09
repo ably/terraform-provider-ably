@@ -11,21 +11,60 @@
             "name": "id",
             "string": {
               "computed_optional_required": "computed",
-              "description": "The rule ID."
+              "description": "The rule ID.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+                      }
+                    ],
+                    "schema_definition": "stringplanmodifier.UseStateForUnknown()"
+                  }
+                }
+              ]
             }
           },
           {
             "name": "app_id",
             "string": {
               "computed_optional_required": "required",
-              "description": "The Ably application ID."
+              "description": "The Ably application ID.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+                      }
+                    ],
+                    "schema_definition": "stringplanmodifier.RequiresReplace()"
+                  }
+                }
+              ]
             }
           },
           {
             "name": "status",
             "string": {
-              "computed_optional_required": "optional",
-              "description": "The status of the rule. Rules can be enabled or disabled."
+              "computed_optional_required": "computed_optional",
+              "default": {
+                "static": "enabled"
+              },
+              "description": "The status of the rule. Rules can be enabled or disabled.",
+              "validators": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.OneOf(\"enabled\", \"disabled\")"
+                  }
+                }
+              ]
             }
           },
           {
@@ -50,14 +89,38 @@
                   "name": "failed_action",
                   "string": {
                     "computed_optional_required": "required",
-                    "description": "The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through."
+                    "description": "The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.OneOf(\"REJECT\", \"PUBLISH\")"
+                        }
+                      }
+                    ]
                   }
                 },
                 {
                   "name": "too_many_requests_action",
                   "string": {
                     "computed_optional_required": "required",
-                    "description": "The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`."
+                    "description": "The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.OneOf(\"RETRY\", \"FAIL\")"
+                        }
+                      }
+                    ]
                   }
                 }
               ],
@@ -68,15 +131,45 @@
           {
             "name": "invocation_mode",
             "string": {
-              "computed_optional_required": "required",
-              "description": "The invocation mode for this rule. Before-publish rules are invoked before a message is published."
+              "computed_optional_required": "computed_optional",
+              "default": {
+                "static": "BEFORE_PUBLISH"
+              },
+              "description": "The invocation mode for this rule. Before-publish rules are invoked before a message is published.",
+              "validators": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.OneOf(\"BEFORE_PUBLISH\")"
+                  }
+                }
+              ]
             }
           },
           {
             "name": "chat_room_filter",
             "string": {
               "computed_optional_required": "optional",
-              "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule."
+              "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
+              "validators": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      },
+                      {
+                        "path": "regexp"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must be a slash-delimited regular expression, e.g. /room-.*/\")"
+                  }
+                }
+              ]
             }
           },
           {
@@ -128,21 +221,60 @@
             "name": "id",
             "string": {
               "computed_optional_required": "computed",
-              "description": "The rule ID."
+              "description": "The rule ID.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+                      }
+                    ],
+                    "schema_definition": "stringplanmodifier.UseStateForUnknown()"
+                  }
+                }
+              ]
             }
           },
           {
             "name": "app_id",
             "string": {
               "computed_optional_required": "required",
-              "description": "The Ably application ID."
+              "description": "The Ably application ID.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+                      }
+                    ],
+                    "schema_definition": "stringplanmodifier.RequiresReplace()"
+                  }
+                }
+              ]
             }
           },
           {
             "name": "status",
             "string": {
-              "computed_optional_required": "optional",
-              "description": "The status of the rule. Rules can be enabled or disabled."
+              "computed_optional_required": "computed_optional",
+              "default": {
+                "static": "enabled"
+              },
+              "description": "The status of the rule. Rules can be enabled or disabled.",
+              "validators": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.OneOf(\"enabled\", \"disabled\")"
+                  }
+                }
+              ]
             }
           },
           {
@@ -167,14 +299,38 @@
                   "name": "failed_action",
                   "string": {
                     "computed_optional_required": "required",
-                    "description": "The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through."
+                    "description": "The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.OneOf(\"REJECT\", \"PUBLISH\")"
+                        }
+                      }
+                    ]
                   }
                 },
                 {
                   "name": "too_many_requests_action",
                   "string": {
                     "computed_optional_required": "required",
-                    "description": "The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`."
+                    "description": "The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.OneOf(\"RETRY\", \"FAIL\")"
+                        }
+                      }
+                    ]
                   }
                 }
               ],
@@ -185,15 +341,45 @@
           {
             "name": "invocation_mode",
             "string": {
-              "computed_optional_required": "required",
-              "description": "The invocation mode for this rule. Before-publish rules are invoked before a message is published."
+              "computed_optional_required": "computed_optional",
+              "default": {
+                "static": "BEFORE_PUBLISH"
+              },
+              "description": "The invocation mode for this rule. Before-publish rules are invoked before a message is published.",
+              "validators": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.OneOf(\"BEFORE_PUBLISH\")"
+                  }
+                }
+              ]
             }
           },
           {
             "name": "chat_room_filter",
             "string": {
               "computed_optional_required": "optional",
-              "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule."
+              "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
+              "validators": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      },
+                      {
+                        "path": "regexp"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must be a slash-delimited regular expression, e.g. /room-.*/\")"
+                  }
+                }
+              ]
             }
           },
           {
@@ -238,21 +424,60 @@
             "name": "id",
             "string": {
               "computed_optional_required": "computed",
-              "description": "The rule ID."
+              "description": "The rule ID.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+                      }
+                    ],
+                    "schema_definition": "stringplanmodifier.UseStateForUnknown()"
+                  }
+                }
+              ]
             }
           },
           {
             "name": "app_id",
             "string": {
               "computed_optional_required": "required",
-              "description": "The Ably application ID."
+              "description": "The Ably application ID.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+                      }
+                    ],
+                    "schema_definition": "stringplanmodifier.RequiresReplace()"
+                  }
+                }
+              ]
             }
           },
           {
             "name": "status",
             "string": {
-              "computed_optional_required": "optional",
-              "description": "The status of the rule. Rules can be enabled or disabled."
+              "computed_optional_required": "computed_optional",
+              "default": {
+                "static": "enabled"
+              },
+              "description": "The status of the rule. Rules can be enabled or disabled.",
+              "validators": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.OneOf(\"enabled\", \"disabled\")"
+                  }
+                }
+              ]
             }
           },
           {
@@ -277,14 +502,38 @@
                   "name": "failed_action",
                   "string": {
                     "computed_optional_required": "required",
-                    "description": "The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through."
+                    "description": "The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.OneOf(\"REJECT\", \"PUBLISH\")"
+                        }
+                      }
+                    ]
                   }
                 },
                 {
                   "name": "too_many_requests_action",
                   "string": {
                     "computed_optional_required": "required",
-                    "description": "The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`."
+                    "description": "The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.OneOf(\"RETRY\", \"FAIL\")"
+                        }
+                      }
+                    ]
                   }
                 }
               ],
@@ -295,15 +544,45 @@
           {
             "name": "invocation_mode",
             "string": {
-              "computed_optional_required": "required",
-              "description": "The invocation mode for this rule. Before-publish rules are invoked before a message is published."
+              "computed_optional_required": "computed_optional",
+              "default": {
+                "static": "BEFORE_PUBLISH"
+              },
+              "description": "The invocation mode for this rule. Before-publish rules are invoked before a message is published.",
+              "validators": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.OneOf(\"BEFORE_PUBLISH\")"
+                  }
+                }
+              ]
             }
           },
           {
             "name": "chat_room_filter",
             "string": {
               "computed_optional_required": "optional",
-              "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule."
+              "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
+              "validators": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      },
+                      {
+                        "path": "regexp"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must be a slash-delimited regular expression, e.g. /room-.*/\")"
+                  }
+                }
+              ]
             }
           },
           {
@@ -341,21 +620,60 @@
             "name": "id",
             "string": {
               "computed_optional_required": "computed",
-              "description": "The rule ID."
+              "description": "The rule ID.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+                      }
+                    ],
+                    "schema_definition": "stringplanmodifier.UseStateForUnknown()"
+                  }
+                }
+              ]
             }
           },
           {
             "name": "app_id",
             "string": {
               "computed_optional_required": "required",
-              "description": "The Ably application ID."
+              "description": "The Ably application ID.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+                      }
+                    ],
+                    "schema_definition": "stringplanmodifier.RequiresReplace()"
+                  }
+                }
+              ]
             }
           },
           {
             "name": "status",
             "string": {
-              "computed_optional_required": "optional",
-              "description": "The status of the rule. Rules can be enabled or disabled."
+              "computed_optional_required": "computed_optional",
+              "default": {
+                "static": "enabled"
+              },
+              "description": "The status of the rule. Rules can be enabled or disabled.",
+              "validators": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.OneOf(\"enabled\", \"disabled\")"
+                  }
+                }
+              ]
             }
           },
           {
@@ -380,14 +698,38 @@
                   "name": "failed_action",
                   "string": {
                     "computed_optional_required": "required",
-                    "description": "The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through."
+                    "description": "The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.OneOf(\"REJECT\", \"PUBLISH\")"
+                        }
+                      }
+                    ]
                   }
                 },
                 {
                   "name": "too_many_requests_action",
                   "string": {
                     "computed_optional_required": "required",
-                    "description": "The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`."
+                    "description": "The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.OneOf(\"RETRY\", \"FAIL\")"
+                        }
+                      }
+                    ]
                   }
                 }
               ],
@@ -399,14 +741,44 @@
             "name": "chat_room_filter",
             "string": {
               "computed_optional_required": "optional",
-              "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule."
+              "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
+              "validators": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      },
+                      {
+                        "path": "regexp"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must be a slash-delimited regular expression, e.g. /room-.*/\")"
+                  }
+                }
+              ]
             }
           },
           {
             "name": "invocation_mode",
             "string": {
-              "computed_optional_required": "required",
-              "description": "The invocation mode for this rule. Before-publish rules are invoked before a message is published."
+              "computed_optional_required": "computed_optional",
+              "default": {
+                "static": "BEFORE_PUBLISH"
+              },
+              "description": "The invocation mode for this rule. Before-publish rules are invoked before a message is published.",
+              "validators": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.OneOf(\"BEFORE_PUBLISH\")"
+                  }
+                }
+              ]
             }
           },
           {
@@ -444,35 +816,104 @@
             "name": "id",
             "string": {
               "computed_optional_required": "computed",
-              "description": "The rule ID."
+              "description": "The rule ID.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+                      }
+                    ],
+                    "schema_definition": "stringplanmodifier.UseStateForUnknown()"
+                  }
+                }
+              ]
             }
           },
           {
             "name": "app_id",
             "string": {
               "computed_optional_required": "required",
-              "description": "The Ably application ID."
+              "description": "The Ably application ID.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+                      }
+                    ],
+                    "schema_definition": "stringplanmodifier.RequiresReplace()"
+                  }
+                }
+              ]
             }
           },
           {
             "name": "status",
             "string": {
-              "computed_optional_required": "optional",
-              "description": "The status of the rule. Rules can be enabled or disabled."
+              "computed_optional_required": "computed_optional",
+              "default": {
+                "static": "enabled"
+              },
+              "description": "The status of the rule. Rules can be enabled or disabled.",
+              "validators": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.OneOf(\"enabled\", \"disabled\")"
+                  }
+                }
+              ]
             }
           },
           {
             "name": "invocation_mode",
             "string": {
-              "computed_optional_required": "required",
-              "description": "The invocation mode for this rule. After-publish rules are invoked after a message is published."
+              "computed_optional_required": "computed_optional",
+              "default": {
+                "static": "BEFORE_PUBLISH"
+              },
+              "description": "The invocation mode for this rule. After-publish rules are invoked after a message is published.",
+              "validators": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.OneOf(\"BEFORE_PUBLISH\")"
+                  }
+                }
+              ]
             }
           },
           {
             "name": "chat_room_filter",
             "string": {
               "computed_optional_required": "optional",
-              "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule."
+              "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
+              "validators": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      },
+                      {
+                        "path": "regexp"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must be a slash-delimited regular expression, e.g. /room-.*/\")"
+                  }
+                }
+              ]
             }
           },
           {
@@ -510,21 +951,60 @@
             "name": "id",
             "string": {
               "computed_optional_required": "computed",
-              "description": "The rule ID."
+              "description": "The rule ID.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+                      }
+                    ],
+                    "schema_definition": "stringplanmodifier.UseStateForUnknown()"
+                  }
+                }
+              ]
             }
           },
           {
             "name": "app_id",
             "string": {
               "computed_optional_required": "required",
-              "description": "The Ably application ID."
+              "description": "The Ably application ID.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+                      }
+                    ],
+                    "schema_definition": "stringplanmodifier.RequiresReplace()"
+                  }
+                }
+              ]
             }
           },
           {
             "name": "status",
             "string": {
-              "computed_optional_required": "optional",
-              "description": "The status of the rule. Rules can be enabled or disabled."
+              "computed_optional_required": "computed_optional",
+              "default": {
+                "static": "enabled"
+              },
+              "description": "The status of the rule. Rules can be enabled or disabled.",
+              "validators": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.OneOf(\"enabled\", \"disabled\")"
+                  }
+                }
+              ]
             }
           },
           {
@@ -549,14 +1029,38 @@
                   "name": "failed_action",
                   "string": {
                     "computed_optional_required": "required",
-                    "description": "The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through."
+                    "description": "The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.OneOf(\"REJECT\", \"PUBLISH\")"
+                        }
+                      }
+                    ]
                   }
                 },
                 {
                   "name": "too_many_requests_action",
                   "string": {
                     "computed_optional_required": "required",
-                    "description": "The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`."
+                    "description": "The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.OneOf(\"RETRY\", \"FAIL\")"
+                        }
+                      }
+                    ]
                   }
                 }
               ],
@@ -567,15 +1071,45 @@
           {
             "name": "invocation_mode",
             "string": {
-              "computed_optional_required": "required",
-              "description": "The invocation mode for this rule. Before-publish rules are invoked before a message is published."
+              "computed_optional_required": "computed_optional",
+              "default": {
+                "static": "BEFORE_PUBLISH"
+              },
+              "description": "The invocation mode for this rule. Before-publish rules are invoked before a message is published.",
+              "validators": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.OneOf(\"BEFORE_PUBLISH\")"
+                  }
+                }
+              ]
             }
           },
           {
             "name": "chat_room_filter",
             "string": {
               "computed_optional_required": "optional",
-              "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule."
+              "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
+              "validators": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      },
+                      {
+                        "path": "regexp"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must be a slash-delimited regular expression, e.g. /room-.*/\")"
+                  }
+                }
+              ]
             }
           },
           {
@@ -629,21 +1163,60 @@
             "name": "id",
             "string": {
               "computed_optional_required": "computed",
-              "description": "The rule ID."
+              "description": "The rule ID.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+                      }
+                    ],
+                    "schema_definition": "stringplanmodifier.UseStateForUnknown()"
+                  }
+                }
+              ]
             }
           },
           {
             "name": "app_id",
             "string": {
               "computed_optional_required": "required",
-              "description": "The Ably application ID."
+              "description": "The Ably application ID.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+                      }
+                    ],
+                    "schema_definition": "stringplanmodifier.RequiresReplace()"
+                  }
+                }
+              ]
             }
           },
           {
             "name": "status",
             "string": {
-              "computed_optional_required": "optional",
-              "description": "The status of the rule. Rules can be enabled or disabled."
+              "computed_optional_required": "computed_optional",
+              "default": {
+                "static": "enabled"
+              },
+              "description": "The status of the rule. Rules can be enabled or disabled.",
+              "validators": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.OneOf(\"enabled\", \"disabled\")"
+                  }
+                }
+              ]
             }
           },
           {
@@ -668,14 +1241,38 @@
                   "name": "failed_action",
                   "string": {
                     "computed_optional_required": "required",
-                    "description": "The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through."
+                    "description": "The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.OneOf(\"REJECT\", \"PUBLISH\")"
+                        }
+                      }
+                    ]
                   }
                 },
                 {
                   "name": "too_many_requests_action",
                   "string": {
                     "computed_optional_required": "required",
-                    "description": "The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`."
+                    "description": "The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.OneOf(\"RETRY\", \"FAIL\")"
+                        }
+                      }
+                    ]
                   }
                 }
               ],
@@ -686,15 +1283,45 @@
           {
             "name": "invocation_mode",
             "string": {
-              "computed_optional_required": "required",
-              "description": "The invocation mode for this rule. Before-publish rules are invoked before a message is published."
+              "computed_optional_required": "computed_optional",
+              "default": {
+                "static": "BEFORE_PUBLISH"
+              },
+              "description": "The invocation mode for this rule. Before-publish rules are invoked before a message is published.",
+              "validators": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.OneOf(\"BEFORE_PUBLISH\")"
+                  }
+                }
+              ]
             }
           },
           {
             "name": "chat_room_filter",
             "string": {
               "computed_optional_required": "optional",
-              "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule."
+              "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
+              "validators": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      },
+                      {
+                        "path": "regexp"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must be a slash-delimited regular expression, e.g. /room-.*/\")"
+                  }
+                }
+              ]
             }
           },
           {
