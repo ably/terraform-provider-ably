@@ -38,13 +38,13 @@ resource "ably_rule_bodyguard" "rule0" {
 ### Required
 
 - `app_id` (String) The Ably application ID.
-- `before_publish_config` (Attributes) Configuration controlling retry and failure behaviour when moderating messages before publish. (see [below for nested schema](#nestedatt--before_publish_config))
-- `target` (Attributes) The Bodyguard target for the rule. (see [below for nested schema](#nestedatt--target))
+- `before_publish_config` (Attributes) Configuration for before-publish behavior, including retry logic and failure handling. (see [below for nested schema](#nestedatt--before_publish_config))
+- `target` (Attributes) The target for the rule, specifying the Bodyguard moderation configuration. (see [below for nested schema](#nestedatt--target))
 
 ### Optional
 
-- `chat_room_filter` (String) An optional filter limiting the rule to matching chat rooms, given as a slash-delimited regular expression, e.g. `/room-.*/`.
-- `invocation_mode` (String) How the moderation endpoint is invoked. Only `BEFORE_PUBLISH` is supported, which moderates messages before they are published.
+- `chat_room_filter` (String) A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.
+- `invocation_mode` (String) The invocation mode for this rule. Before-publish rules are invoked before a message is published.
 - `status` (String) The status of the rule. Rules can be enabled or disabled.
 
 ### Read-Only
@@ -56,10 +56,10 @@ resource "ably_rule_bodyguard" "rule0" {
 
 Required:
 
-- `failed_action` (String) The action to take when moderation fails after exhausting retries. One of `REJECT` (do not publish the message) or `PUBLISH` (publish it without moderation).
-- `max_retries` (Number) The maximum number of times a moderation request is retried before the failed action is taken.
-- `retry_timeout` (Number) The timeout, in milliseconds, after which a moderation request is retried.
-- `too_many_requests_action` (String) The action to take when the moderation endpoint rate limits the request (HTTP 429). One of `RETRY` (retry the moderation request) or `FAIL` (treat it as a failure and apply `failed_action`).
+- `failed_action` (String) The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through.
+- `max_retries` (Number) The maximum number of retry attempts.
+- `retry_timeout` (Number) The timeout in milliseconds for retrying the rule invocation.
+- `too_many_requests_action` (String) The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`.
 
 
 <a id="nestedatt--target"></a>
@@ -67,10 +67,10 @@ Required:
 
 Required:
 
-- `api_key` (String, Sensitive) The Bodyguard API key used to authenticate moderation requests.
+- `api_key` (String, Sensitive) The Bodyguard API key for authenticating with the moderation service.
 
 Optional:
 
-- `api_url` (String) An optional override for the Bodyguard API URL.
-- `channel_id` (String) The Bodyguard channel ID to associate moderated content with.
-- `default_language` (String) The default language code used when moderating messages, e.g. `en`.
+- `api_url` (String) The Bodyguard API URL for the moderation service.
+- `channel_id` (String) The Bodyguard channel ID to associate with moderation requests.
+- `default_language` (String) The default language for text moderation analysis.
