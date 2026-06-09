@@ -56,6 +56,6 @@ testacc:
 # generated code lands in internal/provider/codegen/. See codegen/README.md for
 # how to refresh the spec and the current scope/caveats.
 generate:
-	go run github.com/hashicorp/terraform-plugin-codegen-openapi/cmd/tfplugingen-openapi@v0.3.0 generate --config codegen/generator_config.yml --output codegen/spec.json codegen/swagger.yaml
+	go run github.com/hashicorp/terraform-plugin-codegen-openapi/cmd/tfplugingen-openapi@v0.3.0 generate --config codegen/generator_config.yml --output codegen/spec.json codegen/control-api.yaml
 	go run github.com/hashicorp/terraform-plugin-codegen-framework/cmd/tfplugingen-framework@v0.4.1 generate resources --input codegen/spec.json --output internal/provider/codegen
 	gofmt -w internal/provider/codegen
