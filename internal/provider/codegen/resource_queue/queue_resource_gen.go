@@ -21,10 +21,14 @@ func QueueResourceSchema(ctx context.Context) schema.Schema {
 			"amqp": schema.SingleNestedAttribute{
 				Attributes: map[string]schema.Attribute{
 					"queue_name": schema.StringAttribute{
-						Computed: true,
+						Computed:            true,
+						Description:         "Name of the Ably queue.",
+						MarkdownDescription: "Name of the Ably queue.",
 					},
 					"uri": schema.StringAttribute{
-						Computed: true,
+						Computed:            true,
+						Description:         "URI for the AMQP queue interface.",
+						MarkdownDescription: "URI for the AMQP queue interface.",
 					},
 				},
 				CustomType: AmqpType{
@@ -35,30 +39,46 @@ func QueueResourceSchema(ctx context.Context) schema.Schema {
 				Computed: true,
 			},
 			"app_id": schema.StringAttribute{
-				Computed: true,
+				Computed:            true,
+				Description:         "The Ably application ID.",
+				MarkdownDescription: "The Ably application ID.",
 			},
 			"deadletter": schema.BoolAttribute{
-				Computed: true,
+				Computed:            true,
+				Description:         "A boolean that indicates whether this is a dead letter queue or not.",
+				MarkdownDescription: "A boolean that indicates whether this is a dead letter queue or not.",
 			},
 			"deadletter_id": schema.StringAttribute{
-				Computed: true,
+				Computed:            true,
+				Description:         "The ID of the dead letter queue.",
+				MarkdownDescription: "The ID of the dead letter queue.",
 			},
 			"id": schema.StringAttribute{
-				Computed: true,
+				Computed:            true,
+				Description:         "The ID of the Ably queue",
+				MarkdownDescription: "The ID of the Ably queue",
 			},
 			"max_length": schema.Int64Attribute{
-				Required: true,
+				Required:            true,
+				Description:         "Message limit in number of messages.",
+				MarkdownDescription: "Message limit in number of messages.",
 			},
 			"messages": schema.SingleNestedAttribute{
 				Attributes: map[string]schema.Attribute{
 					"ready": schema.Int64Attribute{
-						Computed: true,
+						Computed:            true,
+						Description:         "The number of ready messages in the queue.",
+						MarkdownDescription: "The number of ready messages in the queue.",
 					},
 					"total": schema.Int64Attribute{
-						Computed: true,
+						Computed:            true,
+						Description:         "The total number of messages in the queue.",
+						MarkdownDescription: "The total number of messages in the queue.",
 					},
 					"unacknowledged": schema.Int64Attribute{
-						Computed: true,
+						Computed:            true,
+						Description:         "The number of unacknowledged messages in the queue.",
+						MarkdownDescription: "The number of unacknowledged messages in the queue.",
 					},
 				},
 				CustomType: MessagesType{
@@ -66,31 +86,47 @@ func QueueResourceSchema(ctx context.Context) schema.Schema {
 						AttrTypes: MessagesValue{}.AttributeTypes(ctx),
 					},
 				},
-				Computed: true,
+				Computed:            true,
+				Description:         "Details of messages in the queue.",
+				MarkdownDescription: "Details of messages in the queue.",
 			},
 			"name": schema.StringAttribute{
-				Required: true,
+				Required:            true,
+				Description:         "A friendly name for your queue.",
+				MarkdownDescription: "A friendly name for your queue.",
 			},
 			"parent_app_id": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				Optional:            true,
+				Computed:            true,
+				Description:         "The application ID.",
+				MarkdownDescription: "The application ID.",
 			},
 			"region": schema.StringAttribute{
-				Required: true,
+				Required:            true,
+				Description:         "The data center region. US East (Virginia) or EU West (Ireland). Values are `us-east-1-a` or `eu-west-1-a`.",
+				MarkdownDescription: "The data center region. US East (Virginia) or EU West (Ireland). Values are `us-east-1-a` or `eu-west-1-a`.",
 			},
 			"state": schema.StringAttribute{
-				Computed: true,
+				Computed:            true,
+				Description:         "The current state of the queue.",
+				MarkdownDescription: "The current state of the queue.",
 			},
 			"stats": schema.SingleNestedAttribute{
 				Attributes: map[string]schema.Attribute{
 					"acknowledgement_rate": schema.NumberAttribute{
-						Computed: true,
+						Computed:            true,
+						Description:         "The rate at which messages are acknowledged. Rate is messages per minute.",
+						MarkdownDescription: "The rate at which messages are acknowledged. Rate is messages per minute.",
 					},
 					"delivery_rate": schema.NumberAttribute{
-						Computed: true,
+						Computed:            true,
+						Description:         "The rate at which messages are delivered from the queue. Rate is messages per minute.",
+						MarkdownDescription: "The rate at which messages are delivered from the queue. Rate is messages per minute.",
 					},
 					"publish_rate": schema.NumberAttribute{
-						Computed: true,
+						Computed:            true,
+						Description:         "The rate at which messages are published to the queue. Rate is messages per minute.",
+						MarkdownDescription: "The rate at which messages are published to the queue. Rate is messages per minute.",
 					},
 				},
 				CustomType: StatsType{
@@ -103,13 +139,19 @@ func QueueResourceSchema(ctx context.Context) schema.Schema {
 			"stomp": schema.SingleNestedAttribute{
 				Attributes: map[string]schema.Attribute{
 					"destination": schema.StringAttribute{
-						Computed: true,
+						Computed:            true,
+						Description:         "Destination queue.",
+						MarkdownDescription: "Destination queue.",
 					},
 					"host": schema.StringAttribute{
-						Computed: true,
+						Computed:            true,
+						Description:         "The host type for the queue.",
+						MarkdownDescription: "The host type for the queue.",
 					},
 					"uri": schema.StringAttribute{
-						Computed: true,
+						Computed:            true,
+						Description:         "URI for the STOMP queue interface.",
+						MarkdownDescription: "URI for the STOMP queue interface.",
 					},
 				},
 				CustomType: StompType{
@@ -120,7 +162,9 @@ func QueueResourceSchema(ctx context.Context) schema.Schema {
 				Computed: true,
 			},
 			"ttl": schema.Int64Attribute{
-				Required: true,
+				Required:            true,
+				Description:         "TTL in minutes.",
+				MarkdownDescription: "TTL in minutes.",
 			},
 		},
 	}

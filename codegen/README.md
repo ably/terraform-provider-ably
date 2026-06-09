@@ -6,11 +6,19 @@ from the Ably Control API's OpenAPI spec, the first step of the strategy in
 
 ## What's here
 
-- `swagger.yaml` — a vendored snapshot of the Control API OpenAPI spec. The
-  source of truth lives in the `ably/website` repo
-  (`apps/website/swagger/v1/swagger.yaml`); we vendor a copy so generation is
-  self-contained and runnable in CI without checking out that repo. Refresh it
-  by copying the latest spec over this file.
+- `control-api.yaml` — a vendored snapshot of the Control API OpenAPI spec. We
+  source it from the `ably/docs` repo (`static/open-specs/control-v1.yaml`),
+  which is the published, description-rich version (~1,160 field descriptions
+  versus ~150 in the `ably/website` rswag output). Generating from it gives the
+  generated schemas correct attribute documentation. We vendor a copy so
+  generation is self-contained and runnable in CI without checking out that
+  repo; refresh it by copying the latest spec over this file.
+
+  One local patch is applied on top of the upstream copy: `conflationEnabled` in
+  the namespace schemas is missing `type: boolean` upstream (it has a default,
+  description and example but no type), which makes `tfplugingen-openapi` skip
+  it. We add the type back. This should be fixed in `ably/docs` and the patch
+  dropped on the next refresh.
 - `generator_config.yml` — maps each resource to its create/read/update/delete
   path and method, plus the per-resource aliases needed to get past spec quirks.
 - `spec.json` — the intermediate Provider Code Specification, produced by
