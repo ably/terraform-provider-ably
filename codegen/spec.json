@@ -1,0 +1,476 @@
+{
+	"provider": {
+		"name": "ably"
+	},
+	"resources": [
+		{
+			"name": "app",
+			"schema": {
+				"attributes": [
+					{
+						"name": "apns_auth_type",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"certificate\",\n\"token\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "apns_certificate",
+						"string": {
+							"computed_optional_required": "computed_optional"
+						}
+					},
+					{
+						"name": "apns_issuer_key",
+						"string": {
+							"computed_optional_required": "computed_optional"
+						}
+					},
+					{
+						"name": "apns_private_key",
+						"string": {
+							"computed_optional_required": "computed_optional"
+						}
+					},
+					{
+						"name": "apns_signing_key",
+						"string": {
+							"computed_optional_required": "computed_optional"
+						}
+					},
+					{
+						"name": "apns_signing_key_id",
+						"string": {
+							"computed_optional_required": "computed_optional"
+						}
+					},
+					{
+						"name": "apns_topic_header",
+						"string": {
+							"computed_optional_required": "computed_optional"
+						}
+					},
+					{
+						"name": "apns_use_sandbox_endpoint",
+						"bool": {
+							"computed_optional_required": "computed_optional"
+						}
+					},
+					{
+						"name": "fcm_key",
+						"string": {
+							"computed_optional_required": "computed_optional"
+						}
+					},
+					{
+						"name": "fcm_project_id",
+						"string": {
+							"computed_optional_required": "computed_optional"
+						}
+					},
+					{
+						"name": "fcm_service_account",
+						"string": {
+							"computed_optional_required": "computed_optional"
+						}
+					},
+					{
+						"name": "name",
+						"string": {
+							"computed_optional_required": "required"
+						}
+					},
+					{
+						"name": "status",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"deprecation_message": "This attribute is deprecated."
+						}
+					},
+					{
+						"name": "tls_only",
+						"bool": {
+							"computed_optional_required": "computed_optional"
+						}
+					},
+					{
+						"name": "_links",
+						"single_nested": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "account_id",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "apns_certificate_configured",
+						"bool": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "apns_signing_key_configured",
+						"bool": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "created",
+						"int64": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "fcm_service_account_configured",
+						"bool": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "id",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "modified",
+						"int64": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "parent_account_id",
+						"string": {
+							"computed_optional_required": "computed_optional"
+						}
+					}
+				]
+			}
+		},
+		{
+			"name": "namespace",
+			"schema": {
+				"attributes": [
+					{
+						"name": "authenticated",
+						"bool": {
+							"computed_optional_required": "computed_optional",
+							"default": {
+								"static": false
+							}
+						}
+					},
+					{
+						"name": "batching_enabled",
+						"bool": {
+							"computed_optional_required": "computed_optional",
+							"default": {
+								"static": false
+							}
+						}
+					},
+					{
+						"name": "batching_interval",
+						"int64": {
+							"computed_optional_required": "computed_optional"
+						}
+					},
+					{
+						"name": "conflation_enabled",
+						"bool": {
+							"computed_optional_required": "computed_optional",
+							"default": {
+								"static": false
+							}
+						}
+					},
+					{
+						"name": "conflation_interval",
+						"int64": {
+							"computed_optional_required": "computed_optional"
+						}
+					},
+					{
+						"name": "conflation_key",
+						"string": {
+							"computed_optional_required": "computed_optional"
+						}
+					},
+					{
+						"name": "expose_timeserial",
+						"bool": {
+							"computed_optional_required": "computed_optional",
+							"default": {
+								"static": false
+							}
+						}
+					},
+					{
+						"name": "id",
+						"string": {
+							"computed_optional_required": "required"
+						}
+					},
+					{
+						"name": "mutable_messages",
+						"bool": {
+							"computed_optional_required": "computed_optional",
+							"default": {
+								"static": false
+							}
+						}
+					},
+					{
+						"name": "persist_last",
+						"bool": {
+							"computed_optional_required": "computed_optional",
+							"default": {
+								"static": false
+							}
+						}
+					},
+					{
+						"name": "persisted",
+						"bool": {
+							"computed_optional_required": "computed_optional",
+							"default": {
+								"static": false
+							}
+						}
+					},
+					{
+						"name": "populate_channel_registry",
+						"bool": {
+							"computed_optional_required": "computed_optional",
+							"default": {
+								"static": false
+							}
+						}
+					},
+					{
+						"name": "push_enabled",
+						"bool": {
+							"computed_optional_required": "computed_optional",
+							"default": {
+								"static": false
+							}
+						}
+					},
+					{
+						"name": "tls_only",
+						"bool": {
+							"computed_optional_required": "computed_optional",
+							"default": {
+								"static": false
+							}
+						}
+					},
+					{
+						"name": "app_id",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "created",
+						"int64": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "modified",
+						"int64": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "parent_app_id",
+						"string": {
+							"computed_optional_required": "computed_optional"
+						}
+					}
+				]
+			}
+		},
+		{
+			"name": "queue",
+			"schema": {
+				"attributes": [
+					{
+						"name": "max_length",
+						"int64": {
+							"computed_optional_required": "required"
+						}
+					},
+					{
+						"name": "name",
+						"string": {
+							"computed_optional_required": "required"
+						}
+					},
+					{
+						"name": "region",
+						"string": {
+							"computed_optional_required": "required"
+						}
+					},
+					{
+						"name": "ttl",
+						"int64": {
+							"computed_optional_required": "required"
+						}
+					},
+					{
+						"name": "amqp",
+						"single_nested": {
+							"computed_optional_required": "computed",
+							"attributes": [
+								{
+									"name": "queue_name",
+									"string": {
+										"computed_optional_required": "computed"
+									}
+								},
+								{
+									"name": "uri",
+									"string": {
+										"computed_optional_required": "computed"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "app_id",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "deadletter",
+						"bool": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "deadletter_id",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "id",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "messages",
+						"single_nested": {
+							"computed_optional_required": "computed",
+							"attributes": [
+								{
+									"name": "ready",
+									"int64": {
+										"computed_optional_required": "computed"
+									}
+								},
+								{
+									"name": "total",
+									"int64": {
+										"computed_optional_required": "computed"
+									}
+								},
+								{
+									"name": "unacknowledged",
+									"int64": {
+										"computed_optional_required": "computed"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "state",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "stats",
+						"single_nested": {
+							"computed_optional_required": "computed",
+							"attributes": [
+								{
+									"name": "acknowledgement_rate",
+									"number": {
+										"computed_optional_required": "computed"
+									}
+								},
+								{
+									"name": "delivery_rate",
+									"number": {
+										"computed_optional_required": "computed"
+									}
+								},
+								{
+									"name": "publish_rate",
+									"number": {
+										"computed_optional_required": "computed"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "stomp",
+						"single_nested": {
+							"computed_optional_required": "computed",
+							"attributes": [
+								{
+									"name": "destination",
+									"string": {
+										"computed_optional_required": "computed"
+									}
+								},
+								{
+									"name": "host",
+									"string": {
+										"computed_optional_required": "computed"
+									}
+								},
+								{
+									"name": "uri",
+									"string": {
+										"computed_optional_required": "computed"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "parent_app_id",
+						"string": {
+							"computed_optional_required": "computed_optional"
+						}
+					}
+				]
+			}
+		}
+	],
+	"version": "0.1"
+}
