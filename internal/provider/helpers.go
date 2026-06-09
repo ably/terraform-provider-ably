@@ -46,6 +46,15 @@ func optStringValue(s *string) types.String {
 	return types.StringValue(*s)
 }
 
+// stringOrNull converts a Go string to types.String, mapping "" to null so
+// that unset optional attributes round-trip as null rather than empty string.
+func stringOrNull(s string) types.String {
+	if s == "" {
+		return types.StringNull()
+	}
+	return types.StringValue(s)
+}
+
 // optBoolValue converts a *bool to types.Bool.
 // Returns types.BoolNull() when nil.
 func optBoolValue(b *bool) types.Bool {
