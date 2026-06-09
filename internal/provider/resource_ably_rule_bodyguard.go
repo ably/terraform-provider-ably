@@ -7,6 +7,7 @@ import (
 	"regexp"
 
 	"github.com/ably/terraform-provider-ably/control"
+	"github.com/ably/terraform-provider-ably/internal/provider/codegen/resource_rule_bodyguard"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -65,102 +66,70 @@ var _ resource.Resource = &ResourceRuleBodyguard{}
 var _ resource.ResourceWithImportState = &ResourceRuleBodyguard{}
 
 // Schema defines the schema for the resource.
-func (r ResourceRuleBodyguard) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = schema.Schema{
-		MarkdownDescription: "The `ably_rule_bodyguard` resource allows you to create and manage an Ably integration rule for Bodyguard text moderation. This rule moderates messages before they are published. Read more at https://ably.com/docs/integrations/moderation",
-		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The rule ID.",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
-			"app_id": schema.StringAttribute{
-				Required:    true,
-				Description: "The Ably application ID.",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-			},
-			"status": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "The status of the rule. Rules can be enabled or disabled.",
-				Default:     stringdefault.StaticString("enabled"),
-				Validators: []validator.String{
-					stringvalidator.OneOf("enabled", "disabled"),
-				},
-			},
-			"invocation_mode": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "How the moderation endpoint is invoked. Only `BEFORE_PUBLISH` is supported, which moderates messages before they are published.",
-				Default:     stringdefault.StaticString("BEFORE_PUBLISH"),
-				Validators: []validator.String{
-					stringvalidator.OneOf("BEFORE_PUBLISH"),
-				},
-			},
-			"chat_room_filter": schema.StringAttribute{
-				Optional:    true,
-				Description: "An optional filter limiting the rule to matching chat rooms, given as a slash-delimited regular expression, e.g. `/room-.*/`.",
-				Validators: []validator.String{
-					stringvalidator.RegexMatches(regexp.MustCompile(`^/.*/$`), "must be a slash-delimited regular expression, e.g. /room-.*/"),
-				},
-			},
-			"before_publish_config": schema.SingleNestedAttribute{
-				Required:    true,
-				Description: "Configuration controlling retry and failure behaviour when moderating messages before publish.",
-				Attributes: map[string]schema.Attribute{
-					"retry_timeout": schema.Int64Attribute{
-						Required:    true,
-						Description: "The timeout, in milliseconds, after which a moderation request is retried.",
-					},
-					"max_retries": schema.Int64Attribute{
-						Required:    true,
-						Description: "The maximum number of times a moderation request is retried before the failed action is taken.",
-					},
-					"failed_action": schema.StringAttribute{
-						Required:    true,
-						Description: "The action to take when moderation fails after exhausting retries. One of `REJECT` (do not publish the message) or `PUBLISH` (publish it without moderation).",
-						Validators: []validator.String{
-							stringvalidator.OneOf("REJECT", "PUBLISH"),
-						},
-					},
-					"too_many_requests_action": schema.StringAttribute{
-						Required:    true,
-						Description: "The action to take when the moderation endpoint rate limits the request (HTTP 429). One of `RETRY` (retry the moderation request) or `FAIL` (treat it as a failure and apply `failed_action`).",
-						Validators: []validator.String{
-							stringvalidator.OneOf("RETRY", "FAIL"),
-						},
-					},
-				},
-			},
-			"target": schema.SingleNestedAttribute{
-				Required:    true,
-				Description: "The Bodyguard target for the rule.",
-				Attributes: map[string]schema.Attribute{
-					"api_key": schema.StringAttribute{
-						Required:    true,
-						Sensitive:   true,
-						Description: "The Bodyguard API key used to authenticate moderation requests.",
-					},
-					"channel_id": schema.StringAttribute{
-						Optional:    true,
-						Description: "The Bodyguard channel ID to associate moderated content with.",
-					},
-					"api_url": schema.StringAttribute{
-						Optional:    true,
-						Description: "An optional override for the Bodyguard API URL.",
-					},
-					"default_language": schema.StringAttribute{
-						Optional:    true,
-						Description: "The default language code used when moderating messages, e.g. `en`.",
-					},
-				},
-			},
-		},
+//
+// PILOT PORT (see DEVELOPMENT.md "Porting a resource onto generated code"):
+// the attribute set, types, nesting and sensitivity come from the generated
+// schema in internal/provider/codegen (produced by `make generate` from the
+// in-repo control rule types). We then patch in the metadata the rule-family
+// generator cannot derive from the Go structs, the enum validators, defaults
+// and plan modifiers, and strip the generated CustomType wrappers so the
+// hand-written model below reflects cleanly.
+//
+// Known gap, captured in the runbook: the rule-family emitter reflects Go
+// structs, which carry no field descriptions, so only id/app_id are documented
+// here. Sourcing descriptions and enums from the docs spec in the emitter is
+// the next enhancement that shrinks these patches (see CODEGEN_STRATEGY.md).
+func (r ResourceRuleBodyguard) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	s := resource_rule_bodyguard.RuleBodyguardResourceSchema(ctx)
+
+	id := s.Attributes["id"].(schema.StringAttribute)
+	id.PlanModifiers = []planmodifier.String{stringplanmodifier.UseStateForUnknown()}
+	s.Attributes["id"] = id
+
+	appID := s.Attributes["app_id"].(schema.StringAttribute)
+	appID.PlanModifiers = []planmodifier.String{stringplanmodifier.RequiresReplace()}
+	s.Attributes["app_id"] = appID
+
+	status := s.Attributes["status"].(schema.StringAttribute)
+	status.Optional = true
+	status.Computed = true
+	status.Default = stringdefault.StaticString("enabled")
+	status.Validators = []validator.String{stringvalidator.OneOf("enabled", "disabled")}
+	s.Attributes["status"] = status
+
+	invocationMode := s.Attributes["invocation_mode"].(schema.StringAttribute)
+	invocationMode.Required = false
+	invocationMode.Optional = true
+	invocationMode.Computed = true
+	invocationMode.Default = stringdefault.StaticString("BEFORE_PUBLISH")
+	invocationMode.Validators = []validator.String{stringvalidator.OneOf("BEFORE_PUBLISH")}
+	s.Attributes["invocation_mode"] = invocationMode
+
+	chatRoomFilter := s.Attributes["chat_room_filter"].(schema.StringAttribute)
+	chatRoomFilter.Validators = []validator.String{
+		stringvalidator.RegexMatches(regexp.MustCompile(`^/.*/$`), "must be a slash-delimited regular expression, e.g. /room-.*/"),
 	}
+	s.Attributes["chat_room_filter"] = chatRoomFilter
+
+	// Strip the generated CustomType from the nested blocks so the plain-struct
+	// model reflects, and add the enum validators the generator can't derive.
+	bpc := s.Attributes["before_publish_config"].(schema.SingleNestedAttribute)
+	bpc.CustomType = nil
+	failedAction := bpc.Attributes["failed_action"].(schema.StringAttribute)
+	failedAction.Validators = []validator.String{stringvalidator.OneOf("REJECT", "PUBLISH")}
+	bpc.Attributes["failed_action"] = failedAction
+	tooMany := bpc.Attributes["too_many_requests_action"].(schema.StringAttribute)
+	tooMany.Validators = []validator.String{stringvalidator.OneOf("RETRY", "FAIL")}
+	bpc.Attributes["too_many_requests_action"] = tooMany
+	s.Attributes["before_publish_config"] = bpc
+
+	tgt := s.Attributes["target"].(schema.SingleNestedAttribute)
+	tgt.CustomType = nil
+	s.Attributes["target"] = tgt
+
+	s.MarkdownDescription = "The `ably_rule_bodyguard` resource allows you to create and manage an Ably integration rule for Bodyguard text moderation. This rule moderates messages before they are published. Read more at https://ably.com/docs/integrations/moderation"
+
+	resp.Schema = s
 }
 
 func (r ResourceRuleBodyguard) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {

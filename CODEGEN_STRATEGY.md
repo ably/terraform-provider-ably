@@ -133,6 +133,24 @@ Implication: the moderation/before-publish rule family should be generated, not 
 
 The steer this gives: retrofitting the existing hand-tuned GA simple resources onto generated schema is a modest, lossy win (descriptions lost, metadata patched, one resource breaking). The bigger prize is generating NEW surface where there is no hand-written schema to preserve and no breaking-change risk, i.e. the moderation/before-publish rule family (Phase 2). Recommend reordering: do Phase 2 (rule families driven from the control types) next, and treat the simple-resource retrofit as lower priority, gated on whether a description overlay is worth maintaining.
 
+**Pilot port + mass-port plan (2026-06-09).** Ported `ably_rule_bodyguard` onto its generated schema as the reference example (the runbook is in DEVELOPMENT.md). The pattern: `Schema()` adopts the generated `RuleBodyguardResourceSchema`, strips the generated `CustomType` from the nested blocks so the existing plain-struct model reflects, and patches in the validators/defaults/plan modifiers; the model and CRUD stay hand-written and unchanged. Green on the hermetic suite, and bodyguard already passes staging.
+
+The pilot also closed the Track B description gap that the earlier note worried about. The rule emitter now sources field descriptions from the vendored docs spec (it reflects the Go structs for shape, but the structs carry no docs), so all seven rule families generate documented schemas, and the bodyguard registry doc came back richer than the hand-written original. So descriptions are solved for both tracks (Track A from the OpenAPI spec, Track B via the emitter), and the "is a description overlay worth it" question is moot.
+
+What the pilot tells us about mass-porting:
+
+- The reliable win per resource is the generated schema: attribute set, types, nesting, sensitivity and descriptions all track the spec/control types automatically. That maintenance burden goes away.
+- The residual hand-work per resource is (a) the metadata the generator can't express (enum validators, defaults, plan modifiers), patched in `Schema()`; (b) the CRUD wiring to the control client; (c) stripping the generated `CustomType` from nested blocks.
+- (a) is identical in shape for every rule and is the obvious next automation: a per-field overrides table in `ruletypesgen` that emits validators/defaults/plan modifiers into the spec, shrinking the per-resource patch to near zero.
+
+Recommended mass-port order:
+
+1. Add the `ruletypesgen` overrides table (validators/defaults/plan modifiers) so rule ports become near-mechanical.
+2. Port the remaining moderation/before-publish families (tisane, azure, hive x2, before-publish webhook/lambda) onto their generated schemas plus CRUD shims. These resources don't exist yet, so this is net-new coverage, not refactoring.
+3. Build Phase 3 (the per-rule resource-file generator) only if the shims prove repetitive enough to template. The pilot suggests they will be.
+4. Tackle the Track A simple-resource retrofit last and cautiously: app and namespace are clean-ish (modulo the `account_id`/`app_id` alias cleanup and the namespace `authenticated` bug, INF-7589); `queue` stays hand-written because its flattened schema can't be generated.
+5. Phase 4 machinery: a no-diff CI check (`make generate` produces no diff) and a spec-drift check (docs spec versus implemented resources) so new API surface becomes a visible worklist.
+
 **Phase 2 — Track B rule schema/model generation (4-6 days).** Promote the Phase 0 rule spike into a real generator: walk all `control/rule_types_*.go`, emit spec entries for all 15 variants, generate schema/model. Carry the per-field type/helper mapping table as explicit generator input.
 
 **Phase 3 — Track B custom per-rule resource generator (3-5 days).** Template the 15 thin resource files delegating to the existing generic CRUD, with declared escape hatches for the ~7 special cases. This is the largest line-count win and the lowest-risk generation because the target files are already uniform.
