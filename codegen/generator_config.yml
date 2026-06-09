@@ -1,0 +1,52 @@
+provider:
+  name: ably
+
+resources:
+  app:
+    create:
+      path: /accounts/{account_id}/apps
+      method: POST
+    read:
+      path: /accounts/{account_id}/apps
+      method: GET
+    update:
+      path: /apps/{id}
+      method: PATCH
+    delete:
+      path: /apps/{id}
+      method: DELETE
+    schema:
+      attributes:
+        aliases:
+          account_id: parent_account_id
+  namespace:
+    create:
+      path: /apps/{app_id}/namespaces
+      method: POST
+    read:
+      path: /apps/{app_id}/namespaces
+      method: GET
+    update:
+      path: /apps/{app_id}/namespaces/{namespace_id}
+      method: PATCH
+    delete:
+      path: /apps/{app_id}/namespaces/{namespace_id}
+      method: DELETE
+    schema:
+      attributes:
+        aliases:
+          app_id: parent_app_id
+  queue:
+    create:
+      path: /apps/{app_id}/queues
+      method: POST
+    read:
+      path: /apps/{app_id}/queues
+      method: GET
+    delete:
+      path: /apps/{app_id}/queues/{queue_id}
+      method: DELETE
+    schema:
+      attributes:
+        aliases:
+          app_id: parent_app_id
