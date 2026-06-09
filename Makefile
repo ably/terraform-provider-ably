@@ -38,9 +38,15 @@ install: build
 	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
 	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
 
+# Hermetic test loop: unit tests plus the full acceptance suite run against an
+# in-process fake Control API (see internal/provider/fake_control_api_test.go).
+# No Ably credentials or network access required, safe to run on every change
+# and in CI on forks. This is the loop an AI agent should run.
 test:
-	go test -i $(TEST) || exit 1
-	echo $(TEST) | xargs -t -n4 go test $(TESTARGS) -timeout=5m -parallel=10
+	go test $(TEST) $(TESTARGS) -timeout=15m
 
+# Acceptance tests against a REAL Control API. Requires ABLY_ACCOUNT_TOKEN (and
+# optionally ABLY_URL, e.g. staging). Setting TF_ACC makes TestMain stand aside
+# so the suite hits the real API instead of the fake.
 testacc:
 	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m
