@@ -261,6 +261,7 @@ func (p *AblyProvider) Resources(context.Context) []func() resource.Resource {
 		func() resource.Resource { return ResourceRuleKafka{p} },
 		func() resource.Resource { return ResourceRuleAMQP{p} },
 		func() resource.Resource { return ResourceRuleAMQPExternal{p} },
+		func() resource.Resource { return ResourceRuleBodyguard{p} },
 		func() resource.Resource { return ResourceIngressRuleMongo{p} },
 		func() resource.Resource { return ResourceIngressRulePostgresOutbox{p} },
 	}
