@@ -24,7 +24,8 @@
           {
             "name": "status",
             "string": {
-              "computed_optional_required": "optional"
+              "computed_optional_required": "optional",
+              "description": "The status of the rule. Rules can be enabled or disabled."
             }
           },
           {
@@ -33,42 +34,49 @@
               "attributes": [
                 {
                   "int64": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The timeout in milliseconds for retrying the rule invocation."
                   },
                   "name": "retry_timeout"
                 },
                 {
                   "int64": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The maximum number of retry attempts."
                   },
                   "name": "max_retries"
                 },
                 {
                   "name": "failed_action",
                   "string": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through."
                   }
                 },
                 {
                   "name": "too_many_requests_action",
                   "string": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`."
                   }
                 }
               ],
-              "computed_optional_required": "required"
+              "computed_optional_required": "required",
+              "description": "Configuration for before-publish behavior, including retry logic and failure handling."
             }
           },
           {
             "name": "invocation_mode",
             "string": {
-              "computed_optional_required": "required"
+              "computed_optional_required": "required",
+              "description": "The invocation mode for this rule. Before-publish rules are invoked before a message is published."
             }
           },
           {
             "name": "chat_room_filter",
             "string": {
-              "computed_optional_required": "optional"
+              "computed_optional_required": "optional",
+              "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule."
             }
           },
           {
@@ -79,29 +87,34 @@
                   "name": "api_key",
                   "string": {
                     "computed_optional_required": "required",
+                    "description": "The Bodyguard API key for authenticating with the moderation service.",
                     "sensitive": true
                   }
                 },
                 {
                   "name": "channel_id",
                   "string": {
-                    "computed_optional_required": "optional"
+                    "computed_optional_required": "optional",
+                    "description": "The Bodyguard channel ID to associate with moderation requests."
                   }
                 },
                 {
                   "name": "api_url",
                   "string": {
-                    "computed_optional_required": "optional"
+                    "computed_optional_required": "optional",
+                    "description": "The Bodyguard API URL for the moderation service."
                   }
                 },
                 {
                   "name": "default_language",
                   "string": {
-                    "computed_optional_required": "optional"
+                    "computed_optional_required": "optional",
+                    "description": "The default language for text moderation analysis."
                   }
                 }
               ],
-              "computed_optional_required": "required"
+              "computed_optional_required": "required",
+              "description": "The target for the rule, specifying the Bodyguard moderation configuration."
             }
           }
         ]
@@ -128,7 +141,8 @@
           {
             "name": "status",
             "string": {
-              "computed_optional_required": "optional"
+              "computed_optional_required": "optional",
+              "description": "The status of the rule. Rules can be enabled or disabled."
             }
           },
           {
@@ -137,42 +151,49 @@
               "attributes": [
                 {
                   "int64": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The timeout in milliseconds for retrying the rule invocation."
                   },
                   "name": "retry_timeout"
                 },
                 {
                   "int64": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The maximum number of retry attempts."
                   },
                   "name": "max_retries"
                 },
                 {
                   "name": "failed_action",
                   "string": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through."
                   }
                 },
                 {
                   "name": "too_many_requests_action",
                   "string": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`."
                   }
                 }
               ],
-              "computed_optional_required": "required"
+              "computed_optional_required": "required",
+              "description": "Configuration for before-publish behavior, including retry logic and failure handling."
             }
           },
           {
             "name": "invocation_mode",
             "string": {
-              "computed_optional_required": "required"
+              "computed_optional_required": "required",
+              "description": "The invocation mode for this rule. Before-publish rules are invoked before a message is published."
             }
           },
           {
             "name": "chat_room_filter",
             "string": {
-              "computed_optional_required": "optional"
+              "computed_optional_required": "optional",
+              "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule."
             }
           },
           {
@@ -183,23 +204,27 @@
                   "name": "api_key",
                   "string": {
                     "computed_optional_required": "required",
+                    "description": "The Tisane API key for authenticating with the moderation service.",
                     "sensitive": true
                   }
                 },
                 {
                   "name": "model_url",
                   "string": {
-                    "computed_optional_required": "optional"
+                    "computed_optional_required": "optional",
+                    "description": "The URL of the Tisane model to use for text analysis."
                   }
                 },
                 {
                   "name": "default_language",
                   "string": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The default language for text moderation analysis."
                   }
                 }
               ],
-              "computed_optional_required": "required"
+              "computed_optional_required": "required",
+              "description": "The target for the rule, specifying the Tisane moderation configuration."
             }
           }
         ]
@@ -226,7 +251,8 @@
           {
             "name": "status",
             "string": {
-              "computed_optional_required": "optional"
+              "computed_optional_required": "optional",
+              "description": "The status of the rule. Rules can be enabled or disabled."
             }
           },
           {
@@ -235,42 +261,49 @@
               "attributes": [
                 {
                   "int64": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The timeout in milliseconds for retrying the rule invocation."
                   },
                   "name": "retry_timeout"
                 },
                 {
                   "int64": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The maximum number of retry attempts."
                   },
                   "name": "max_retries"
                 },
                 {
                   "name": "failed_action",
                   "string": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through."
                   }
                 },
                 {
                   "name": "too_many_requests_action",
                   "string": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`."
                   }
                 }
               ],
-              "computed_optional_required": "required"
+              "computed_optional_required": "required",
+              "description": "Configuration for before-publish behavior, including retry logic and failure handling."
             }
           },
           {
             "name": "invocation_mode",
             "string": {
-              "computed_optional_required": "required"
+              "computed_optional_required": "required",
+              "description": "The invocation mode for this rule. Before-publish rules are invoked before a message is published."
             }
           },
           {
             "name": "chat_room_filter",
             "string": {
-              "computed_optional_required": "optional"
+              "computed_optional_required": "optional",
+              "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule."
             }
           },
           {
@@ -281,17 +314,20 @@
                   "name": "api_key",
                   "string": {
                     "computed_optional_required": "required",
+                    "description": "The Azure Content Safety API key for authenticating with the moderation service.",
                     "sensitive": true
                   }
                 },
                 {
                   "name": "endpoint",
                   "string": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The Azure Content Safety endpoint URL."
                   }
                 }
               ],
-              "computed_optional_required": "required"
+              "computed_optional_required": "required",
+              "description": "The target for the rule, specifying the Azure Content Safety configuration."
             }
           }
         ]
@@ -318,7 +354,8 @@
           {
             "name": "status",
             "string": {
-              "computed_optional_required": "optional"
+              "computed_optional_required": "optional",
+              "description": "The status of the rule. Rules can be enabled or disabled."
             }
           },
           {
@@ -327,42 +364,49 @@
               "attributes": [
                 {
                   "int64": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The timeout in milliseconds for retrying the rule invocation."
                   },
                   "name": "retry_timeout"
                 },
                 {
                   "int64": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The maximum number of retry attempts."
                   },
                   "name": "max_retries"
                 },
                 {
                   "name": "failed_action",
                   "string": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through."
                   }
                 },
                 {
                   "name": "too_many_requests_action",
                   "string": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`."
                   }
                 }
               ],
-              "computed_optional_required": "required"
+              "computed_optional_required": "required",
+              "description": "Configuration for before-publish behavior, including retry logic and failure handling."
             }
           },
           {
             "name": "chat_room_filter",
             "string": {
-              "computed_optional_required": "optional"
+              "computed_optional_required": "optional",
+              "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule."
             }
           },
           {
             "name": "invocation_mode",
             "string": {
-              "computed_optional_required": "required"
+              "computed_optional_required": "required",
+              "description": "The invocation mode for this rule. Before-publish rules are invoked before a message is published."
             }
           },
           {
@@ -373,17 +417,20 @@
                   "name": "api_key",
                   "string": {
                     "computed_optional_required": "required",
+                    "description": "The Hive API key for authenticating with the moderation service.",
                     "sensitive": true
                   }
                 },
                 {
                   "name": "model_url",
                   "string": {
-                    "computed_optional_required": "optional"
+                    "computed_optional_required": "optional",
+                    "description": "The URL of the Hive text classification model to use."
                   }
                 }
               ],
-              "computed_optional_required": "required"
+              "computed_optional_required": "required",
+              "description": "The target for the rule, specifying the Hive AI moderation configuration."
             }
           }
         ]
@@ -410,19 +457,22 @@
           {
             "name": "status",
             "string": {
-              "computed_optional_required": "optional"
+              "computed_optional_required": "optional",
+              "description": "The status of the rule. Rules can be enabled or disabled."
             }
           },
           {
             "name": "invocation_mode",
             "string": {
-              "computed_optional_required": "required"
+              "computed_optional_required": "required",
+              "description": "The invocation mode for this rule. After-publish rules are invoked after a message is published."
             }
           },
           {
             "name": "chat_room_filter",
             "string": {
-              "computed_optional_required": "optional"
+              "computed_optional_required": "optional",
+              "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule."
             }
           },
           {
@@ -433,17 +483,20 @@
                   "name": "api_key",
                   "string": {
                     "computed_optional_required": "required",
+                    "description": "The Hive API key for authenticating with the moderation dashboard.",
                     "sensitive": true
                   }
                 },
                 {
                   "bool": {
-                    "computed_optional_required": "optional"
+                    "computed_optional_required": "optional",
+                    "description": "If `true`, messages will also be checked against Hive watch lists."
                   },
                   "name": "check_watch_lists"
                 }
               ],
-              "computed_optional_required": "required"
+              "computed_optional_required": "required",
+              "description": "The target for the rule, specifying the Hive dashboard configuration."
             }
           }
         ]
@@ -470,7 +523,8 @@
           {
             "name": "status",
             "string": {
-              "computed_optional_required": "optional"
+              "computed_optional_required": "optional",
+              "description": "The status of the rule. Rules can be enabled or disabled."
             }
           },
           {
@@ -479,42 +533,49 @@
               "attributes": [
                 {
                   "int64": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The timeout in milliseconds for retrying the rule invocation."
                   },
                   "name": "retry_timeout"
                 },
                 {
                   "int64": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The maximum number of retry attempts."
                   },
                   "name": "max_retries"
                 },
                 {
                   "name": "failed_action",
                   "string": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through."
                   }
                 },
                 {
                   "name": "too_many_requests_action",
                   "string": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`."
                   }
                 }
               ],
-              "computed_optional_required": "required"
+              "computed_optional_required": "required",
+              "description": "Configuration for before-publish behavior, including retry logic and failure handling."
             }
           },
           {
             "name": "invocation_mode",
             "string": {
-              "computed_optional_required": "required"
+              "computed_optional_required": "required",
+              "description": "The invocation mode for this rule. Before-publish rules are invoked before a message is published."
             }
           },
           {
             "name": "chat_room_filter",
             "string": {
-              "computed_optional_required": "optional"
+              "computed_optional_required": "optional",
+              "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule."
             }
           },
           {
@@ -524,7 +585,8 @@
                 {
                   "name": "url",
                   "string": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The webhook URL that Ably will POST events to before publishing."
                   }
                 },
                 {
@@ -535,13 +597,15 @@
                         {
                           "name": "name",
                           "string": {
-                            "computed_optional_required": "optional"
+                            "computed_optional_required": "optional",
+                            "description": "The name of the header."
                           }
                         },
                         {
                           "name": "value",
                           "string": {
-                            "computed_optional_required": "optional"
+                            "computed_optional_required": "optional",
+                            "description": "The value of the header."
                           }
                         }
                       ]
@@ -550,7 +614,8 @@
                   "name": "headers"
                 }
               ],
-              "computed_optional_required": "required"
+              "computed_optional_required": "required",
+              "description": "The target for the rule, specifying the webhook endpoint to call."
             }
           }
         ]
@@ -577,7 +642,8 @@
           {
             "name": "status",
             "string": {
-              "computed_optional_required": "optional"
+              "computed_optional_required": "optional",
+              "description": "The status of the rule. Rules can be enabled or disabled."
             }
           },
           {
@@ -586,42 +652,49 @@
               "attributes": [
                 {
                   "int64": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The timeout in milliseconds for retrying the rule invocation."
                   },
                   "name": "retry_timeout"
                 },
                 {
                   "int64": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The maximum number of retry attempts."
                   },
                   "name": "max_retries"
                 },
                 {
                   "name": "failed_action",
                   "string": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through."
                   }
                 },
                 {
                   "name": "too_many_requests_action",
                   "string": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`."
                   }
                 }
               ],
-              "computed_optional_required": "required"
+              "computed_optional_required": "required",
+              "description": "Configuration for before-publish behavior, including retry logic and failure handling."
             }
           },
           {
             "name": "invocation_mode",
             "string": {
-              "computed_optional_required": "required"
+              "computed_optional_required": "required",
+              "description": "The invocation mode for this rule. Before-publish rules are invoked before a message is published."
             }
           },
           {
             "name": "chat_room_filter",
             "string": {
-              "computed_optional_required": "optional"
+              "computed_optional_required": "optional",
+              "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule."
             }
           },
           {
@@ -651,13 +724,15 @@
                 {
                   "name": "region",
                   "string": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The AWS region in which your Lambda function is hosted. See the \u003ca href=\"https://docs.aws.amazon.com/general/latest/gr/rande.html#lambda_region\"\u003eAWS documentation\u003c/a\u003e for more detail."
                   }
                 },
                 {
                   "name": "function_name",
                   "string": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "description": "The name of your AWS Lambda function."
                   }
                 },
                 {
@@ -693,7 +768,8 @@
                   }
                 }
               ],
-              "computed_optional_required": "required"
+              "computed_optional_required": "required",
+              "description": "The target for the rule, specifying the AWS Lambda function to invoke."
             }
           }
         ]

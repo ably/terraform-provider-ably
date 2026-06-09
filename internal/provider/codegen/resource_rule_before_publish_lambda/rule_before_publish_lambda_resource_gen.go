@@ -26,16 +26,24 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 			"before_publish_config": schema.SingleNestedAttribute{
 				Attributes: map[string]schema.Attribute{
 					"failed_action": schema.StringAttribute{
-						Required: true,
+						Required:            true,
+						Description:         "The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through.",
+						MarkdownDescription: "The action to take if the rule invocation fails. `REJECT` prevents the message from being published, `PUBLISH` allows it through.",
 					},
 					"max_retries": schema.Int64Attribute{
-						Required: true,
+						Required:            true,
+						Description:         "The maximum number of retry attempts.",
+						MarkdownDescription: "The maximum number of retry attempts.",
 					},
 					"retry_timeout": schema.Int64Attribute{
-						Required: true,
+						Required:            true,
+						Description:         "The timeout in milliseconds for retrying the rule invocation.",
+						MarkdownDescription: "The timeout in milliseconds for retrying the rule invocation.",
 					},
 					"too_many_requests_action": schema.StringAttribute{
-						Required: true,
+						Required:            true,
+						Description:         "The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`.",
+						MarkdownDescription: "The action to take if the rule invocation returns a rate limit response. `RETRY` will attempt the request again, `FAIL` will invoke the `failedAction`.",
 					},
 				},
 				CustomType: BeforePublishConfigType{
@@ -43,10 +51,14 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 						AttrTypes: BeforePublishConfigValue{}.AttributeTypes(ctx),
 					},
 				},
-				Required: true,
+				Required:            true,
+				Description:         "Configuration for before-publish behavior, including retry logic and failure handling.",
+				MarkdownDescription: "Configuration for before-publish behavior, including retry logic and failure handling.",
 			},
 			"chat_room_filter": schema.StringAttribute{
-				Optional: true,
+				Optional:            true,
+				Description:         "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
+				MarkdownDescription: "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
 			},
 			"id": schema.StringAttribute{
 				Computed:            true,
@@ -54,7 +66,9 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 				MarkdownDescription: "The rule ID.",
 			},
 			"invocation_mode": schema.StringAttribute{
-				Required: true,
+				Required:            true,
+				Description:         "The invocation mode for this rule. Before-publish rules are invoked before a message is published.",
+				MarkdownDescription: "The invocation mode for this rule. Before-publish rules are invoked before a message is published.",
 			},
 			"source": schema.SingleNestedAttribute{
 				Attributes: map[string]schema.Attribute{
@@ -73,7 +87,9 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 				Optional: true,
 			},
 			"status": schema.StringAttribute{
-				Optional: true,
+				Optional:            true,
+				Description:         "The status of the rule. Rules can be enabled or disabled.",
+				MarkdownDescription: "The status of the rule. Rules can be enabled or disabled.",
 			},
 			"target": schema.SingleNestedAttribute{
 				Attributes: map[string]schema.Attribute{
@@ -100,10 +116,14 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 						Required: true,
 					},
 					"function_name": schema.StringAttribute{
-						Required: true,
+						Required:            true,
+						Description:         "The name of your AWS Lambda function.",
+						MarkdownDescription: "The name of your AWS Lambda function.",
 					},
 					"region": schema.StringAttribute{
-						Required: true,
+						Required:            true,
+						Description:         "The AWS region in which your Lambda function is hosted. See the <a href=\"https://docs.aws.amazon.com/general/latest/gr/rande.html#lambda_region\">AWS documentation</a> for more detail.",
+						MarkdownDescription: "The AWS region in which your Lambda function is hosted. See the <a href=\"https://docs.aws.amazon.com/general/latest/gr/rande.html#lambda_region\">AWS documentation</a> for more detail.",
 					},
 				},
 				CustomType: TargetType{
@@ -111,7 +131,9 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 						AttrTypes: TargetValue{}.AttributeTypes(ctx),
 					},
 				},
-				Required: true,
+				Required:            true,
+				Description:         "The target for the rule, specifying the AWS Lambda function to invoke.",
+				MarkdownDescription: "The target for the rule, specifying the AWS Lambda function to invoke.",
 			},
 		},
 	}

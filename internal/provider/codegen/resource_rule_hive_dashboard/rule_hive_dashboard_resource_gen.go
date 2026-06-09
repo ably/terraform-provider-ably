@@ -24,7 +24,9 @@ func RuleHiveDashboardResourceSchema(ctx context.Context) schema.Schema {
 				MarkdownDescription: "The Ably application ID.",
 			},
 			"chat_room_filter": schema.StringAttribute{
-				Optional: true,
+				Optional:            true,
+				Description:         "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
+				MarkdownDescription: "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
 			},
 			"id": schema.StringAttribute{
 				Computed:            true,
@@ -32,19 +34,27 @@ func RuleHiveDashboardResourceSchema(ctx context.Context) schema.Schema {
 				MarkdownDescription: "The rule ID.",
 			},
 			"invocation_mode": schema.StringAttribute{
-				Required: true,
+				Required:            true,
+				Description:         "The invocation mode for this rule. After-publish rules are invoked after a message is published.",
+				MarkdownDescription: "The invocation mode for this rule. After-publish rules are invoked after a message is published.",
 			},
 			"status": schema.StringAttribute{
-				Optional: true,
+				Optional:            true,
+				Description:         "The status of the rule. Rules can be enabled or disabled.",
+				MarkdownDescription: "The status of the rule. Rules can be enabled or disabled.",
 			},
 			"target": schema.SingleNestedAttribute{
 				Attributes: map[string]schema.Attribute{
 					"api_key": schema.StringAttribute{
-						Required:  true,
-						Sensitive: true,
+						Required:            true,
+						Sensitive:           true,
+						Description:         "The Hive API key for authenticating with the moderation dashboard.",
+						MarkdownDescription: "The Hive API key for authenticating with the moderation dashboard.",
 					},
 					"check_watch_lists": schema.BoolAttribute{
-						Optional: true,
+						Optional:            true,
+						Description:         "If `true`, messages will also be checked against Hive watch lists.",
+						MarkdownDescription: "If `true`, messages will also be checked against Hive watch lists.",
 					},
 				},
 				CustomType: TargetType{
@@ -52,7 +62,9 @@ func RuleHiveDashboardResourceSchema(ctx context.Context) schema.Schema {
 						AttrTypes: TargetValue{}.AttributeTypes(ctx),
 					},
 				},
-				Required: true,
+				Required:            true,
+				Description:         "The target for the rule, specifying the Hive dashboard configuration.",
+				MarkdownDescription: "The target for the rule, specifying the Hive dashboard configuration.",
 			},
 		},
 	}
