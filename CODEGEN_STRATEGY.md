@@ -113,6 +113,15 @@ Verified against the code, not just the agent's self-report:
 
 Net: the thesis holds, an agent can extend this codebase, but unsupervised correctness depends on two things the spike shows are missing: the structural fix to the rule plumbing, and a credential-free round-trip test.
 
+**Phase 0a/0b results (run 2026-06-09).** Ran both generator de-risk spikes. Both passed, so per the priority order in Section 2 we generate rather than hand-build.
+
+- Track A (0a): `tfplugingen-openapi` then `tfplugingen-framework` on `ably_app`, end to end. Produced a 407-line schema/model that compiles against the repo's framework deps. Optionality inference was good (`name` came out Required, the `*_configured` flags Computed, the push secrets Optional+Computed) and it lifted the `apns_auth_type` enum (`OneOf("certificate","token")`) straight from the swagger for free. Two manual touches were needed: alias the `account_id` path parameter so it does not collide with the `accountId` response field (framework-gen errors on the duplicate otherwise), and decide what to do with `_links` (the tool models it as a typed nested object; the hand-written client treats it as raw JSON). One useful realisation: the Go-initialism problem is a Layer 1 (client) concern only. The Terraform schema layer is snake_case anyway, so it does not arise here. Net: viable for the four simple resources with a small per-resource config and light post-processing.
+- Track B back half (0b): hand-authored a Provider Code Spec for the source-less Bodyguard moderation shape (nested `before_publish_config` and `target`, sensitive `api_key`, no `source`/`request_mode`) and ran `tfplugingen-framework generate`. It produced compilable schema + model with the correct nested types and none of the webhook fields. So the framework stage handles the moderation family cleanly; the only remaining Phase 2 work is the mechanical emitter that walks the in-repo control rule types into a Provider Code Spec.
+
+Carry the caveat: `tfplugingen-openapi` is still tech preview and last shipped Jan 2024, but it works on our spec today. Both tools emit schema + model only; all CRUD wiring to the control client stays hand-written, as the plan assumed.
+
+Implication: the moderation/before-publish rule family should be generated, not hand-built. Spiking before committing to a hand-build was the right call.
+
 **Phase 1 — Track A simple resources (3-5 days).** Build the overlay, the `generator_config.yml`, and wire `tfplugingen-openapi` -> `tfplugingen-framework generate` for app/key/namespace/queue into a `make generate` target. Diff the generated schema/model against the current hand-written ones and reconcile. CRUD wiring stays hand-written but now sits on top of generated schema/model. Effort is dominated by reconciling generated attribute metadata against our existing defaults/sensitive flags.
 
 **Phase 2 — Track B rule schema/model generation (4-6 days).** Promote the Phase 0 rule spike into a real generator: walk all `control/rule_types_*.go`, emit spec entries for all 15 variants, generate schema/model. Carry the per-field type/helper mapping table as explicit generator input.
