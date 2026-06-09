@@ -19,10 +19,18 @@ from the Ably Control API's OpenAPI spec, the first step of the strategy in
   description and example but no type), which makes `tfplugingen-openapi` skip
   it. We add the type back. This should be fixed in `ably/docs` and the patch
   dropped on the next refresh.
-- `generator_config.yml` — maps each resource to its create/read/update/delete
-  path and method, plus the per-resource aliases needed to get past spec quirks.
-- `spec.json` — the intermediate Provider Code Specification, produced by
-  `tfplugingen-openapi`. Regenerated, not hand-edited.
+- `generator_config.yml` — maps each simple resource to its
+  create/read/update/delete path and method, plus the per-resource aliases
+  needed to get past spec quirks.
+- `spec.json` — the intermediate Provider Code Specification for the simple
+  resources, produced by `tfplugingen-openapi`. Regenerated, not hand-edited.
+- `ruletypesgen/` — a small Go program that reflects over the in-repo `control`
+  rule types and emits a Provider Code Spec for the integration-rule families
+  the OpenAPI generator can't handle (the `oneOf` + discriminator union). This
+  is "Track B": the rules are generated from the curated control types, not the
+  spec.
+- `rules_spec.json` — the Provider Code Spec emitted by `ruletypesgen`.
+  Regenerated, not hand-edited.
 
 ## How to regenerate
 
@@ -30,13 +38,17 @@ from the Ably Control API's OpenAPI spec, the first step of the strategy in
 make generate
 ```
 
-That runs HashiCorp's two tools in sequence (pinned versions, fetched via
-`go run`):
+That runs both tracks:
 
-1. `tfplugingen-openapi` turns `swagger.yaml` + `generator_config.yml` into
-   `spec.json`.
-2. `tfplugingen-framework` turns `spec.json` into Go schema + model code under
-   `internal/provider/codegen/resource_<name>/`.
+1. **Track A (simple resources).** `tfplugingen-openapi` turns
+   `control-api.yaml` + `generator_config.yml` into `spec.json`, then
+   `tfplugingen-framework` turns that into Go schema + model code.
+2. **Track B (rule families).** `ruletypesgen` reflects the control rule types
+   into `rules_spec.json`, then `tfplugingen-framework` turns that into Go code
+   the same way.
+
+Both write to `internal/provider/codegen/resource_<name>/` (pinned tool
+versions, fetched via `go run`).
 
 The output is committed so changes are reviewable and a future CI check can
 assert that regeneration produces no diff.
@@ -45,11 +57,12 @@ assert that regeneration produces no diff.
 
 This is deliberately limited right now:
 
-- **Simple resources only.** `app`, `namespace` and `queue` are generated. The
-  integration rules use an OpenAPI `oneOf` + discriminator that
-  `tfplugingen-openapi` cannot handle, so they are not generated from the spec;
-  the rule families are driven from the in-repo `control` types instead (see the
-  strategy doc).
+- **Two tracks.** Simple resources (`app`, `namespace`, `queue`) generate from
+  the OpenAPI spec. The integration rules use an OpenAPI `oneOf` + discriminator
+  that `tfplugingen-openapi` cannot handle, so the moderation and before-publish
+  rule families are generated from the in-repo `control` types instead via
+  `ruletypesgen` (see the strategy doc). The webhook/firehose rule families are
+  not generated yet.
 - **Schema + model only.** The tools do not emit CRUD wiring. All wiring to the
   `control` client stays hand-written and is not generated here.
 - **Both tools are tech preview.** `tfplugingen-openapi` last shipped v0.3.0
