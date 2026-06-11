@@ -23,7 +23,7 @@ func TestAccAblyNamespace(t *testing.T) {
 			{
 				Config: testAccAblyNamespaceConfig(appName, control.NamespacePost{
 					ID:                      namespaceName,
-					Authenticated:           true,
+					Authenticated:           ptr(true),
 					Persisted:               true,
 					PersistLast:             true,
 					PushEnabled:             true,
@@ -36,6 +36,8 @@ func TestAccAblyNamespace(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "id", namespaceName),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "authenticated", "true"),
+					// identified mirrors the deprecated authenticated alias.
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "identified", "true"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "persisted", "true"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "persist_last", "true"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "push_enabled", "true"),
@@ -63,7 +65,7 @@ func TestAccAblyNamespace(t *testing.T) {
 			{
 				Config: testAccAblyNamespaceConfig(appName, control.NamespacePost{
 					ID:                      namespaceName,
-					Authenticated:           false,
+					Authenticated:           ptr(false),
 					Persisted:               false,
 					PersistLast:             false,
 					PushEnabled:             false,
@@ -76,6 +78,7 @@ func TestAccAblyNamespace(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "id", namespaceName),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "authenticated", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "identified", "false"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "persisted", "false"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "persist_last", "false"),
 					resource.TestCheckResourceAttr("ably_namespace.namespace0", "push_enabled", "false"),
@@ -88,7 +91,7 @@ func TestAccAblyNamespace(t *testing.T) {
 			{
 				Config: testAccAblyNamespaceConfig(appName, control.NamespacePost{
 					ID:               namespaceName + "new",
-					Authenticated:    false,
+					Authenticated:    ptr(false),
 					Persisted:        false,
 					PersistLast:      false,
 					PushEnabled:      false,
@@ -109,7 +112,7 @@ func TestAccAblyNamespace(t *testing.T) {
 			{
 				Config: testAccAblyNamespaceBatchingConfig(appName, control.NamespacePost{
 					ID:               namespaceName + "batching",
-					Authenticated:    false,
+					Authenticated:    ptr(false),
 					Persisted:        false,
 					PersistLast:      false,
 					PushEnabled:      false,
@@ -134,7 +137,7 @@ func TestAccAblyNamespace(t *testing.T) {
 			{
 				Config: testAccAblyNamespaceConflationConfig(appName, control.NamespacePost{
 					ID:                 namespaceName + "conflation",
-					Authenticated:      false,
+					Authenticated:      ptr(false),
 					Persisted:          false,
 					PersistLast:        false,
 					PushEnabled:        false,
@@ -199,7 +202,7 @@ resource "ably_namespace" "namespace0" {
 `,
 		appName,
 		namespace.ID,
-		namespace.Authenticated,
+		*namespace.Authenticated,
 		namespace.Persisted,
 		namespace.PersistLast,
 		namespace.PushEnabled,
@@ -244,7 +247,7 @@ resource "ably_namespace" "namespace0" {
 `,
 		appName,
 		namespace.ID,
-		namespace.Authenticated,
+		*namespace.Authenticated,
 		namespace.Persisted,
 		namespace.PersistLast,
 		namespace.PushEnabled,
@@ -290,7 +293,7 @@ resource "ably_namespace" "namespace0" {
 `,
 		appName,
 		namespace.ID,
-		namespace.Authenticated,
+		*namespace.Authenticated,
 		namespace.Persisted,
 		namespace.PersistLast,
 		namespace.PushEnabled,
@@ -300,6 +303,93 @@ resource "ably_namespace" "namespace0" {
 		*namespace.ConflationInterval,
 		*namespace.ConflationKey,
 	)
+}
+
+// TestAccAblyNamespace_Identified exercises the canonical identified attribute
+// and confirms the deprecated authenticated alias mirrors it in state.
+func TestAccAblyNamespace_Identified(t *testing.T) {
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	namespaceName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccAblyNamespaceIdentifiedConfig(appName, namespaceName, true),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "id", namespaceName),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "identified", "true"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "authenticated", "true"),
+				),
+			},
+			{
+				Config: testAccAblyNamespaceIdentifiedConfig(appName, namespaceName, false),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "id", namespaceName),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "identified", "false"),
+					resource.TestCheckResourceAttr("ably_namespace.namespace0", "authenticated", "false"),
+				),
+			},
+		},
+	})
+}
+
+func testAccAblyNamespaceIdentifiedConfig(appName, namespaceName string, identified bool) string {
+	return fmt.Sprintf(`
+terraform {
+	required_providers {
+		ably = {
+			source = "registry.terraform.io/ably/ably"
+		}
+	}
+}
+provider "ably" {}
+
+resource "ably_app" "app0" {
+	name     = %[1]q
+	status   = "enabled"
+	tls_only = true
+}
+
+resource "ably_namespace" "namespace0" {
+  app_id     = ably_app.app0.id
+  id         = %[2]q
+  identified = %[3]t
+}
+`, appName, namespaceName, identified)
+}
+
+// TestAccAblyNamespace_ConflictingIdentifiedAuthenticated confirms that setting
+// both the canonical identified attribute and its deprecated authenticated alias
+// is rejected at plan time by the ConflictsWith validator.
+func TestAccAblyNamespace_ConflictingIdentifiedAuthenticated(t *testing.T) {
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+terraform {
+	required_providers {
+		ably = {
+			source = "registry.terraform.io/ably/ably"
+		}
+	}
+}
+provider "ably" {}
+resource "ably_app" "app0" { name = %q }
+resource "ably_namespace" "ns0" {
+	app_id        = ably_app.app0.id
+	id            = "test-ns"
+	identified    = true
+	authenticated = true
+}
+`, appName),
+				ExpectError: regexp.MustCompile(`(?s).*cannot be specified when.*`),
+			},
+		},
+	})
 }
 
 func TestAccAblyNamespace_InvalidBatchingInterval(t *testing.T) {

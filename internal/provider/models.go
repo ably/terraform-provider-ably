@@ -36,6 +36,7 @@ type AblyApp struct {
 type AblyNamespace struct {
 	AppID                   types.String `tfsdk:"app_id"`
 	ID                      types.String `tfsdk:"id"`
+	Identified              types.Bool   `tfsdk:"identified"`
 	Authenticated           types.Bool   `tfsdk:"authenticated"`
 	Persisted               types.Bool   `tfsdk:"persisted"`
 	PersistLast             types.Bool   `tfsdk:"persist_last"`

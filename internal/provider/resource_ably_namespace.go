@@ -5,7 +5,9 @@ import (
 	"context"
 
 	"github.com/ably/terraform-provider-ably/control"
+	"github.com/hashicorp/terraform-plugin-framework-validators/boolvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -39,12 +41,27 @@ func (r ResourceNamespace) Schema(_ context.Context, _ resource.SchemaRequest, r
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"authenticated": schema.BoolAttribute{
+			"identified": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "Require clients to be authenticated to use channels in this namespace.",
+				Description: "Require clients to be identified (authenticated with a client ID) to use channels in this namespace. See https://ably.com/docs/auth/identified-clients.",
 				PlanModifiers: []planmodifier.Bool{
-					DefaultBoolAttribute(types.BoolValue(false)),
+					AliasBoolAttribute(path.Root("authenticated"), types.BoolValue(false)),
+				},
+				Validators: []validator.Bool{
+					boolvalidator.ConflictsWith(path.MatchRoot("authenticated")),
+				},
+			},
+			"authenticated": schema.BoolAttribute{
+				Optional:           true,
+				Computed:           true,
+				DeprecationMessage: "Use `identified` instead. `authenticated` is a legacy alias and will be removed in a future major version.",
+				Description:        "Deprecated alias for `identified`. Require clients to be identified to use channels in this namespace.",
+				PlanModifiers: []planmodifier.Bool{
+					AliasBoolAttribute(path.Root("identified"), types.BoolValue(false)),
+				},
+				Validators: []validator.Bool{
+					boolvalidator.ConflictsWith(path.MatchRoot("identified")),
 				},
 			},
 			"persisted": schema.BoolAttribute{
@@ -154,6 +171,29 @@ func (r ResourceNamespace) Schema(_ context.Context, _ resource.SchemaRequest, r
 	}
 }
 
+// namespaceIdentified returns the effective "identified" value from a plan,
+// preferring the canonical identified attribute and falling back to the
+// deprecated authenticated alias. The two are mutually exclusive in config.
+func namespaceIdentified(plan AblyNamespace) bool {
+	if !plan.Identified.IsNull() && !plan.Identified.IsUnknown() {
+		return plan.Identified.ValueBool()
+	}
+	if !plan.Authenticated.IsNull() && !plan.Authenticated.IsUnknown() {
+		return plan.Authenticated.ValueBool()
+	}
+	return false
+}
+
+// namespaceIdentifiedValue extracts the server's identified value from a
+// response, preferring the canonical identified field and falling back to the
+// authenticated alias for Control API versions that don't yet return it.
+func namespaceIdentifiedValue(n control.NamespaceResponse) bool {
+	if n.Identified != nil {
+		return *n.Identified
+	}
+	return n.Authenticated
+}
+
 // Create creates a new resource.
 func (r ResourceNamespace) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.ensureConfigured(&resp.Diagnostics) {
@@ -171,7 +211,7 @@ func (r ResourceNamespace) Create(ctx context.Context, req resource.CreateReques
 	// Generates an API request body from the plan values
 	namespaceValues := control.NamespacePost{
 		ID:                      plan.ID.ValueString(),
-		Authenticated:           plan.Authenticated.ValueBool(),
+		Identified:              ptr(namespaceIdentified(plan)),
 		Persisted:               plan.Persisted.ValueBool(),
 		PersistLast:             plan.PersistLast.ValueBool(),
 		PushEnabled:             plan.PushEnabled.ValueBool(),
@@ -213,7 +253,8 @@ func (r ResourceNamespace) Create(ctx context.Context, req resource.CreateReques
 	respApps := AblyNamespace{
 		AppID:                   types.StringValue(plan.AppID.ValueString()),
 		ID:                      types.StringValue(ablyNamespace.ID),
-		Authenticated:           types.BoolValue(ablyNamespace.Authenticated),
+		Identified:              types.BoolValue(namespaceIdentifiedValue(ablyNamespace)),
+		Authenticated:           types.BoolValue(namespaceIdentifiedValue(ablyNamespace)),
 		Persisted:               types.BoolValue(ablyNamespace.Persisted),
 		PersistLast:             types.BoolValue(ablyNamespace.PersistLast),
 		PushEnabled:             types.BoolValue(ablyNamespace.PushEnabled),
@@ -287,7 +328,8 @@ func (r ResourceNamespace) Read(ctx context.Context, req resource.ReadRequest, r
 			respNamespaces := AblyNamespace{
 				AppID:                   types.StringValue(appID),
 				ID:                      types.StringValue(namespaceID),
-				Authenticated:           types.BoolValue(v.Authenticated),
+				Identified:              types.BoolValue(namespaceIdentifiedValue(v)),
+				Authenticated:           types.BoolValue(namespaceIdentifiedValue(v)),
 				Persisted:               types.BoolValue(v.Persisted),
 				PersistLast:             types.BoolValue(v.PersistLast),
 				PushEnabled:             types.BoolValue(v.PushEnabled),
@@ -345,7 +387,7 @@ func (r ResourceNamespace) Update(ctx context.Context, req resource.UpdateReques
 
 	// Instantiates struct of type control.NamespacePatch and sets values to output of plan
 	namespaceValues := control.NamespacePatch{
-		Authenticated:           ptr(plan.Authenticated.ValueBool()),
+		Identified:              ptr(namespaceIdentified(plan)),
 		Persisted:               ptr(plan.Persisted.ValueBool()),
 		PersistLast:             ptr(plan.PersistLast.ValueBool()),
 		PushEnabled:             ptr(plan.PushEnabled.ValueBool()),
@@ -388,7 +430,8 @@ func (r ResourceNamespace) Update(ctx context.Context, req resource.UpdateReques
 	respNamespaces := AblyNamespace{
 		AppID:                   types.StringValue(appID),
 		ID:                      types.StringValue(ablyNamespace.ID),
-		Authenticated:           types.BoolValue(ablyNamespace.Authenticated),
+		Identified:              types.BoolValue(namespaceIdentifiedValue(ablyNamespace)),
+		Authenticated:           types.BoolValue(namespaceIdentifiedValue(ablyNamespace)),
 		Persisted:               types.BoolValue(ablyNamespace.Persisted),
 		PersistLast:             types.BoolValue(ablyNamespace.PersistLast),
 		PushEnabled:             types.BoolValue(ablyNamespace.PushEnabled),

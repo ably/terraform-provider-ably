@@ -1,7 +1,7 @@
 resource "ably_namespace" "namespace0" {
   app_id            = ably_app.app0.id
   id                = "namespace"
-  authenticated     = false
+  identified        = false
   persisted         = false
   persist_last      = false
   push_enabled      = false
@@ -12,7 +12,7 @@ resource "ably_namespace" "namespace0" {
 resource "ably_namespace" "namespace_batching" {
   app_id            = ably_app.app0.id
   id                = "namespace"
-  authenticated     = false
+  identified        = false
   persisted         = false
   persist_last      = false
   push_enabled      = false
@@ -25,7 +25,7 @@ resource "ably_namespace" "namespace_batching" {
 resource "ably_namespace" "namespace_conflation" {
   app_id              = ably_app.app0.id
   id                  = "namespace"
-  authenticated       = false
+  identified          = false
   persisted           = false
   persist_last        = false
   push_enabled        = false

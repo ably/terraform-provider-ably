@@ -16,7 +16,7 @@ The Ably namespace resource allows you to manage namespaces for channel rules in
 resource "ably_namespace" "namespace0" {
   app_id            = ably_app.app0.id
   id                = "namespace"
-  authenticated     = false
+  identified        = false
   persisted         = false
   persist_last      = false
   push_enabled      = false
@@ -27,7 +27,7 @@ resource "ably_namespace" "namespace0" {
 resource "ably_namespace" "namespace_batching" {
   app_id            = ably_app.app0.id
   id                = "namespace"
-  authenticated     = false
+  identified        = false
   persisted         = false
   persist_last      = false
   push_enabled      = false
@@ -40,7 +40,7 @@ resource "ably_namespace" "namespace_batching" {
 resource "ably_namespace" "namespace_conflation" {
   app_id              = ably_app.app0.id
   id                  = "namespace"
-  authenticated       = false
+  identified          = false
   persisted           = false
   persist_last        = false
   push_enabled        = false
@@ -62,13 +62,14 @@ resource "ably_namespace" "namespace_conflation" {
 
 ### Optional
 
-- `authenticated` (Boolean) Require clients to be authenticated to use channels in this namespace.
+- `authenticated` (Boolean, Deprecated) Deprecated alias for `identified`. Require clients to be identified to use channels in this namespace.
 - `batching_enabled` (Boolean) If true, channels within this namespace will start batching inbound messages instead of sending them out immediately to subscribers as per the configured policy.
 - `batching_interval` (Number) When configured, sets the maximium batching interval in the channel.
 - `conflation_enabled` (Boolean) If true, enables conflation for channels within this namespace. Conflation reduces the number of messages sent to subscribers by combining multiple messages into a single message.
 - `conflation_interval` (Number) The interval in milliseconds at which messages are conflated. This determines how frequently messages are combined into a single message.
 - `conflation_key` (String) The key used to determine which messages should be conflated. Messages with the same conflation key will be combined into a single message.
 - `expose_timeserial` (Boolean) If true, messages received on a channel will contain a unique timeserial that can be referenced by later messages for use with message interactions.
+- `identified` (Boolean) Require clients to be identified (authenticated with a client ID) to use channels in this namespace. See https://ably.com/docs/auth/identified-clients.
 - `mutable_messages` (Boolean) Enables message editing and deletion on the namespace. When enabled, messages published to channels matching this namespace can be modified or deleted.
 - `persist_last` (Boolean) If true, the last message on each channel will persist for 365 days.
 - `persisted` (Boolean) If true, messages will be stored for 24 hours.
