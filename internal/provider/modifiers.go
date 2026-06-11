@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -36,6 +37,62 @@ func (m defaultBoolModifier) PlanModifyBool(_ context.Context, req planmodifier.
 // DefaultBoolAttribute returns a plan modifier that sets a default bool value.
 func DefaultBoolAttribute(value types.Bool) planmodifier.Bool {
 	return defaultBoolModifier{value: value}
+}
+
+// aliasBoolModifier mirrors one half of a pair of aliased boolean attributes
+// (e.g. a canonical attribute and its deprecated alias). The two are mutually
+// exclusive in config, so at most one is ever set. When this attribute is not
+// configured it takes the value of the other alias if that is set; otherwise it
+// falls back to a default on create and keeps the prior state value on update.
+type aliasBoolModifier struct {
+	other path.Path
+	value types.Bool
+}
+
+func (m aliasBoolModifier) Description(_ context.Context) string {
+	return "Mirrors the value of an aliased attribute, defaulting when neither is set."
+}
+
+func (m aliasBoolModifier) MarkdownDescription(ctx context.Context) string {
+	return m.Description(ctx)
+}
+
+func (m aliasBoolModifier) PlanModifyBool(ctx context.Context, req planmodifier.BoolRequest, resp *planmodifier.BoolResponse) {
+	// Configured explicitly: keep the configured value.
+	if !req.ConfigValue.IsNull() {
+		return
+	}
+
+	// Mirror the other alias when it is configured. The two always hold the
+	// same value, so copying it keeps plan and result in agreement.
+	var other types.Bool
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, m.other, &other)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if !other.IsNull() {
+		// The other alias drives the value. If it isn't known yet (e.g. it
+		// references an unresolved value), leave this attribute unknown so the
+		// mirrored result is accepted after apply rather than clashing with a
+		// stale planned value.
+		if other.IsUnknown() {
+			resp.PlanValue = types.BoolUnknown()
+		} else {
+			resp.PlanValue = other
+		}
+		return
+	}
+
+	// Neither alias is set: default on create, keep prior state on update.
+	if req.PlanValue.IsNull() {
+		resp.PlanValue = m.value
+	}
+}
+
+// AliasBoolAttribute returns a plan modifier for one half of a pair of aliased
+// boolean attributes. See [aliasBoolModifier].
+func AliasBoolAttribute(other path.Path, value types.Bool) planmodifier.Bool {
+	return aliasBoolModifier{other: other, value: value}
 }
 
 // defaultInt64Modifier implements planmodifier.Int64.

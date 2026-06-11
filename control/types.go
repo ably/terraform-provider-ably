@@ -137,8 +137,14 @@ type KeyResponse struct {
 // ID is the namespace prefix (e.g. "chat"); boolean fields default to
 // false when omitted.
 type NamespacePost struct {
-	ID                      string  `json:"id"`
-	Authenticated           bool    `json:"authenticated"`
+	ID string `json:"id"`
+	// Identified is the canonical field; Authenticated is a legacy alias for the
+	// same setting. Both are pointers with omitempty so an unset alias is
+	// dropped from the body rather than sent alongside the other (which the
+	// server would treat as a conflicting pair). The provider only ever sets
+	// Identified.
+	Identified              *bool   `json:"identified,omitempty"`
+	Authenticated           *bool   `json:"authenticated,omitempty"`
 	Persisted               bool    `json:"persisted"`
 	PersistLast             bool    `json:"persistLast"`
 	PushEnabled             bool    `json:"pushEnabled"`
@@ -156,6 +162,7 @@ type NamespacePost struct {
 // NamespacePatch is the request body for [Client.UpdateNamespace]. This
 // is a partial update — only non-nil fields are sent.
 type NamespacePatch struct {
+	Identified              *bool   `json:"identified,omitempty"`
 	Authenticated           *bool   `json:"authenticated,omitempty"`
 	Persisted               *bool   `json:"persisted,omitempty"`
 	PersistLast             *bool   `json:"persistLast,omitempty"`
@@ -174,6 +181,7 @@ type NamespacePatch struct {
 // NamespaceResponse is the response for namespace operations.
 type NamespaceResponse struct {
 	AppID                   string  `json:"appId,omitempty"`
+	Identified              *bool   `json:"identified,omitempty"`
 	Authenticated           bool    `json:"authenticated"`
 	Created                 int64   `json:"created,omitempty"`
 	Modified                int64   `json:"modified,omitempty"`
