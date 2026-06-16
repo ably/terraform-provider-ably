@@ -64,7 +64,7 @@ resource "ably_namespace" "namespace_conflation" {
 
 - `authenticated` (Boolean, Deprecated) Deprecated alias for `identified`. Require clients to be identified to use channels in this namespace.
 - `batching_enabled` (Boolean) If true, channels within this namespace will start batching inbound messages instead of sending them out immediately to subscribers as per the configured policy.
-- `batching_interval` (Number) When configured, sets the maximium batching interval in the channel.
+- `batching_interval` (Number) When configured, sets the maximum batching interval in the channel.
 - `conflation_enabled` (Boolean) If true, enables conflation for channels within this namespace. Conflation reduces the number of messages sent to subscribers by combining multiple messages into a single message.
 - `conflation_interval` (Number) The interval in milliseconds at which messages are conflated. This determines how frequently messages are combined into a single message.
 - `conflation_key` (String) The key used to determine which messages should be conflated. Messages with the same conflation key will be combined into a single message.

@@ -131,7 +131,7 @@ func (r ResourceNamespace) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"batching_interval": schema.Int64Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "When configured, sets the maximium batching interval in the channel.",
+				Description: "When configured, sets the maximum batching interval in the channel.",
 				PlanModifiers: []planmodifier.Int64{
 					DefaultInt64Attribute(types.Int64Null()),
 				},
