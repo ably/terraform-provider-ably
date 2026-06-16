@@ -42,7 +42,7 @@ Generate docs for this provider by installing [`tfplugindocs`](https://github.co
 Schema and model code is generated from the Control API spec. See
 [`codegen/README.md`](codegen/README.md) for the pipeline. Regenerate with:
 
-```
+```sh
 make generate
 ```
 
@@ -78,20 +78,19 @@ The reference example is `ably_rule_bodyguard`
 (`internal/provider/resource_ably_rule_bodyguard.go`). The pattern:
 
 1. `Schema()` calls the generated `…ResourceSchema(ctx)` as its base. The
-   generated schema provides the attribute set, types, nesting, sensitivity and
-   (where the spec documents them) descriptions.
-2. Patch in the metadata the generator can't derive: enum validators, defaults,
-   and plan modifiers (`RequiresReplace`, `UseStateForUnknown`).
-3. Strip the generated `CustomType` from any nested blocks (`attr.CustomType =
+   generated schema already carries the attribute set, types, nesting,
+   sensitivity, descriptions, and (sourced from the spec or the overrides table
+   in `ruletypesgen`) enum validators, defaults and plan modifiers.
+2. Strip the generated `CustomType` from any nested blocks (`attr.CustomType =
    nil`) so a plain-struct tfsdk model reflects cleanly. (Alternatively, adopt
    the generated model and its value types; the plain-struct approach keeps the
    CRUD simpler.)
+3. Set the resource-level `MarkdownDescription`.
 4. Leave the model and CRUD hand-written. Wiring to the `control` client is not
    generated.
 5. `make test` must stay green; the fake exercises the full CRUD/import/diff.
 
-Known limitation worth shrinking: the rule-family generator can't express
-validators, defaults or plan modifiers (they aren't in the Go types), so those
-are hand-patched in `Schema()`. Teaching `ruletypesgen` to emit them from a
-per-field overrides table is the main enhancement that would make ports nearly
-mechanical.
+If a rule needs metadata the spec doesn't carry (for example the `status` enum,
+or a particular plan modifier), add it to the overrides table in
+`codegen/ruletypesgen/main.go` rather than patching it in `Schema()`, so every
+rule benefits and ports stay near-mechanical.

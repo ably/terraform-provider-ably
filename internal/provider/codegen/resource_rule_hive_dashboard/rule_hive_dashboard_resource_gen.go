@@ -37,7 +37,7 @@ func RuleHiveDashboardResourceSchema(ctx context.Context) schema.Schema {
 				Description:         "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
 				MarkdownDescription: "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
 				Validators: []validator.String{
-					stringvalidator.RegexMatches(regexp.MustCompile("^/.*/$"), "must be a slash-delimited regular expression, e.g. /room-.*/"),
+					stringvalidator.RegexMatches(regexp.MustCompile("^/.*/$"), "must match the pattern ^/.*/$"),
 				},
 			},
 			"id": schema.StringAttribute{
@@ -54,9 +54,9 @@ func RuleHiveDashboardResourceSchema(ctx context.Context) schema.Schema {
 				Description:         "The invocation mode for this rule. After-publish rules are invoked after a message is published.",
 				MarkdownDescription: "The invocation mode for this rule. After-publish rules are invoked after a message is published.",
 				Validators: []validator.String{
-					stringvalidator.OneOf("BEFORE_PUBLISH"),
+					stringvalidator.OneOf("AFTER_PUBLISH"),
 				},
-				Default: stringdefault.StaticString("BEFORE_PUBLISH"),
+				Default: stringdefault.StaticString("AFTER_PUBLISH"),
 			},
 			"status": schema.StringAttribute{
 				Optional:            true,

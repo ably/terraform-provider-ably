@@ -18,6 +18,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"reflect"
 	"strings"
@@ -50,9 +51,10 @@ var rules = []rule{
 
 // sensitive field names (by snake_case) that should be marked Sensitive.
 var sensitive = map[string]bool{
-	"api_key":  true,
-	"token":    true,
-	"password": true,
+	"api_key":           true,
+	"token":             true,
+	"password":          true,
+	"secret_access_key": true,
 }
 
 // customExpr is a code expression plus the imports it needs, used to emit
@@ -77,10 +79,12 @@ const (
 	pkgRegexp             = "regexp"
 )
 
-// attrOverrides supplies the metadata that previously had to be hand-patched in
-// each resource's Schema(): enum validators, defaults and plan modifiers.
-// Emitting them here keeps ports near-mechanical. Keyed by snake_case attribute
-// name; the moderation/before-publish families share these names and semantics.
+// attrOverrides supplies the generic, spec-absent metadata: the envelope plan
+// modifiers and the rule status field (which the spec doesn't enumerate).
+// Field-level enums, patterns and their defaults are sourced from the spec
+// per rule instead (see the string case in attrsFromStruct), so they stay
+// correct per family, e.g. moderation rules enforce invocation_mode
+// BEFORE_PUBLISH while hive/dashboard enforces AFTER_PUBLISH.
 var attrOverrides = map[string]override{
 	"id":     {planModifiers: []customExpr{{[]string{pkgStringPlanModifier}, "stringplanmodifier.UseStateForUnknown()"}}},
 	"app_id": {planModifiers: []customExpr{{[]string{pkgStringPlanModifier}, "stringplanmodifier.RequiresReplace()"}}},
@@ -89,14 +93,6 @@ var attrOverrides = map[string]override{
 		staticDefault: "enabled",
 		validators:    []customExpr{{[]string{pkgStringValidator}, `stringvalidator.OneOf("enabled", "disabled")`}},
 	},
-	"invocation_mode": {
-		mode:          "computed_optional",
-		staticDefault: "BEFORE_PUBLISH",
-		validators:    []customExpr{{[]string{pkgStringValidator}, `stringvalidator.OneOf("BEFORE_PUBLISH")`}},
-	},
-	"chat_room_filter":         {validators: []customExpr{{[]string{pkgStringValidator, pkgRegexp}, `stringvalidator.RegexMatches(regexp.MustCompile("^/.*/$"), "must be a slash-delimited regular expression, e.g. /room-.*/")`}}},
-	"failed_action":            {validators: []customExpr{{[]string{pkgStringValidator}, `stringvalidator.OneOf("REJECT", "PUBLISH")`}}},
-	"too_many_requests_action": {validators: []customExpr{{[]string{pkgStringValidator}, `stringvalidator.OneOf("RETRY", "FAIL")`}}},
 }
 
 // applyOverride mutates an attribute's type map with any configured metadata.
@@ -232,6 +228,24 @@ func attrsFromStruct(t reflect.Type, props map[string]any) []map[string]any {
 				s["sensitive"] = true
 			}
 			applyOverride(name, s)
+			// Source enum and pattern constraints from the spec so they stay
+			// correct per rule. A single-value enum (e.g. invocation_mode) is
+			// also made computed_optional with that value as the default.
+			var specVals []customExpr
+			if enums := specEnum(props, jsonName); len(enums) > 0 {
+				specVals = append(specVals, customExpr{[]string{pkgStringValidator}, oneOfExpr(enums)})
+				if len(enums) == 1 {
+					s["computed_optional_required"] = "computed_optional"
+					s["default"] = map[string]any{"static": enums[0]}
+				}
+			}
+			if p := specPattern(props, jsonName); p != "" {
+				specVals = append(specVals, customExpr{[]string{pkgStringValidator, pkgRegexp}, regexExpr(p)})
+			}
+			if len(specVals) > 0 {
+				existing, _ := s["validators"].([]map[string]any)
+				s["validators"] = append(existing, customList(specVals)...)
+			}
 			attr["string"] = s
 		case reflect.Bool:
 			b := map[string]any{"computed_optional_required": mode}
@@ -297,6 +311,38 @@ func childProps(props map[string]any, jsonName string) map[string]any {
 // itemProps returns the properties map of an array property's item schema.
 func itemProps(props map[string]any, jsonName string) map[string]any {
 	return asMap(asMap(asMap(props[jsonName])["items"])["properties"])
+}
+
+// specEnum returns the string enum values declared for a property, if any.
+func specEnum(props map[string]any, jsonName string) []string {
+	raw, _ := asMap(props[jsonName])["enum"].([]any)
+	out := make([]string, 0, len(raw))
+	for _, v := range raw {
+		if s, ok := v.(string); ok {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+// specPattern returns the regex pattern declared for a property, if any.
+func specPattern(props map[string]any, jsonName string) string {
+	s, _ := asMap(props[jsonName])["pattern"].(string)
+	return s
+}
+
+// oneOfExpr builds a stringvalidator.OneOf(...) expression for the given values.
+func oneOfExpr(vals []string) string {
+	quoted := make([]string, len(vals))
+	for i, v := range vals {
+		quoted[i] = fmt.Sprintf("%q", v)
+	}
+	return "stringvalidator.OneOf(" + strings.Join(quoted, ", ") + ")"
+}
+
+// regexExpr builds a stringvalidator.RegexMatches(...) expression for a pattern.
+func regexExpr(pattern string) string {
+	return fmt.Sprintf("stringvalidator.RegexMatches(regexp.MustCompile(%q), %q)", pattern, "must match the pattern "+pattern)
 }
 
 func parseJSONTag(f reflect.StructField) (name string, omitempty bool) {

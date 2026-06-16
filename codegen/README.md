@@ -34,7 +34,7 @@ from the Ably Control API's OpenAPI spec, the first step of the strategy in
 
 ## How to regenerate
 
-```
+```sh
 make generate
 ```
 
@@ -68,13 +68,13 @@ This is deliberately limited right now:
 - **Both tools are tech preview.** `tfplugingen-openapi` last shipped v0.3.0
   (Jan 2024). It works on our spec today; we are not betting anything load
   bearing on a future release.
-- **The generated code is not yet wired into the live resources.** It is
-  committed as the reviewable output of the pipeline. Retrofitting the existing
-  hand-written resources onto it is a separate, deliberate step, because the
-  spec is description-poor (the generated schemas lose the hand-written
-  descriptions and plan modifiers) and some resources diverge from the spec
-  shape on purpose (e.g. `queue` flattens the API's nested `amqp`/`stomp`
-  objects into flat attributes). See the Phase 1 findings in the strategy doc.
+- **The generated code is wired into one live resource so far.**
+  `ably_rule_bodyguard` is ported onto it; the rest of the generated packages
+  are committed as the reviewable output of the pipeline. Retrofitting the
+  remaining resources is a separate, deliberate step, partly because some
+  diverge from the spec shape on purpose (e.g. `queue` flattens the API's
+  nested `amqp`/`stomp` objects into flat attributes). See the Phase 1 findings
+  in the strategy doc.
 
 ## Known per-resource quirks (encoded in `generator_config.yml`)
 

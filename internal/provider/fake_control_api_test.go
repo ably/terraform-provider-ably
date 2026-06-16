@@ -25,6 +25,7 @@
 package provider
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"maps"
@@ -574,7 +575,7 @@ func setupHermeticProvider() (string, error) {
 		return "", err
 	}
 	bin := filepath.Join(dir, "terraform-provider-ably")
-	build := exec.Command("go", "build", "-o", bin, "github.com/ably/terraform-provider-ably")
+	build := exec.CommandContext(context.Background(), "go", "build", "-o", bin, "github.com/ably/terraform-provider-ably")
 	build.Stderr = os.Stderr
 	if err := build.Run(); err != nil {
 		return dir, fmt.Errorf("build provider: %w", err)

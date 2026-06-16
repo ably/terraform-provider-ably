@@ -75,7 +75,7 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 				Description:         "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
 				MarkdownDescription: "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
 				Validators: []validator.String{
-					stringvalidator.RegexMatches(regexp.MustCompile("^/.*/$"), "must be a slash-delimited regular expression, e.g. /room-.*/"),
+					stringvalidator.RegexMatches(regexp.MustCompile("^/.*/$"), "must match the pattern ^/.*/$"),
 				},
 			},
 			"id": schema.StringAttribute{
@@ -136,7 +136,8 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 								Required: true,
 							},
 							"secret_access_key": schema.StringAttribute{
-								Optional: true,
+								Optional:  true,
+								Sensitive: true,
 							},
 						},
 						CustomType: AuthenticationType{
