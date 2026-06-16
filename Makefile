@@ -52,7 +52,7 @@ testacc:
 	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m
 
 # Regenerate Terraform schema/model code from the vendored Control API spec
-# (codegen/swagger.yaml) using HashiCorp's tech-preview codegen tools. The
+# (codegen/control-api.yaml) using HashiCorp's tech-preview codegen tools. The
 # generated code lands in internal/provider/codegen/. See codegen/README.md for
 # how to refresh the spec and the current scope/caveats.
 generate:
@@ -64,3 +64,5 @@ generate:
 	go run ./codegen/ruletypesgen
 	go run github.com/hashicorp/terraform-plugin-codegen-framework/cmd/tfplugingen-framework@v0.4.1 generate resources --input codegen/rules_spec.json --output internal/provider/codegen
 	gofmt -w internal/provider/codegen
+
+.PHONY: build release install test testacc generate

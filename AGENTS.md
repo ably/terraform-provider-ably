@@ -7,7 +7,7 @@ spec; `CODEGEN_STRATEGY.md` explains the why, the decisions, and the plan.
 
 ## The test loop (run this on every change)
 
-```
+```sh
 make test
 ```
 
@@ -27,7 +27,7 @@ CI also enforces `gofmt` and `go vet`, so keep `gofmt -l .` clean and
 
 Schema and model code is generated. Regenerate with:
 
-```
+```sh
 make generate
 ```
 

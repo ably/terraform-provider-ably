@@ -166,7 +166,7 @@
                         "path": "regexp"
                       }
                     ],
-                    "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must be a slash-delimited regular expression, e.g. /room-.*/\")"
+                    "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must match the pattern ^/.*/$\")"
                   }
                 }
               ]
@@ -376,7 +376,7 @@
                         "path": "regexp"
                       }
                     ],
-                    "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must be a slash-delimited regular expression, e.g. /room-.*/\")"
+                    "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must match the pattern ^/.*/$\")"
                   }
                 }
               ]
@@ -579,7 +579,7 @@
                         "path": "regexp"
                       }
                     ],
-                    "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must be a slash-delimited regular expression, e.g. /room-.*/\")"
+                    "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must match the pattern ^/.*/$\")"
                   }
                 }
               ]
@@ -753,7 +753,7 @@
                         "path": "regexp"
                       }
                     ],
-                    "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must be a slash-delimited regular expression, e.g. /room-.*/\")"
+                    "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must match the pattern ^/.*/$\")"
                   }
                 }
               ]
@@ -877,7 +877,7 @@
             "string": {
               "computed_optional_required": "computed_optional",
               "default": {
-                "static": "BEFORE_PUBLISH"
+                "static": "AFTER_PUBLISH"
               },
               "description": "The invocation mode for this rule. After-publish rules are invoked after a message is published.",
               "validators": [
@@ -888,7 +888,7 @@
                         "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
                       }
                     ],
-                    "schema_definition": "stringvalidator.OneOf(\"BEFORE_PUBLISH\")"
+                    "schema_definition": "stringvalidator.OneOf(\"AFTER_PUBLISH\")"
                   }
                 }
               ]
@@ -910,7 +910,7 @@
                         "path": "regexp"
                       }
                     ],
-                    "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must be a slash-delimited regular expression, e.g. /room-.*/\")"
+                    "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must match the pattern ^/.*/$\")"
                   }
                 }
               ]
@@ -1106,7 +1106,7 @@
                         "path": "regexp"
                       }
                     ],
-                    "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must be a slash-delimited regular expression, e.g. /room-.*/\")"
+                    "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must match the pattern ^/.*/$\")"
                   }
                 }
               ]
@@ -1318,7 +1318,7 @@
                         "path": "regexp"
                       }
                     ],
-                    "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must be a slash-delimited regular expression, e.g. /room-.*/\")"
+                    "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must match the pattern ^/.*/$\")"
                   }
                 }
               ]
@@ -1381,7 +1381,8 @@
                       {
                         "name": "secret_access_key",
                         "string": {
-                          "computed_optional_required": "optional"
+                          "computed_optional_required": "optional",
+                          "sensitive": true
                         }
                       },
                       {
