@@ -29,23 +29,25 @@ name: Release
 on:
   workflow_dispatch: {}
 
-permissions:
-  contents: write
+permissions: {}
 
 # ─── Detect which components need releasing ──────────────────────────
 
 jobs:
   detect:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       provider_tag: ${{ steps.detect.outputs.provider_tag }}
       control_tag: ${{ steps.detect.outputs.control_tag }}
       provider_prev: ${{ steps.detect.outputs.provider_prev }}
       control_prev: ${{ steps.detect.outputs.control_prev }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Detect unreleased tags
         id: detect
@@ -86,21 +88,24 @@ jobs:
     needs: detect
     if: needs.detect.outputs.provider_tag != ''
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       # Check out the exact commit the provider tag points to,
       # so GoReleaser builds the right code.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ needs.detect.outputs.provider_tag }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version-file: 'go.mod'
 
       - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@v5
+        uses: crazy-max/ghaction-import-gpg@d6f3f49f3345e29369fe57596a3ca8f94c4d2ca7 # v5.4.0
         id: import_gpg
         with:
           gpg_private_key: ${{ secrets.TERRAFORM_REGISTRY_PRIVATE_KEY }}
@@ -111,7 +116,7 @@ jobs:
       # GORELEASER_CURRENT_TAG / _PREVIOUS_TAG override auto-detection
       # so that control/v* tags don't confuse it.
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6.4.0
         with:
           version: latest
           args: release --clean
@@ -127,11 +132,15 @@ jobs:
     needs: detect
     if: needs.detect.outputs.control_tag != ''
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ needs.detect.outputs.control_tag }}
           fetch-depth: 0
+          persist-credentials: false
 
       # Build release notes from PRs that touch control/ paths only,
       # so provider-only changes don't leak into the control changelog.
@@ -143,9 +152,11 @@ jobs:
       - name: Generate scoped release notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CONTROL_TAG: ${{ needs.detect.outputs.control_tag }}
+          CONTROL_PREV: ${{ needs.detect.outputs.control_prev }}
         run: |
-          tag="${{ needs.detect.outputs.control_tag }}"
-          prev="${{ needs.detect.outputs.control_prev }}"
+          tag="$CONTROL_TAG"
+          prev="$CONTROL_PREV"
           since=$([ -n "$prev" ] && git log -1 --format=%aI "$prev" || echo "1970-01-01T00:00:00Z")
 
           gh pr list --repo "$GITHUB_REPOSITORY" \
@@ -176,8 +187,9 @@ jobs:
       - name: Create release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CONTROL_TAG: ${{ needs.detect.outputs.control_tag }}
         run: |
-          gh release create "${{ needs.detect.outputs.control_tag }}" \
-            --title "Release ${{ needs.detect.outputs.control_tag }}" \
+          gh release create "$CONTROL_TAG" \
+            --title "Release $CONTROL_TAG" \
             --notes-file "$RUNNER_TEMP/notes.md" \
             --draft
