@@ -1,0 +1,1 @@
+See [AGENTS.md](AGENTS.md) for how to work in this repository: the credential-free test loop (`make test`), code generation (`make generate`), the resource porting runbook, and the gotchas worth knowing before you start.
