@@ -1,6 +1,11 @@
-# Ably Terraform Provider
+![Ably Terraform Provider Header](/images/terraform-provider-ably-github-v1.0.png)
+[![Terraform Registry](https://img.shields.io/badge/terraform-registry-844FBA?logo=terraform&logoColor=white)](https://registry.terraform.io/providers/ably/ably/latest)
+[![Go Reference](https://pkg.go.dev/badge/github.com/ably/terraform-provider-ably/control.svg)](https://pkg.go.dev/github.com/ably/terraform-provider-ably/control)
+[![License](https://badgen.net/github/license/ably/terraform-provider-ably)](https://github.com/ably/terraform-provider-ably/blob/main/LICENSE)
 
-_[Ably](https://ably.com) is the platform that powers synchronized digital experiences in realtime. Whether attending an event in a virtual venue, receiving realtime financial information, or monitoring live car performance data – consumers simply expect realtime digital experiences as standard. Ably provides a suite of APIs to build, extend, and deliver powerful digital experiences in realtime for more than 250 million devices across 80 countries each month. Organizations like Bloomberg, HubSpot, Verizon, and Hopin depend on Ably’s platform to offload the growing complexity of business-critical realtime data synchronization at global scale. For more information, see the [Ably documentation](https://ably.com/docs)._
+---
+
+# Ably Terraform Provider
 
 This is a Terraform provider for Ably that enables you to manage your Ably account using IaC (Infrastructure-as-Code), including managing your applications, namespaces, keys, queues, rules and more.
 
@@ -30,7 +35,7 @@ terraform {
   required_providers {
     ably = {
       source  = "ably/ably"
-      version = "0.6.1"
+      version = "1.0.0"
     }
   }
 }
@@ -39,7 +44,7 @@ provider "ably" {
 }
 ```
 
-4. (Optional) Alternatively you can also specify Control API token in the provider configuration directly:
+4. (Optional) Alternatively you can also specify Control API token in the provider configuration directly. This is not recommended and risks secret leakage should this file ever be committed to a public version control system:
 
 ```terraform
 provider "ably" {
@@ -84,7 +89,7 @@ resource "ably_queue" "example_queue" {
 
 ## Dependencies
 
-This provider uses [Ably Control API](https://ably.com/docs/api/control-api) and [Ably Control Go SDK](https://github.com/ably/ably-control-go) under the hood.
+This provider uses the [Ably Control API](https://ably.com/docs/api/control-api) via the [`control`](control/) Go client module in this repository, which replaced the standalone [ably-control-go](https://github.com/ably/ably-control-go) SDK.
 
 
 ## Support, feedback and troubleshooting
