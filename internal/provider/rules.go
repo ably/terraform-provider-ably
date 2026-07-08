@@ -339,6 +339,22 @@ func GetAwsAuth(rc *reconciler, auth control.AWSAuthentication, plan *AblyRule) 
 		}
 	}
 
+	// On Read, an out-of-band switch of authentication mode means fields from
+	// the previously active mode no longer apply. Reconciling them against
+	// prior state would echo the stale values (input non-empty, output empty →
+	// echo input), leaving both modes' fields in state at once — drop them.
+	if rc.reading && auth.AuthenticationMode != "" &&
+		!planAuth.AuthenticationMode.IsNull() && !planAuth.AuthenticationMode.IsUnknown() &&
+		planAuth.AuthenticationMode.ValueString() != auth.AuthenticationMode {
+		switch control.AWSAuthMode(auth.AuthenticationMode) {
+		case control.AWSAuthModeCredentials:
+			planAuth.RoleArn = types.StringNull()
+		case control.AWSAuthModeAssumeRole:
+			planAuth.AccessKeyId = types.StringNull()
+			planAuth.SecretAccessKey = types.StringNull()
+		}
+	}
+
 	// The API returns different fields depending on auth mode.
 	// Fields not relevant to the current mode are null in the response,
 	// so we pass types.StringNull() as the output for those — reconcile
