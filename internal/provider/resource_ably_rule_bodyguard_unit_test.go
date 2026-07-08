@@ -93,9 +93,10 @@ func TestGetPlanBodyguardPost_Discriminator(t *testing.T) {
 	}
 }
 
-// sampleResponse returns a moderation rule response as the Control API shapes
-// it: all moderation fields present, but no api_key in the target (it is
-// write-only and never returned).
+// sampleResponse returns a moderation rule response as the live Control API
+// shapes it: all moderation fields present, and the full target INCLUDING
+// apiKey (verified against production 2026-07-08: the API returns the target
+// verbatim on create, read and update).
 func sampleResponse() control.RuleResponse {
 	return control.RuleResponse{
 		ID:             "rule-1",
@@ -111,34 +112,30 @@ func sampleResponse() control.RuleResponse {
 			TooManyRequestsAction: "RETRY",
 		},
 		Target: map[string]any{
+			"apiKey":          "resp-key",
 			"channelId":       "my-channel",
 			"defaultLanguage": "en",
 		},
 	}
 }
 
-// TestGetBodyguardResponse_ReadsModerationFieldsBack verifies the moderation
-// fields come from the response, not the plan, so out-of-band changes surface
-// as drift. The write-only target api_key is the one exception: it is
-// preserved from the plan because the API never returns it.
-func TestGetBodyguardResponse_ReadsModerationFieldsBack(t *testing.T) {
+// TestGetBodyguardResponse_ReadsEverythingBack verifies every field comes
+// from the response, api_key included, so out-of-band changes to any
+// attribute surface as drift and import captures the complete resource.
+func TestGetBodyguardResponse_ReadsEverythingBack(t *testing.T) {
 	t.Parallel()
 
-	plan := samplePlan()
-
-	// The response disagrees with the plan on every moderation field: the
-	// response must win everywhere except the write-only api_key.
 	rule := sampleResponse()
 	rule.ChatRoomFilter = "/other-.*/"
 	rule.BeforePublishConfig.MaxRetries = 7
 
-	got, diags := getBodyguardResponse(&rule, &plan)
+	got, diags := getBodyguardResponse(&rule)
 	if diags.HasError() {
 		t.Fatalf("unexpected diagnostics: %s", diags.Errors()[0].Detail())
 	}
 
-	if got.Target.ApiKey.ValueString() != "secret-key" {
-		t.Fatalf("expected write-only api_key to be preserved from plan, got %q", got.Target.ApiKey.ValueString())
+	if got.Target.ApiKey.ValueString() != "resp-key" {
+		t.Fatalf("expected api_key from response, got %q", got.Target.ApiKey.ValueString())
 	}
 	if got.InvocationMode.ValueString() != "BEFORE_PUBLISH" {
 		t.Fatalf("expected invocation_mode from response, got %q", got.InvocationMode.ValueString())
@@ -157,45 +154,29 @@ func TestGetBodyguardResponse_ReadsModerationFieldsBack(t *testing.T) {
 	}
 }
 
-// TestGetBodyguardResponse_ClearedFilterIsNull verifies a response without
-// chatRoomFilter maps to null even when the prior plan/state held a value:
-// this is the read-back half of clearing the filter.
-func TestGetBodyguardResponse_ClearedFilterIsNull(t *testing.T) {
+// TestGetBodyguardResponse_AbsentOptionalsAreNull verifies a response without
+// chatRoomFilter or the optional target fields maps them to null, matching a
+// plan that never set them (production omits chatRoomFilter entirely when a
+// rule is created without one).
+func TestGetBodyguardResponse_AbsentOptionalsAreNull(t *testing.T) {
 	t.Parallel()
 
-	plan := samplePlan()
 	rule := sampleResponse()
 	rule.ChatRoomFilter = ""
+	rule.Target = map[string]any{"apiKey": "resp-key"}
 
-	got, diags := getBodyguardResponse(&rule, &plan)
+	got, diags := getBodyguardResponse(&rule)
 	if diags.HasError() {
 		t.Fatalf("unexpected diagnostics: %s", diags.Errors()[0].Detail())
 	}
 	if !got.ChatRoomFilter.IsNull() {
 		t.Fatalf("expected chat_room_filter null when absent from response, got %q", got.ChatRoomFilter.ValueString())
 	}
-}
-
-// TestGetBodyguardResponse_ImportLeavesApiKeyNull verifies the import path
-// (no plan): the write-only api_key must be null, not a known "", since the
-// API never returns it and a known empty string would misrepresent it.
-func TestGetBodyguardResponse_ImportLeavesApiKeyNull(t *testing.T) {
-	t.Parallel()
-
-	rule := sampleResponse()
-
-	got, diags := getBodyguardResponse(&rule, nil)
-	if diags.HasError() {
-		t.Fatalf("unexpected diagnostics: %s", diags.Errors()[0].Detail())
+	if !got.Target.ChannelID.IsNull() {
+		t.Fatalf("expected channel_id null when absent from response, got %q", got.Target.ChannelID.ValueString())
 	}
-	if !got.Target.ApiKey.IsNull() {
-		t.Fatalf("expected api_key null on import, got %q", got.Target.ApiKey.ValueString())
-	}
-	if got.ChatRoomFilter.ValueString() != "/room-.*/" {
-		t.Fatalf("expected chat_room_filter from response on import, got %q", got.ChatRoomFilter.ValueString())
-	}
-	if got.BeforePublishConfig == nil {
-		t.Fatal("expected before_publish_config from response on import, got nil")
+	if got.Target.ApiKey.ValueString() != "resp-key" {
+		t.Fatalf("expected api_key from response, got %q", got.Target.ApiKey.ValueString())
 	}
 }
 
@@ -204,14 +185,13 @@ func TestGetBodyguardResponse_ImportLeavesApiKeyNull(t *testing.T) {
 func TestGetBodyguardResponse_WrongRuleType(t *testing.T) {
 	t.Parallel()
 
-	plan := samplePlan()
 	rule := control.RuleResponse{
 		ID:       "rule-1",
 		RuleType: "http",
 		Target:   map[string]any{},
 	}
 
-	_, diags := getBodyguardResponse(&rule, &plan)
+	_, diags := getBodyguardResponse(&rule)
 	if !diags.HasError() {
 		t.Fatal("expected an error for a non-bodyguard rule type, got none")
 	}

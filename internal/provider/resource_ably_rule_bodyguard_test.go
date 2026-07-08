@@ -40,8 +40,9 @@ func TestAccAblyRuleBodyguard(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_bodyguard.rule0", "target.default_language", "en"),
 				),
 			},
-			// ImportState testing. api_key is write-only and never returned by the
-			// API, so it cannot be verified on import.
+			// ImportState testing. The API returns the full rule including the
+			// target api_key (verified against production), so import verifies
+			// every attribute with no ignores.
 			{
 				ResourceName:      "ably_rule_bodyguard.rule0",
 				ImportState:       true,
@@ -52,9 +53,6 @@ func TestAccAblyRuleBodyguard(t *testing.T) {
 						return "", fmt.Errorf("resource not found: ably_rule_bodyguard.rule0")
 					}
 					return fmt.Sprintf("%s,%s", rs.Primary.Attributes["app_id"], rs.Primary.ID), nil
-				},
-				ImportStateVerifyIgnore: []string{
-					"target.api_key",
 				},
 			},
 			// Update and Read testing

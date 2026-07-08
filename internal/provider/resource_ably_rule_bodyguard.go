@@ -121,14 +121,11 @@ func getPlanBodyguardPost(plan AblyRuleBodyguard) control.BodyguardTextModeratio
 
 // getBodyguardResponse maps an API rule response back onto the tfsdk model.
 //
-// All moderation fields (invocation_mode, chat_room_filter,
-// before_publish_config) are read back from the response, so out-of-band
-// changes surface as drift. The only exception is the target's api_key, which
-// is genuinely write-only (the API never returns it): the configured value is
-// preserved from the plan/prior state, and left null when there is none (e.g.
-// on import), since inventing a known "" would misrepresent what the API
-// holds.
-func getBodyguardResponse(rule *control.RuleResponse, plan *AblyRuleBodyguard) (AblyRuleBodyguard, diag.Diagnostics) {
+// Every field is read back from the response, including the sensitive target
+// api_key: the Control API returns the full target on create, read and update
+// (verified against the live API, 2026-07-08), so out-of-band changes to any
+// attribute surface as drift and import captures the complete resource.
+func getBodyguardResponse(rule *control.RuleResponse) (AblyRuleBodyguard, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	if rule.RuleType != bodyguardRuleType {
@@ -145,15 +142,8 @@ func getBodyguardResponse(rule *control.RuleResponse, plan *AblyRuleBodyguard) (
 		return AblyRuleBodyguard{}, diags
 	}
 
-	// api_key is write-only: preserve the configured value from the plan so it
-	// does not flip to empty on read, and stay null when there is no plan.
-	apiKey := stringOrNull(target.APIKey)
-	if plan != nil && plan.Target != nil && !plan.Target.ApiKey.IsNull() {
-		apiKey = plan.Target.ApiKey
-	}
-
 	respTarget := &AblyRuleBodyguardTarget{
-		ApiKey:          apiKey,
+		ApiKey:          stringOrNull(target.APIKey),
 		ChannelID:       stringOrNull(target.ChannelID),
 		ApiURL:          stringOrNull(target.APIURL),
 		DefaultLanguage: stringOrNull(target.DefaultLanguage),
@@ -204,7 +194,7 @@ func (r ResourceRuleBodyguard) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
-	responseValues, respDiags := getBodyguardResponse(&rule, &plan)
+	responseValues, respDiags := getBodyguardResponse(&rule)
 	resp.Diagnostics.Append(respDiags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -236,7 +226,7 @@ func (r ResourceRuleBodyguard) Read(ctx context.Context, req resource.ReadReques
 		return
 	}
 
-	responseValues, respDiags := getBodyguardResponse(&rule, &state)
+	responseValues, respDiags := getBodyguardResponse(&rule)
 	resp.Diagnostics.Append(respDiags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -264,7 +254,7 @@ func (r ResourceRuleBodyguard) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
-	responseValues, respDiags := getBodyguardResponse(&rule, &plan)
+	responseValues, respDiags := getBodyguardResponse(&rule)
 	resp.Diagnostics.Append(respDiags...)
 	if resp.Diagnostics.HasError() {
 		return
