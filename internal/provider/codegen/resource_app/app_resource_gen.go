@@ -51,6 +51,7 @@ func AppResourceSchema(ctx context.Context) schema.Schema {
 			"apns_certificate": schema.StringAttribute{
 				Optional:            true,
 				Computed:            true,
+				Sensitive:           true,
 				Description:         "The Apple Push Notification service certificate.",
 				MarkdownDescription: "The Apple Push Notification service certificate.",
 			},
@@ -68,12 +69,14 @@ func AppResourceSchema(ctx context.Context) schema.Schema {
 			"apns_private_key": schema.StringAttribute{
 				Optional:            true,
 				Computed:            true,
+				Sensitive:           true,
 				Description:         "The Apple Push Notification service private key.",
 				MarkdownDescription: "The Apple Push Notification service private key.",
 			},
 			"apns_signing_key": schema.StringAttribute{
 				Optional:            true,
 				Computed:            true,
+				Sensitive:           true,
 				Description:         "The contents of the `.p8` signing key file from the Apple Developer portal. Used for token-based APNs authentication.",
 				MarkdownDescription: "The contents of the `.p8` signing key file from the Apple Developer portal. Used for token-based APNs authentication.",
 			},
@@ -108,6 +111,7 @@ func AppResourceSchema(ctx context.Context) schema.Schema {
 			"fcm_key": schema.StringAttribute{
 				Optional:            true,
 				Computed:            true,
+				Sensitive:           true,
 				Description:         "The Firebase Cloud Messaging key.",
 				MarkdownDescription: "The Firebase Cloud Messaging key.",
 			},
@@ -120,6 +124,7 @@ func AppResourceSchema(ctx context.Context) schema.Schema {
 			"fcm_service_account": schema.StringAttribute{
 				Optional:            true,
 				Computed:            true,
+				Sensitive:           true,
 				Description:         "Used to specify the Firebase Cloud Messaging(FCM) service account credentials used for authentication and enabling communication with FCM to send push notifications to devices.",
 				MarkdownDescription: "Used to specify the Firebase Cloud Messaging(FCM) service account credentials used for authentication and enabling communication with FCM to send push notifications to devices.",
 			},

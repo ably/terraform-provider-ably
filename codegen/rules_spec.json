@@ -1936,6 +1936,7 @@
                         "string": {
                           "computed_optional_required": "optional",
                           "description": "The AWS key ID for the AWS IAM user. See the Ably \u003ca href=\"https://ably.com/docs/general/aws-authentication/\"\u003eAWS authentication docs\u003c/a\u003e for details.",
+                          "sensitive": true,
                           "validators": [
                             {
                               "custom": {
