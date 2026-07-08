@@ -1696,24 +1696,14 @@
                   "name": "channel_filter",
                   "string": {
                     "computed_optional_required": "required",
-                    "validators": [
-                      {
-                        "custom": {
-                          "imports": [
-                            {
-                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-                            }
-                          ],
-                          "schema_definition": "stringvalidator.LengthAtLeast(1)"
-                        }
-                      }
-                    ]
+                    "description": "This field allows you to filter your rule based on a regular expression that is matched against the complete channel name. Leave this empty if you want the rule to apply to all channels."
                   }
                 },
                 {
                   "name": "type",
                   "string": {
                     "computed_optional_required": "required",
+                    "description": "Ably currently supports the following sources for all rule types, in both single and batch mode: `channel.message`, `channel.presence`, `channel.lifecycle` and `channel.occupancy`. If the source `channel.message` is selected, you receive notifications when messages are published on a channel. If the source `channel.presence` is selected, you receive notifications of presence events when clients enter, update their data, or leave channels. If the source `channel.lifecycle` is selected, you receive notifications of channel lifecycle events, such as when a channel is created (following the first client attaching to this channel) or discarded (when there are no more clients attached to the channel). If the source `channel.occupancy` is selected, you receive notifications of occupancy events, which relate to the number and type of occupants in the channel.",
                     "validators": [
                       {
                         "custom": {
@@ -1782,6 +1772,7 @@
                         "name": "authentication_mode",
                         "string": {
                           "computed_optional_required": "required",
+                          "description": "Authentication method is using AWS credentials (AWS key ID and secret key).",
                           "validators": [
                             {
                               "custom": {
@@ -1790,7 +1781,7 @@
                                     "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
                                   }
                                 ],
-                                "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                                "schema_definition": "stringvalidator.OneOf(\"credentials\", \"assumeRole\")"
                               }
                             }
                           ]
@@ -1800,6 +1791,7 @@
                         "name": "access_key_id",
                         "string": {
                           "computed_optional_required": "optional",
+                          "description": "The AWS key ID for the AWS IAM user. See the Ably \u003ca href=\"https://ably.com/docs/general/aws-authentication/\"\u003eAWS authentication docs\u003c/a\u003e for details.",
                           "validators": [
                             {
                               "custom": {
@@ -1818,6 +1810,7 @@
                         "name": "secret_access_key",
                         "string": {
                           "computed_optional_required": "optional",
+                          "description": "The AWS secret key for the AWS IAM user. See the Ably \u003ca href=\"https://ably.com/docs/general/aws-authentication/\"\u003eAWS authentication docs\u003c/a\u003e for details.",
                           "sensitive": true,
                           "validators": [
                             {
@@ -1837,6 +1830,7 @@
                         "name": "assume_role_arn",
                         "string": {
                           "computed_optional_required": "optional",
+                          "description": "If you are using the \"ARN of an assumable role\" authentication method, this is your Assume Role ARN. See the Ably \u003ca href=\"https://ably.com/docs/general/aws-authentication/\"\u003eAWS authentication docs\u003c/a\u003e for details.",
                           "validators": [
                             {
                               "custom": {
