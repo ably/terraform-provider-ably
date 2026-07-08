@@ -77,6 +77,7 @@ type override struct {
 const (
 	pkgStringValidator    = "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	pkgStringPlanModifier = "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	pkgPlanModifiers      = "github.com/ably/terraform-provider-ably/internal/provider/planmodifiers"
 	pkgRegexp             = "regexp"
 )
 
@@ -94,6 +95,10 @@ var attrOverrides = map[string]override{
 		staticDefault: "enabled",
 		validators:    []customExpr{{[]string{pkgStringValidator}, `stringvalidator.OneOf("enabled", "disabled")`}},
 	},
+	// The rule PATCH schemas neither accept null nor let the pattern-bound
+	// chatRoomFilter be "", so an in-place update can never unset it (verified
+	// against the live API, 2026-07-08): removing it must recreate the rule.
+	"chat_room_filter": {planModifiers: []customExpr{{[]string{pkgPlanModifiers}, "planmodifiers.RequiresReplaceWhenCleared()"}}},
 }
 
 // applyOverride mutates an attribute's type map with any configured metadata.

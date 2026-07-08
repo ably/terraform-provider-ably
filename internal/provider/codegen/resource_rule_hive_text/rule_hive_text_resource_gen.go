@@ -5,6 +5,7 @@ package resource_rule_hive_text
 import (
 	"context"
 	"fmt"
+	"github.com/ably/terraform-provider-ably/internal/provider/planmodifiers"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -74,6 +75,9 @@ func RuleHiveTextResourceSchema(ctx context.Context) schema.Schema {
 				Optional:            true,
 				Description:         "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
 				MarkdownDescription: "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
+				PlanModifiers: []planmodifier.String{
+					planmodifiers.RequiresReplaceWhenCleared(),
+				},
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexp.MustCompile("^/.*/$"), "must match the pattern ^/.*/$"),
 					stringvalidator.LengthAtLeast(1),

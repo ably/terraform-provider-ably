@@ -155,6 +155,18 @@
             "string": {
               "computed_optional_required": "optional",
               "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/ably/terraform-provider-ably/internal/provider/planmodifiers"
+                      }
+                    ],
+                    "schema_definition": "planmodifiers.RequiresReplaceWhenCleared()"
+                  }
+                }
+              ],
               "validators": [
                 {
                   "custom": {
@@ -423,6 +435,18 @@
             "string": {
               "computed_optional_required": "optional",
               "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/ably/terraform-provider-ably/internal/provider/planmodifiers"
+                      }
+                    ],
+                    "schema_definition": "planmodifiers.RequiresReplaceWhenCleared()"
+                  }
+                }
+              ],
               "validators": [
                 {
                   "custom": {
@@ -672,6 +696,18 @@
             "string": {
               "computed_optional_required": "optional",
               "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/ably/terraform-provider-ably/internal/provider/planmodifiers"
+                      }
+                    ],
+                    "schema_definition": "planmodifiers.RequiresReplaceWhenCleared()"
+                  }
+                }
+              ],
               "validators": [
                 {
                   "custom": {
@@ -880,6 +916,18 @@
             "string": {
               "computed_optional_required": "optional",
               "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/ably/terraform-provider-ably/internal/provider/planmodifiers"
+                      }
+                    ],
+                    "schema_definition": "planmodifiers.RequiresReplaceWhenCleared()"
+                  }
+                }
+              ],
               "validators": [
                 {
                   "custom": {
@@ -1071,6 +1119,18 @@
             "string": {
               "computed_optional_required": "optional",
               "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/ably/terraform-provider-ably/internal/provider/planmodifiers"
+                      }
+                    ],
+                    "schema_definition": "planmodifiers.RequiresReplaceWhenCleared()"
+                  }
+                }
+              ],
               "validators": [
                 {
                   "custom": {
@@ -1289,6 +1349,18 @@
             "string": {
               "computed_optional_required": "optional",
               "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/ably/terraform-provider-ably/internal/provider/planmodifiers"
+                      }
+                    ],
+                    "schema_definition": "planmodifiers.RequiresReplaceWhenCleared()"
+                  }
+                }
+              ],
               "validators": [
                 {
                   "custom": {
@@ -1547,6 +1619,18 @@
             "string": {
               "computed_optional_required": "optional",
               "description": "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/ably/terraform-provider-ably/internal/provider/planmodifiers"
+                      }
+                    ],
+                    "schema_definition": "planmodifiers.RequiresReplaceWhenCleared()"
+                  }
+                }
+              ],
               "validators": [
                 {
                   "custom": {
