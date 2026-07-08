@@ -45,9 +45,10 @@ install: build
 test:
 	go test $(TEST) $(TESTARGS) -timeout=15m
 
-# Acceptance tests against a REAL Control API. Requires ABLY_ACCOUNT_TOKEN (and
-# optionally ABLY_URL, e.g. staging). Setting TF_ACC makes TestMain stand aside
-# so the suite hits the real API instead of the fake.
+# Acceptance tests against a REAL Control API. Requires ABLY_ACCOUNT_TOKEN and
+# an explicit ABLY_URL (e.g. staging): TestMain refuses a real run that would
+# fall back to the production URL implicitly. Setting TF_ACC makes TestMain
+# stand aside so the suite hits the real API instead of the fake.
 testacc:
 	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m
 

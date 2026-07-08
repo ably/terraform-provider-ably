@@ -17,8 +17,11 @@ credentials and no network**, and it is the loop to run after any change. You do
 not need real Ably credentials to develop or test locally.
 
 `make testacc` runs the acceptance suite against a real Control API (needs
-`ABLY_ACCOUNT_TOKEN`, optionally `ABLY_URL`). CI runs this against staging; you
-generally don't run it locally.
+`ABLY_ACCOUNT_TOKEN` and an explicit `ABLY_URL`). CI runs this against staging;
+you generally don't run it locally. Real runs are strictly opt-in: with
+`TF_ACC` set but no `ABLY_URL`, the suite refuses to start rather than
+defaulting to the production API, and falsy `TF_ACC` values (`0`, `false`)
+fall back to the hermetic fake.
 
 CI also enforces `gofmt` and `go vet`, so keep `gofmt -l .` clean and
 `go vet ./...` passing.

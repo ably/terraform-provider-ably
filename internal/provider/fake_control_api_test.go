@@ -531,11 +531,30 @@ func (f *fakeControlAPI) emptyArray(w http.ResponseWriter, _ *http.Request) {
 // Unless an explicit real run is requested via TF_ACC (as `make testacc` and CI
 // do, pointing at a real Control API), it stands up the in-process fake, builds
 // the current provider, and points Terraform at it via a clean dev_overrides
-// config. With TF_ACC already set it stands aside entirely.
+// config. With TF_ACC set to a truthy value it stands aside entirely, but a
+// real run must name its target: it refuses to fall back to the production
+// Control API URL implicitly.
 func TestMain(m *testing.M) {
+	tfAcc := os.Getenv("TF_ACC")
+	switch strings.ToLower(tfAcc) {
+	case "0", "false", "no", "off":
+		// terraform-plugin-testing treats ANY non-empty TF_ACC as "run the
+		// acceptance tests", so idioms like TF_ACC=0 would run the full CRUD
+		// suite against whatever ABLY_URL/ABLY_ACCOUNT_TOKEN are ambient in
+		// the shell — production by default. Honour the obvious intent
+		// instead: treat falsy values as unset and use the hermetic fake.
+		_ = os.Unsetenv("TF_ACC")
+		tfAcc = ""
+	}
+	if tfAcc != "" && os.Getenv("ABLY_URL") == "" {
+		fmt.Fprintln(os.Stderr, "TF_ACC is set but ABLY_URL is not: refusing to run acceptance tests"+
+			" against the production Control API implicitly. Set ABLY_URL explicitly"+
+			" (e.g. the staging URL), or unset TF_ACC to use the hermetic fake.")
+		os.Exit(1)
+	}
 	var fake *fakeControlAPI
 	var hermeticDir string
-	if os.Getenv("TF_ACC") == "" {
+	if tfAcc == "" {
 		fake = newFakeControlAPI()
 		_ = os.Setenv("ABLY_URL", fake.server.URL)
 		_ = os.Setenv("ABLY_ACCOUNT_TOKEN", "fake-token")
