@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -58,6 +59,10 @@ func TestReconcileString_InputNull_OutputNonEmpty_NotComputed(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for unexpected API value on non-computed field")
 	}
+	// The API value may be a secret; the error must never contain it.
+	if strings.Contains(err.Error(), "surprise") {
+		t.Fatalf("error must not leak the raw API value, got %q", err.Error())
+	}
 }
 
 func TestReconcileString_InputEmpty_OutputNonEmpty_NotComputed(t *testing.T) {
@@ -65,6 +70,10 @@ func TestReconcileString_InputEmpty_OutputNonEmpty_NotComputed(t *testing.T) {
 	_, err := reconcileString("my_field", types.StringValue(""), types.StringValue("surprise"), false)
 	if err == nil {
 		t.Fatal("expected error for unexpected API value on non-computed field (empty string input)")
+	}
+	// The API value may be a secret; the error must never contain it.
+	if strings.Contains(err.Error(), "surprise") {
+		t.Fatalf("error must not leak the raw API value, got %q", err.Error())
 	}
 }
 

@@ -193,9 +193,12 @@ func reconcileString(field string, input, output types.String, computed bool) (t
 		if computed {
 			return output, nil
 		}
+		// Deliberately omit the returned value: string fields can carry
+		// secrets (keys, tokens, header values) that must not leak into
+		// diagnostics or logs.
 		return types.StringNull(), fmt.Errorf(
-			"reconcile %q: API returned %q but field was not set in config and is not computed",
-			field, output.ValueString(),
+			"reconcile %q: API returned a value but field was not set in config and is not computed",
+			field,
 		)
 	default:
 		return types.StringNull(), nil
