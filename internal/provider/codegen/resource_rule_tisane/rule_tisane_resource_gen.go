@@ -76,6 +76,7 @@ func RuleTisaneResourceSchema(ctx context.Context) schema.Schema {
 				MarkdownDescription: "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexp.MustCompile("^/.*/$"), "must match the pattern ^/.*/$"),
+					stringvalidator.LengthAtLeast(1),
 				},
 			},
 			"id": schema.StringAttribute{
@@ -113,16 +114,25 @@ func RuleTisaneResourceSchema(ctx context.Context) schema.Schema {
 						Sensitive:           true,
 						Description:         "The Tisane API key for authenticating with the moderation service.",
 						MarkdownDescription: "The Tisane API key for authenticating with the moderation service.",
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
 					},
 					"default_language": schema.StringAttribute{
 						Required:            true,
 						Description:         "The default language for text moderation analysis.",
 						MarkdownDescription: "The default language for text moderation analysis.",
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
 					},
 					"model_url": schema.StringAttribute{
 						Optional:            true,
 						Description:         "The URL of the Tisane model to use for text analysis.",
 						MarkdownDescription: "The URL of the Tisane model to use for text analysis.",
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
 					},
 				},
 				CustomType: TargetType{

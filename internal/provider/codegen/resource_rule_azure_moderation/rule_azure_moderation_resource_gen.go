@@ -76,6 +76,7 @@ func RuleAzureModerationResourceSchema(ctx context.Context) schema.Schema {
 				MarkdownDescription: "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexp.MustCompile("^/.*/$"), "must match the pattern ^/.*/$"),
+					stringvalidator.LengthAtLeast(1),
 				},
 			},
 			"id": schema.StringAttribute{
@@ -113,11 +114,17 @@ func RuleAzureModerationResourceSchema(ctx context.Context) schema.Schema {
 						Sensitive:           true,
 						Description:         "The Azure Content Safety API key for authenticating with the moderation service.",
 						MarkdownDescription: "The Azure Content Safety API key for authenticating with the moderation service.",
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
 					},
 					"endpoint": schema.StringAttribute{
 						Required:            true,
 						Description:         "The Azure Content Safety endpoint URL.",
 						MarkdownDescription: "The Azure Content Safety endpoint URL.",
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
 					},
 				},
 				CustomType: TargetType{

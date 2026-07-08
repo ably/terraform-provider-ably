@@ -242,6 +242,14 @@ func attrsFromStruct(t reflect.Type, props map[string]any) []map[string]any {
 			if p := specPattern(props, jsonName); p != "" {
 				specVals = append(specVals, customExpr{[]string{pkgStringValidator, pkgRegexp}, regexExpr(p)})
 			}
+			// Reject explicit "" on string attributes: empty and unset mean the
+			// same thing to the Control API, and a known "" in the plan reads
+			// back as null, aborting the apply with an opaque "inconsistent
+			// values" error. A plan-time validator turns that into a clear
+			// message. Enum-valued attributes already exclude "" via OneOf.
+			if len(specEnum(props, jsonName)) == 0 && len(attrOverrides[name].validators) == 0 {
+				specVals = append(specVals, customExpr{[]string{pkgStringValidator}, "stringvalidator.LengthAtLeast(1)"})
+			}
 			if len(specVals) > 0 {
 				existing, _ := s["validators"].([]map[string]any)
 				s["validators"] = append(existing, customList(specVals)...)

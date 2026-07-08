@@ -76,6 +76,7 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 				MarkdownDescription: "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexp.MustCompile("^/.*/$"), "must match the pattern ^/.*/$"),
+					stringvalidator.LengthAtLeast(1),
 				},
 			},
 			"id": schema.StringAttribute{
@@ -100,9 +101,15 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 				Attributes: map[string]schema.Attribute{
 					"channel_filter": schema.StringAttribute{
 						Required: true,
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
 					},
 					"type": schema.StringAttribute{
 						Required: true,
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
 					},
 				},
 				CustomType: SourceType{
@@ -128,16 +135,28 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 						Attributes: map[string]schema.Attribute{
 							"access_key_id": schema.StringAttribute{
 								Optional: true,
+								Validators: []validator.String{
+									stringvalidator.LengthAtLeast(1),
+								},
 							},
 							"assume_role_arn": schema.StringAttribute{
 								Optional: true,
+								Validators: []validator.String{
+									stringvalidator.LengthAtLeast(1),
+								},
 							},
 							"authentication_mode": schema.StringAttribute{
 								Required: true,
+								Validators: []validator.String{
+									stringvalidator.LengthAtLeast(1),
+								},
 							},
 							"secret_access_key": schema.StringAttribute{
 								Optional:  true,
 								Sensitive: true,
+								Validators: []validator.String{
+									stringvalidator.LengthAtLeast(1),
+								},
 							},
 						},
 						CustomType: AuthenticationType{
@@ -151,11 +170,17 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 						Required:            true,
 						Description:         "The name of your AWS Lambda function.",
 						MarkdownDescription: "The name of your AWS Lambda function.",
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
 					},
 					"region": schema.StringAttribute{
 						Required:            true,
 						Description:         "The AWS region in which your Lambda function is hosted. See the <a href=\"https://docs.aws.amazon.com/general/latest/gr/rande.html#lambda_region\">AWS documentation</a> for more detail.",
 						MarkdownDescription: "The AWS region in which your Lambda function is hosted. See the <a href=\"https://docs.aws.amazon.com/general/latest/gr/rande.html#lambda_region\">AWS documentation</a> for more detail.",
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
 					},
 				},
 				CustomType: TargetType{

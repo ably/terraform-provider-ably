@@ -3,6 +3,8 @@ package provider
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -71,6 +73,36 @@ func TestAccAblyRuleBodyguard(t *testing.T) {
 				),
 			},
 			// Delete testing automatically occurs in TestCase
+		},
+	})
+}
+
+// TestAccAblyRuleBodyguardEmptyString verifies that explicit "" on optional
+// string attributes is rejected at plan time. Empty and unset mean the same
+// thing to the Control API, so without the validator a known "" in the plan
+// reads back as null and aborts the apply with an opaque "inconsistent values
+// for sensitive attribute" error that hides the culprit attribute.
+func TestAccAblyRuleBodyguardEmptyString(t *testing.T) {
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: strings.Replace(
+					testAccAblyRuleBodyguardConfig(
+						appName,
+						"enabled",
+						"/room-.*/",
+						"RETRY",
+						"my-bodyguard-api-key",
+					),
+					`channel_id       = "my-channel"`,
+					`channel_id       = ""`,
+					1,
+				),
+				ExpectError: regexp.MustCompile(`string length must be at least 1`),
+			},
 		},
 	})
 }

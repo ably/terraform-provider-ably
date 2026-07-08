@@ -76,6 +76,7 @@ func RuleHiveTextResourceSchema(ctx context.Context) schema.Schema {
 				MarkdownDescription: "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexp.MustCompile("^/.*/$"), "must match the pattern ^/.*/$"),
+					stringvalidator.LengthAtLeast(1),
 				},
 			},
 			"id": schema.StringAttribute{
@@ -113,11 +114,17 @@ func RuleHiveTextResourceSchema(ctx context.Context) schema.Schema {
 						Sensitive:           true,
 						Description:         "The Hive API key for authenticating with the moderation service.",
 						MarkdownDescription: "The Hive API key for authenticating with the moderation service.",
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
 					},
 					"model_url": schema.StringAttribute{
 						Optional:            true,
 						Description:         "The URL of the Hive text classification model to use.",
 						MarkdownDescription: "The URL of the Hive text classification model to use.",
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
 					},
 				},
 				CustomType: TargetType{

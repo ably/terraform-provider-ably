@@ -76,6 +76,7 @@ func RuleBeforePublishWebhookResourceSchema(ctx context.Context) schema.Schema {
 				MarkdownDescription: "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexp.MustCompile("^/.*/$"), "must match the pattern ^/.*/$"),
+					stringvalidator.LengthAtLeast(1),
 				},
 			},
 			"id": schema.StringAttribute{
@@ -115,11 +116,17 @@ func RuleBeforePublishWebhookResourceSchema(ctx context.Context) schema.Schema {
 									Optional:            true,
 									Description:         "The name of the header.",
 									MarkdownDescription: "The name of the header.",
+									Validators: []validator.String{
+										stringvalidator.LengthAtLeast(1),
+									},
 								},
 								"value": schema.StringAttribute{
 									Optional:            true,
 									Description:         "The value of the header.",
 									MarkdownDescription: "The value of the header.",
+									Validators: []validator.String{
+										stringvalidator.LengthAtLeast(1),
+									},
 								},
 							},
 							CustomType: HeadersType{
@@ -134,6 +141,9 @@ func RuleBeforePublishWebhookResourceSchema(ctx context.Context) schema.Schema {
 						Required:            true,
 						Description:         "The webhook URL that Ably will POST events to before publishing.",
 						MarkdownDescription: "The webhook URL that Ably will POST events to before publishing.",
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
 					},
 				},
 				CustomType: TargetType{

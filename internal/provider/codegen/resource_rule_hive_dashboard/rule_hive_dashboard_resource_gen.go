@@ -38,6 +38,7 @@ func RuleHiveDashboardResourceSchema(ctx context.Context) schema.Schema {
 				MarkdownDescription: "A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.",
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexp.MustCompile("^/.*/$"), "must match the pattern ^/.*/$"),
+					stringvalidator.LengthAtLeast(1),
 				},
 			},
 			"id": schema.StringAttribute{
@@ -75,6 +76,9 @@ func RuleHiveDashboardResourceSchema(ctx context.Context) schema.Schema {
 						Sensitive:           true,
 						Description:         "The Hive API key for authenticating with the moderation dashboard.",
 						MarkdownDescription: "The Hive API key for authenticating with the moderation dashboard.",
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
 					},
 					"check_watch_lists": schema.BoolAttribute{
 						Optional:            true,

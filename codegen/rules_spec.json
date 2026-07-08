@@ -168,6 +168,16 @@
                     ],
                     "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must match the pattern ^/.*/$\")"
                   }
+                },
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                  }
                 }
               ]
             }
@@ -181,28 +191,76 @@
                   "string": {
                     "computed_optional_required": "required",
                     "description": "The Bodyguard API key for authenticating with the moderation service.",
-                    "sensitive": true
+                    "sensitive": true,
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                        }
+                      }
+                    ]
                   }
                 },
                 {
                   "name": "channel_id",
                   "string": {
                     "computed_optional_required": "optional",
-                    "description": "The Bodyguard channel ID to associate with moderation requests."
+                    "description": "The Bodyguard channel ID to associate with moderation requests.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                        }
+                      }
+                    ]
                   }
                 },
                 {
                   "name": "api_url",
                   "string": {
                     "computed_optional_required": "optional",
-                    "description": "The Bodyguard API URL for the moderation service."
+                    "description": "The Bodyguard API URL for the moderation service.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                        }
+                      }
+                    ]
                   }
                 },
                 {
                   "name": "default_language",
                   "string": {
                     "computed_optional_required": "optional",
-                    "description": "The default language for text moderation analysis."
+                    "description": "The default language for text moderation analysis.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                        }
+                      }
+                    ]
                   }
                 }
               ],
@@ -378,6 +436,16 @@
                     ],
                     "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must match the pattern ^/.*/$\")"
                   }
+                },
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                  }
                 }
               ]
             }
@@ -391,21 +459,57 @@
                   "string": {
                     "computed_optional_required": "required",
                     "description": "The Tisane API key for authenticating with the moderation service.",
-                    "sensitive": true
+                    "sensitive": true,
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                        }
+                      }
+                    ]
                   }
                 },
                 {
                   "name": "model_url",
                   "string": {
                     "computed_optional_required": "optional",
-                    "description": "The URL of the Tisane model to use for text analysis."
+                    "description": "The URL of the Tisane model to use for text analysis.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                        }
+                      }
+                    ]
                   }
                 },
                 {
                   "name": "default_language",
                   "string": {
                     "computed_optional_required": "required",
-                    "description": "The default language for text moderation analysis."
+                    "description": "The default language for text moderation analysis.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                        }
+                      }
+                    ]
                   }
                 }
               ],
@@ -581,6 +685,16 @@
                     ],
                     "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must match the pattern ^/.*/$\")"
                   }
+                },
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                  }
                 }
               ]
             }
@@ -594,14 +708,38 @@
                   "string": {
                     "computed_optional_required": "required",
                     "description": "The Azure Content Safety API key for authenticating with the moderation service.",
-                    "sensitive": true
+                    "sensitive": true,
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                        }
+                      }
+                    ]
                   }
                 },
                 {
                   "name": "endpoint",
                   "string": {
                     "computed_optional_required": "required",
-                    "description": "The Azure Content Safety endpoint URL."
+                    "description": "The Azure Content Safety endpoint URL.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                        }
+                      }
+                    ]
                   }
                 }
               ],
@@ -755,6 +893,16 @@
                     ],
                     "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must match the pattern ^/.*/$\")"
                   }
+                },
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                  }
                 }
               ]
             }
@@ -790,14 +938,38 @@
                   "string": {
                     "computed_optional_required": "required",
                     "description": "The Hive API key for authenticating with the moderation service.",
-                    "sensitive": true
+                    "sensitive": true,
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                        }
+                      }
+                    ]
                   }
                 },
                 {
                   "name": "model_url",
                   "string": {
                     "computed_optional_required": "optional",
-                    "description": "The URL of the Hive text classification model to use."
+                    "description": "The URL of the Hive text classification model to use.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                        }
+                      }
+                    ]
                   }
                 }
               ],
@@ -912,6 +1084,16 @@
                     ],
                     "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must match the pattern ^/.*/$\")"
                   }
+                },
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                  }
                 }
               ]
             }
@@ -925,7 +1107,19 @@
                   "string": {
                     "computed_optional_required": "required",
                     "description": "The Hive API key for authenticating with the moderation dashboard.",
-                    "sensitive": true
+                    "sensitive": true,
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                        }
+                      }
+                    ]
                   }
                 },
                 {
@@ -1108,6 +1302,16 @@
                     ],
                     "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must match the pattern ^/.*/$\")"
                   }
+                },
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                  }
                 }
               ]
             }
@@ -1120,7 +1324,19 @@
                   "name": "url",
                   "string": {
                     "computed_optional_required": "required",
-                    "description": "The webhook URL that Ably will POST events to before publishing."
+                    "description": "The webhook URL that Ably will POST events to before publishing.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                        }
+                      }
+                    ]
                   }
                 },
                 {
@@ -1132,14 +1348,38 @@
                           "name": "name",
                           "string": {
                             "computed_optional_required": "optional",
-                            "description": "The name of the header."
+                            "description": "The name of the header.",
+                            "validators": [
+                              {
+                                "custom": {
+                                  "imports": [
+                                    {
+                                      "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                                    }
+                                  ],
+                                  "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                                }
+                              }
+                            ]
                           }
                         },
                         {
                           "name": "value",
                           "string": {
                             "computed_optional_required": "optional",
-                            "description": "The value of the header."
+                            "description": "The value of the header.",
+                            "validators": [
+                              {
+                                "custom": {
+                                  "imports": [
+                                    {
+                                      "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                                    }
+                                  ],
+                                  "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                                }
+                              }
+                            ]
                           }
                         }
                       ]
@@ -1320,6 +1560,16 @@
                     ],
                     "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^/.*/$\"), \"must match the pattern ^/.*/$\")"
                   }
+                },
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                  }
                 }
               ]
             }
@@ -1331,13 +1581,37 @@
                 {
                   "name": "channel_filter",
                   "string": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                        }
+                      }
+                    ]
                   }
                 },
                 {
                   "name": "type",
                   "string": {
-                    "computed_optional_required": "required"
+                    "computed_optional_required": "required",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                        }
+                      }
+                    ]
                   }
                 }
               ],
@@ -1352,14 +1626,38 @@
                   "name": "region",
                   "string": {
                     "computed_optional_required": "required",
-                    "description": "The AWS region in which your Lambda function is hosted. See the \u003ca href=\"https://docs.aws.amazon.com/general/latest/gr/rande.html#lambda_region\"\u003eAWS documentation\u003c/a\u003e for more detail."
+                    "description": "The AWS region in which your Lambda function is hosted. See the \u003ca href=\"https://docs.aws.amazon.com/general/latest/gr/rande.html#lambda_region\"\u003eAWS documentation\u003c/a\u003e for more detail.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                        }
+                      }
+                    ]
                   }
                 },
                 {
                   "name": "function_name",
                   "string": {
                     "computed_optional_required": "required",
-                    "description": "The name of your AWS Lambda function."
+                    "description": "The name of your AWS Lambda function.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                            }
+                          ],
+                          "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                        }
+                      }
+                    ]
                   }
                 },
                 {
@@ -1369,26 +1667,74 @@
                       {
                         "name": "authentication_mode",
                         "string": {
-                          "computed_optional_required": "required"
+                          "computed_optional_required": "required",
+                          "validators": [
+                            {
+                              "custom": {
+                                "imports": [
+                                  {
+                                    "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                                  }
+                                ],
+                                "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                              }
+                            }
+                          ]
                         }
                       },
                       {
                         "name": "access_key_id",
                         "string": {
-                          "computed_optional_required": "optional"
+                          "computed_optional_required": "optional",
+                          "validators": [
+                            {
+                              "custom": {
+                                "imports": [
+                                  {
+                                    "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                                  }
+                                ],
+                                "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                              }
+                            }
+                          ]
                         }
                       },
                       {
                         "name": "secret_access_key",
                         "string": {
                           "computed_optional_required": "optional",
-                          "sensitive": true
+                          "sensitive": true,
+                          "validators": [
+                            {
+                              "custom": {
+                                "imports": [
+                                  {
+                                    "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                                  }
+                                ],
+                                "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                              }
+                            }
+                          ]
                         }
                       },
                       {
                         "name": "assume_role_arn",
                         "string": {
-                          "computed_optional_required": "optional"
+                          "computed_optional_required": "optional",
+                          "validators": [
+                            {
+                              "custom": {
+                                "imports": [
+                                  {
+                                    "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                                  }
+                                ],
+                                "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                              }
+                            }
+                          ]
                         }
                       }
                     ],
