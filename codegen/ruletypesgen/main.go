@@ -51,12 +51,25 @@ var rules = []rule{
 	{"rule_before_publish_lambda", control.BeforePublishAWSLambdaRulePost{}, "before_publish_aws_lambda_rule_post"},
 }
 
-// sensitive field names (by snake_case) that should be marked Sensitive.
+// sensitive field names (by snake_case) that should be marked Sensitive, in
+// both the rule schemas reflected here and the Track A spec.json (see
+// patchSpecJSON). Any credential-bearing attribute name must be listed:
+// nothing else marks sensitivity, and a miss prints the secret in plan
+// output. Matches what the hand-written schemas mark today, except names
+// that are only unambiguously secret in context: the ingress rules mark
+// "url" sensitive because theirs embed database credentials, but listing it
+// here would also mask webhook endpoint URLs.
 var sensitive = map[string]bool{
-	"api_key":           true,
-	"token":             true,
-	"password":          true,
-	"secret_access_key": true,
+	"api_key":             true,
+	"token":               true,
+	"password":            true,
+	"secret_access_key":   true,
+	"access_key_id":       true,
+	"apns_certificate":    true,
+	"apns_private_key":    true,
+	"apns_signing_key":    true,
+	"fcm_key":             true,
+	"fcm_service_account": true,
 }
 
 // customExpr is a code expression plus the imports it needs, used to emit
@@ -187,6 +200,53 @@ func main() {
 	}
 	if err := os.WriteFile("codegen/rules_spec.json", append(out, '\n'), 0o644); err != nil {
 		panic(err)
+	}
+
+	patchSpecJSON("codegen/spec.json")
+}
+
+// patchSpecJSON applies metadata to the Track A Provider Code Spec that
+// tfplugingen-openapi cannot express: the shared sensitive-name set. The
+// generate target runs this after tfplugingen-openapi writes spec.json and
+// before tfplugingen-framework consumes it, so both tracks mark secrets from
+// the one list.
+func patchSpecJSON(path string) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		panic(fmt.Sprintf("patch %s: %v (run tfplugingen-openapi first; see the generate target)", path, err))
+	}
+	var doc map[string]any
+	if err := json.Unmarshal(data, &doc); err != nil {
+		panic(fmt.Sprintf("patch %s: %v", path, err))
+	}
+	for _, kind := range []string{"resources", "datasources"} {
+		entries, _ := doc[kind].([]any)
+		for _, e := range entries {
+			markSensitive(asMap(asMap(e)["schema"])["attributes"])
+		}
+	}
+	out, err := json.MarshalIndent(doc, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	if err := os.WriteFile(path, append(out, '\n'), 0o644); err != nil {
+		panic(err)
+	}
+}
+
+// markSensitive walks a Provider Code Spec attribute list, setting
+// sensitive: true on string attributes whose name is in the sensitive set and
+// recursing into nested attribute shapes.
+func markSensitive(attrs any) {
+	list, _ := attrs.([]any)
+	for _, a := range list {
+		attr := asMap(a)
+		name, _ := attr["name"].(string)
+		if s := asMap(attr["string"]); s != nil && sensitive[name] {
+			s["sensitive"] = true
+		}
+		markSensitive(asMap(attr["single_nested"])["attributes"])
+		markSensitive(asMap(asMap(attr["list_nested"])["nested_object"])["attributes"])
 	}
 }
 

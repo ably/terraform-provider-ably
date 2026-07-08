@@ -147,6 +147,7 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 						Attributes: map[string]schema.Attribute{
 							"access_key_id": schema.StringAttribute{
 								Optional:            true,
+								Sensitive:           true,
 								Description:         "The AWS key ID for the AWS IAM user. See the Ably <a href=\"https://ably.com/docs/general/aws-authentication/\">AWS authentication docs</a> for details.",
 								MarkdownDescription: "The AWS key ID for the AWS IAM user. See the Ably <a href=\"https://ably.com/docs/general/aws-authentication/\">AWS authentication docs</a> for details.",
 								Validators: []validator.String{
