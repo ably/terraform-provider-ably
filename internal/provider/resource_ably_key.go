@@ -69,9 +69,6 @@ func (r *ResourceKey) Schema(ctx context.Context, req resource.SchemaRequest, re
 			"created": schema.Int64Attribute{
 				Computed:    true,
 				Description: "The timestamp of when the key was created.",
-				PlanModifiers: []planmodifier.Int64{
-					DefaultInt64Attribute(types.Int64Value(0)),
-				},
 			},
 			"key": schema.StringAttribute{
 				Computed:    true,
@@ -282,22 +279,11 @@ func (r ResourceKey) Update(ctx context.Context, req resource.UpdateRequest, res
 		return
 	}
 
-	// Read back via GET to get settled computed fields.
-	keys, err := r.p.client.ListKeys(ctx, appID)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error reading back ably_api_key after update",
-			"Could not read back ably_api_key, unexpected error: "+err.Error(),
-		)
-		return
-	}
-	for _, k := range keys {
-		if k.ID == ablyKey.ID {
-			ablyKey = k
-			break
-		}
-	}
-
+	// Unlike Create, do not read back via GET here. On update the planned
+	// values of computed fields are the prior state values, so storing a
+	// settled `modified` that differs from the PATCH response would make
+	// Terraform report an inconsistent result after apply. The next Read
+	// picks up the settled values instead.
 	rc := newReconciler(&resp.Diagnostics)
 	respKey := buildKeyState(rc, plan, ablyKey)
 	if resp.Diagnostics.HasError() {
