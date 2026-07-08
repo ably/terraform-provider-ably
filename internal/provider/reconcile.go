@@ -150,23 +150,6 @@ func planSlice[T any, E any](pt *T, fn func(*T) []E) []E {
 	return fn(pt)
 }
 
-// optIntFromIntPtr converts a *int to types.Int64, returning types.Int64Null() when nil.
-func optIntFromIntPtr(i *int) types.Int64 {
-	if i == nil {
-		return types.Int64Null()
-	}
-	return types.Int64Value(int64(*i))
-}
-
-// optStringValue converts a non-pointer string to types.String, treating "" as null.
-// For pointer strings, use the existing optStringValue in helpers.go.
-func optStringFromString(s string) types.String {
-	if s == "" {
-		return types.StringNull()
-	}
-	return types.StringValue(s)
-}
-
 // Reconcile functions handle the four-way matrix of input (plan/state) vs
 // output (API response) emptiness:
 //

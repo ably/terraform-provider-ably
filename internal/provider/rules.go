@@ -658,7 +658,7 @@ func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule, reading boo
 			Exchange:           rc.str("target.exchange", planStr(pt, func(t *AblyRuleTargetAMQPExternal) types.String { return t.Exchange }), optStringValue(&target.Exchange), false),
 			MandatoryRoute:     rc.boolean("target.mandatory_route", planBool(pt, func(t *AblyRuleTargetAMQPExternal) types.Bool { return t.MandatoryRoute }), optBoolValue(target.MandatoryRoute), false),
 			PersistentMessages: rc.boolean("target.persistent_messages", planBool(pt, func(t *AblyRuleTargetAMQPExternal) types.Bool { return t.PersistentMessages }), optBoolValue(target.PersistentMessages), false),
-			MessageTtl:         rc.int64val("target.message_ttl", planInt64(pt, func(t *AblyRuleTargetAMQPExternal) types.Int64 { return t.MessageTtl }), optIntFromIntPtr(target.MessageTTL), false),
+			MessageTtl:         rc.int64val("target.message_ttl", planInt64(pt, func(t *AblyRuleTargetAMQPExternal) types.Int64 { return t.MessageTtl }), optIntValue(target.MessageTTL), false),
 			Headers:            rcSlice(rc, "target.headers", planSlice(pt, func(t *AblyRuleTargetAMQPExternal) []AblyRuleHeaders { return t.Headers }), ToHeaders(target.Headers), false),
 			Enveloped:          rc.boolean("target.enveloped", planBool(pt, func(t *AblyRuleTargetAMQPExternal) types.Bool { return t.Enveloped }), optBoolValue(target.Enveloped), true),
 			Format:             rc.str("target.format", planStr(pt, func(t *AblyRuleTargetAMQPExternal) types.String { return t.Format }), types.StringValue(target.Format), true),
