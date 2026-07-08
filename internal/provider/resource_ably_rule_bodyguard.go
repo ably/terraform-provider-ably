@@ -121,21 +121,13 @@ func getPlanBodyguardPost(plan AblyRuleBodyguard) control.BodyguardTextModeratio
 
 // getBodyguardResponse maps an API rule response back onto the tfsdk model.
 //
-// The in-repo control.RuleResponse only decodes id/appId/status/ruleType and
-// the (untyped) target. The Control API does return beforePublishConfig,
-// invocationMode and chatRoomFilter for moderation rules, but the shared
-// RuleResponse type does not yet have fields for them, so the client discards
-// them; the target's api_key is genuinely write-only (never returned). We
-// therefore preserve those values from the plan/prior state to avoid Terraform
-// "inconsistent result after apply" errors and the opaque "inconsistent values
-// for sensitive attribute" diff (the target block holds the sensitive api_key,
-// so any field mismatch trips it).
-//
-// Known limitation: because we carry these forward rather than reading them
-// back, out-of-band changes to invocation_mode/chat_room_filter/
-// before_publish_config are not detected as drift. Decoding them properly
-// belongs with the moderation/before-publish rule family work in
-// CODEGEN_STRATEGY.md, where control.RuleResponse should learn these fields.
+// All moderation fields (invocation_mode, chat_room_filter,
+// before_publish_config) are read back from the response, so out-of-band
+// changes surface as drift. The only exception is the target's api_key, which
+// is genuinely write-only (the API never returns it): the configured value is
+// preserved from the plan/prior state, and left null when there is none (e.g.
+// on import), since inventing a known "" would misrepresent what the API
+// holds.
 func getBodyguardResponse(rule *control.RuleResponse, plan *AblyRuleBodyguard) (AblyRuleBodyguard, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
@@ -154,8 +146,8 @@ func getBodyguardResponse(rule *control.RuleResponse, plan *AblyRuleBodyguard) (
 	}
 
 	// api_key is write-only: preserve the configured value from the plan so it
-	// does not flip to empty on read.
-	apiKey := types.StringValue(target.APIKey)
+	// does not flip to empty on read, and stay null when there is no plan.
+	apiKey := stringOrNull(target.APIKey)
 	if plan != nil && plan.Target != nil && !plan.Target.ApiKey.IsNull() {
 		apiKey = plan.Target.ApiKey
 	}
@@ -167,24 +159,22 @@ func getBodyguardResponse(rule *control.RuleResponse, plan *AblyRuleBodyguard) (
 		DefaultLanguage: stringOrNull(target.DefaultLanguage),
 	}
 
-	// invocation_mode, chat_room_filter and before_publish_config are not
-	// decoded by the in-repo control client (see the function doc), so carry
-	// them forward from the plan/state.
-	invocationMode := types.StringNull()
-	chatRoomFilter := types.StringNull()
 	var beforePublish *AblyRuleBodyguardBeforePublishConfig
-	if plan != nil {
-		invocationMode = plan.InvocationMode
-		chatRoomFilter = plan.ChatRoomFilter
-		beforePublish = plan.BeforePublishConfig
+	if rule.BeforePublishConfig != nil {
+		beforePublish = &AblyRuleBodyguardBeforePublishConfig{
+			RetryTimeout:          types.Int64Value(int64(rule.BeforePublishConfig.RetryTimeout)),
+			MaxRetries:            types.Int64Value(int64(rule.BeforePublishConfig.MaxRetries)),
+			FailedAction:          types.StringValue(rule.BeforePublishConfig.FailedAction),
+			TooManyRequestsAction: types.StringValue(rule.BeforePublishConfig.TooManyRequestsAction),
+		}
 	}
 
 	respRule := AblyRuleBodyguard{
 		ID:                  types.StringValue(rule.ID),
 		AppID:               types.StringValue(rule.AppID),
 		Status:              types.StringValue(rule.Status),
-		InvocationMode:      invocationMode,
-		ChatRoomFilter:      chatRoomFilter,
+		InvocationMode:      stringOrNull(rule.InvocationMode),
+		ChatRoomFilter:      stringOrNull(rule.ChatRoomFilter),
 		BeforePublishConfig: beforePublish,
 		Target:              respTarget,
 	}

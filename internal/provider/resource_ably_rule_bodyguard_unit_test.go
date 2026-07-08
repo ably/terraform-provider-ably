@@ -93,29 +93,44 @@ func TestGetPlanBodyguardPost_Discriminator(t *testing.T) {
 	}
 }
 
-// TestGetBodyguardResponse_PreservesWriteOnlyAndUnreturnedFields is the footgun
-// test. The Control RuleResponse does NOT return before_publish_config,
-// invocation_mode, chat_room_filter, or the target api_key. If those are not
-// preserved from the plan, Terraform raises "inconsistent result after apply"
-// and an "inconsistent values for sensitive attribute" diff on the target
-// block (which contains the sensitive api_key).
-func TestGetBodyguardResponse_PreservesWriteOnlyAndUnreturnedFields(t *testing.T) {
-	t.Parallel()
-
-	plan := samplePlan()
-
-	// Simulate what the API actually returns: id/appId/status/ruleType plus a
-	// target that omits the write-only api_key.
-	rule := control.RuleResponse{
-		ID:       "rule-1",
-		AppID:    "app-123",
-		Status:   "enabled",
-		RuleType: "bodyguard/text-moderation",
+// sampleResponse returns a moderation rule response as the Control API shapes
+// it: all moderation fields present, but no api_key in the target (it is
+// write-only and never returned).
+func sampleResponse() control.RuleResponse {
+	return control.RuleResponse{
+		ID:             "rule-1",
+		AppID:          "app-123",
+		Status:         "enabled",
+		RuleType:       "bodyguard/text-moderation",
+		InvocationMode: "BEFORE_PUBLISH",
+		ChatRoomFilter: "/room-.*/",
+		BeforePublishConfig: &control.BeforePublishConfig{
+			RetryTimeout:          5000,
+			MaxRetries:            3,
+			FailedAction:          "PUBLISH",
+			TooManyRequestsAction: "RETRY",
+		},
 		Target: map[string]any{
 			"channelId":       "my-channel",
 			"defaultLanguage": "en",
 		},
 	}
+}
+
+// TestGetBodyguardResponse_ReadsModerationFieldsBack verifies the moderation
+// fields come from the response, not the plan, so out-of-band changes surface
+// as drift. The write-only target api_key is the one exception: it is
+// preserved from the plan because the API never returns it.
+func TestGetBodyguardResponse_ReadsModerationFieldsBack(t *testing.T) {
+	t.Parallel()
+
+	plan := samplePlan()
+
+	// The response disagrees with the plan on every moderation field: the
+	// response must win everywhere except the write-only api_key.
+	rule := sampleResponse()
+	rule.ChatRoomFilter = "/other-.*/"
+	rule.BeforePublishConfig.MaxRetries = 7
 
 	got, diags := getBodyguardResponse(&rule, &plan)
 	if diags.HasError() {
@@ -126,19 +141,61 @@ func TestGetBodyguardResponse_PreservesWriteOnlyAndUnreturnedFields(t *testing.T
 		t.Fatalf("expected write-only api_key to be preserved from plan, got %q", got.Target.ApiKey.ValueString())
 	}
 	if got.InvocationMode.ValueString() != "BEFORE_PUBLISH" {
-		t.Fatalf("expected invocation_mode preserved from plan, got %q", got.InvocationMode.ValueString())
+		t.Fatalf("expected invocation_mode from response, got %q", got.InvocationMode.ValueString())
 	}
-	if got.ChatRoomFilter.ValueString() != "/room-.*/" {
-		t.Fatalf("expected chat_room_filter preserved from plan, got %q", got.ChatRoomFilter.ValueString())
+	if got.ChatRoomFilter.ValueString() != "/other-.*/" {
+		t.Fatalf("expected chat_room_filter from response, got %q", got.ChatRoomFilter.ValueString())
 	}
 	if got.BeforePublishConfig == nil {
-		t.Fatal("expected before_publish_config preserved from plan, got nil")
+		t.Fatal("expected before_publish_config from response, got nil")
 	}
-	if got.BeforePublishConfig.MaxRetries.ValueInt64() != 3 {
-		t.Fatalf("expected before_publish_config.max_retries=3, got %d", got.BeforePublishConfig.MaxRetries.ValueInt64())
+	if got.BeforePublishConfig.MaxRetries.ValueInt64() != 7 {
+		t.Fatalf("expected before_publish_config.max_retries=7 from response, got %d", got.BeforePublishConfig.MaxRetries.ValueInt64())
 	}
 	if got.ID.ValueString() != "rule-1" {
 		t.Fatalf("expected id from response, got %q", got.ID.ValueString())
+	}
+}
+
+// TestGetBodyguardResponse_ClearedFilterIsNull verifies a response without
+// chatRoomFilter maps to null even when the prior plan/state held a value:
+// this is the read-back half of clearing the filter.
+func TestGetBodyguardResponse_ClearedFilterIsNull(t *testing.T) {
+	t.Parallel()
+
+	plan := samplePlan()
+	rule := sampleResponse()
+	rule.ChatRoomFilter = ""
+
+	got, diags := getBodyguardResponse(&rule, &plan)
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %s", diags.Errors()[0].Detail())
+	}
+	if !got.ChatRoomFilter.IsNull() {
+		t.Fatalf("expected chat_room_filter null when absent from response, got %q", got.ChatRoomFilter.ValueString())
+	}
+}
+
+// TestGetBodyguardResponse_ImportLeavesApiKeyNull verifies the import path
+// (no plan): the write-only api_key must be null, not a known "", since the
+// API never returns it and a known empty string would misrepresent it.
+func TestGetBodyguardResponse_ImportLeavesApiKeyNull(t *testing.T) {
+	t.Parallel()
+
+	rule := sampleResponse()
+
+	got, diags := getBodyguardResponse(&rule, nil)
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %s", diags.Errors()[0].Detail())
+	}
+	if !got.Target.ApiKey.IsNull() {
+		t.Fatalf("expected api_key null on import, got %q", got.Target.ApiKey.ValueString())
+	}
+	if got.ChatRoomFilter.ValueString() != "/room-.*/" {
+		t.Fatalf("expected chat_room_filter from response on import, got %q", got.ChatRoomFilter.ValueString())
+	}
+	if got.BeforePublishConfig == nil {
+		t.Fatal("expected before_publish_config from response on import, got nil")
 	}
 }
 

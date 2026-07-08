@@ -53,9 +53,6 @@ func TestAccAblyRuleBodyguard(t *testing.T) {
 				},
 				ImportStateVerifyIgnore: []string{
 					"target.api_key",
-					"invocation_mode",
-					"chat_room_filter",
-					"before_publish_config",
 				},
 			},
 			// Update and Read testing
