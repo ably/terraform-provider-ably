@@ -19,6 +19,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"reflect"
 	"regexp"
@@ -70,6 +71,7 @@ type customExpr struct {
 type override struct {
 	mode          string // overrides computed_optional_required when set
 	staticDefault any    // sets a static default when non-nil
+	allowEmpty    bool   // suppresses the LengthAtLeast(1) validator
 	validators    []customExpr
 	planModifiers []customExpr
 }
@@ -99,6 +101,11 @@ var attrOverrides = map[string]override{
 	// chatRoomFilter be "", so an in-place update can never unset it (verified
 	// against the live API, 2026-07-08): removing it must recreate the rule.
 	"chat_room_filter": {planModifiers: []customExpr{{[]string{pkgPlanModifiers}, "planmodifiers.RequiresReplaceWhenCleared()"}}},
+	// "" is a meaningful value for a source channel filter: the spec documents
+	// it as "apply to all channels", and unlike chatRoomFilter it round-trips
+	// (verified against the live API, 2026-07-20: create with "" and update
+	// non-empty -> "" both persist and read back as "").
+	"channel_filter": {allowEmpty: true},
 }
 
 // applyOverride mutates an attribute's type map with any configured metadata.
@@ -138,8 +145,13 @@ func customList(exprs []customExpr) []map[string]any {
 	return out
 }
 
+// specSchemas holds components.schemas from the vendored spec so property
+// lookups can resolve $ref and oneOf nodes anywhere in the tree.
+var specSchemas map[string]any
+
 func main() {
 	schemas := loadSpecSchemas("codegen/control-api.yaml")
+	specSchemas = schemas
 
 	resources := make([]map[string]any, 0, len(rules))
 	for _, r := range rules {
@@ -259,8 +271,9 @@ func attrsFromStruct(t reflect.Type, props map[string]any) []map[string]any {
 			// same thing to the Control API, and a known "" in the plan reads
 			// back as null, aborting the apply with an opaque "inconsistent
 			// values" error. A plan-time validator turns that into a clear
-			// message. Enum-valued attributes already exclude "" via OneOf.
-			if len(specEnum(props, jsonName)) == 0 && len(attrOverrides[name].validators) == 0 {
+			// message. Enum-valued attributes already exclude "" via OneOf, and
+			// attributes for which "" is a real value opt out via allowEmpty.
+			if len(specEnum(props, jsonName)) == 0 && len(attrOverrides[name].validators) == 0 && !attrOverrides[name].allowEmpty {
 				specVals = append(specVals, customExpr{[]string{pkgStringValidator}, "stringvalidator.LengthAtLeast(1)"})
 			}
 			if len(specVals) > 0 {
@@ -333,20 +346,94 @@ func asMap(v any) map[string]any {
 	return m
 }
 
-// description returns the description of a property by its JSON name.
+// resolveNode follows $ref and oneOf on a schema node so lookups see the
+// effective schema. A $ref resolves to the named component (failing loudly if
+// it doesn't exist); a oneOf resolves each variant and merges their
+// properties, unioning enums per property, so a discriminated union (e.g. the
+// lambda target's aws_access_keys/aws_assume_role authentication) yields one
+// property map whose discriminator carries the enum of all variants. Nodes
+// without either pass through unchanged.
+func resolveNode(node map[string]any) map[string]any {
+	if ref, ok := node["$ref"].(string); ok {
+		name := ref[strings.LastIndex(ref, "/")+1:]
+		target := asMap(specSchemas[name])
+		if target == nil {
+			panic(fmt.Sprintf("unresolvable $ref %q in the vendored spec", ref))
+		}
+		return resolveNode(target)
+	}
+	variants, ok := node["oneOf"].([]any)
+	if !ok {
+		return node
+	}
+	merged := map[string]any{}
+	for _, v := range variants {
+		mergeProps(merged, asMap(resolveNode(asMap(v))["properties"]))
+	}
+	out := map[string]any{"properties": merged}
+	if d, ok := node["description"].(string); ok {
+		out["description"] = d
+	}
+	return out
+}
+
+// mergeProps merges src properties into dst: new properties are referenced
+// as-is, existing ones union their enum values (in encounter order) and keep
+// the first description seen. A property is never mutated in place — the
+// values alias the parsed spec, shared by every schema that references them —
+// so a merged property is a fresh copy.
+func mergeProps(dst, src map[string]any) {
+	for name, v := range src {
+		existing, ok := dst[name]
+		if !ok {
+			dst[name] = v
+			continue
+		}
+		vEnum, _ := asMap(v)["enum"].([]any)
+		if len(vEnum) == 0 {
+			continue
+		}
+		em := asMap(existing)
+		merged := make(map[string]any, len(em))
+		maps.Copy(merged, em)
+		eEnum, _ := em["enum"].([]any)
+		combined := append([]any{}, eEnum...)
+		seen := map[any]bool{}
+		for _, e := range combined {
+			seen[e] = true
+		}
+		for _, e := range vEnum {
+			if !seen[e] {
+				combined = append(combined, e)
+			}
+		}
+		merged["enum"] = combined
+		dst[name] = merged
+	}
+}
+
+// description returns the description of a property by its JSON name,
+// following $ref/oneOf to the effective schema when the property itself has
+// no inline description.
 func description(props map[string]any, jsonName string) string {
-	s, _ := asMap(props[jsonName])["description"].(string)
+	node := asMap(props[jsonName])
+	if s, ok := node["description"].(string); ok {
+		return s
+	}
+	s, _ := resolveNode(node)["description"].(string)
 	return s
 }
 
-// childProps returns the nested properties map of an object-typed property.
+// childProps returns the nested properties map of an object-typed property,
+// resolving $ref and oneOf indirection.
 func childProps(props map[string]any, jsonName string) map[string]any {
-	return asMap(asMap(props[jsonName])["properties"])
+	return asMap(resolveNode(asMap(props[jsonName]))["properties"])
 }
 
-// itemProps returns the properties map of an array property's item schema.
+// itemProps returns the properties map of an array property's item schema,
+// resolving $ref and oneOf indirection.
 func itemProps(props map[string]any, jsonName string) map[string]any {
-	return asMap(asMap(asMap(props[jsonName])["items"])["properties"])
+	return asMap(resolveNode(asMap(asMap(props[jsonName])["items"]))["properties"])
 }
 
 // specEnum returns the string enum values declared for a property, if any.
