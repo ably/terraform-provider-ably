@@ -302,9 +302,24 @@ func attrsFromStruct(t reflect.Type, props map[string]any) []map[string]any {
 					"element_type":               map[string]any{elementType(elem): map[string]any{}},
 				}
 			}
+		case reflect.Map:
+			if ft.Key().Kind() != reflect.String {
+				panic(fmt.Sprintf("ruletypesgen: %s.%s (%s) has non-string map key %s; the generator cannot emit it", t.Name(), f.Name, jsonName, ft.Key().Kind()))
+			}
+			m := map[string]any{
+				"computed_optional_required": mode,
+				"element_type":               map[string]any{elementType(ft.Elem()): map[string]any{}},
+			}
+			if desc != "" {
+				m["description"] = desc
+			}
+			attr["map"] = m
 		default:
-			// maps and anything else are skipped; the families here don't use them.
-			continue
+			// Fail loudly rather than emitting an incomplete schema: a silent
+			// skip here is invisible until a user discovers a field their rule
+			// supports doesn't exist in the provider (this happened to the
+			// moderation thresholds maps).
+			panic(fmt.Sprintf("ruletypesgen: %s.%s (%s) has kind %s which the generator cannot emit; add support or exclude it explicitly", t.Name(), f.Name, jsonName, ft.Kind()))
 		}
 		attrs = append(attrs, attr)
 	}
