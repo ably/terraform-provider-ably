@@ -121,8 +121,8 @@ func TestAccAblyRuleKinesis_Minimal(t *testing.T) {
 		partition_key  = "/data"
 		authentication = {
 			mode              = "credentials"
-			access_key_id     = "AKIAIOSFODNN7EXAMPLE"
-			secret_access_key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+			access_key_id     = "test-access-key-id"
+			secret_access_key = "test-secret-access-key"
 		}
 	}`)
 

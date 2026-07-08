@@ -113,7 +113,7 @@ func TestAccAblyRulePulsar_Minimal(t *testing.T) {
 		service_url = "pulsar://pulsar.us-west.example.com:6650/"
 		authentication = {
 			mode  = "token"
-			token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+			token = "fake-test-token"
 		}
 	}`)
 
