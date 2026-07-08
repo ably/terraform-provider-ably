@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"regexp"
 	"strings"
 	"unicode"
 
@@ -184,9 +185,16 @@ func loadSpecSchemas(path string) map[string]any {
 	return asMap(asMap(doc["components"])["schemas"])
 }
 
-// schemaProps returns the properties map of a named schema, or nil.
+// schemaProps returns the properties map of a named schema. A missing or
+// property-less schema fails generation immediately: returning nil here would
+// silently strip descriptions, enums, patterns and defaults from the whole
+// resource next time someone renames a schema in the vendored spec.
 func schemaProps(schemas map[string]any, name string) map[string]any {
-	return asMap(asMap(schemas[name])["properties"])
+	props := asMap(asMap(schemas[name])["properties"])
+	if len(props) == 0 {
+		panic(fmt.Sprintf("spec schema %q is missing or has no properties: the rules table in ruletypesgen and the vendored spec (codegen/control-api.yaml) are out of sync", name))
+	}
+	return props
 }
 
 // attrsFromStruct reflects a struct type into Provider Code Spec attributes,
@@ -240,7 +248,7 @@ func attrsFromStruct(t reflect.Type, props map[string]any) []map[string]any {
 				}
 			}
 			if p := specPattern(props, jsonName); p != "" {
-				specVals = append(specVals, customExpr{[]string{pkgStringValidator, pkgRegexp}, regexExpr(p)})
+				specVals = append(specVals, customExpr{[]string{pkgStringValidator, pkgRegexp}, regexExpr(p, jsonName)})
 			}
 			// Reject explicit "" on string attributes: empty and unset mean the
 			// same thing to the Control API, and a known "" in the plan reads
@@ -348,8 +356,13 @@ func oneOfExpr(vals []string) string {
 	return "stringvalidator.OneOf(" + strings.Join(quoted, ", ") + ")"
 }
 
-// regexExpr builds a stringvalidator.RegexMatches(...) expression for a pattern.
-func regexExpr(pattern string) string {
+// regexExpr builds a stringvalidator.RegexMatches(...) expression for a
+// pattern, compiling it first so a malformed pattern in the vendored spec
+// fails generation here rather than panicking the generated provider at init.
+func regexExpr(pattern, jsonName string) string {
+	if _, err := regexp.Compile(pattern); err != nil {
+		panic(fmt.Sprintf("invalid regex pattern %q on spec property %q: %v", pattern, jsonName, err))
+	}
 	return fmt.Sprintf("stringvalidator.RegexMatches(regexp.MustCompile(%q), %q)", pattern, "must match the pattern "+pattern)
 }
 
