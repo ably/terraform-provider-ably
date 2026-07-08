@@ -74,14 +74,38 @@
                 {
                   "int64": {
                     "computed_optional_required": "required",
-                    "description": "The timeout in milliseconds for retrying the rule invocation."
+                    "description": "The timeout in milliseconds for retrying the rule invocation.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+                            }
+                          ],
+                          "schema_definition": "int64validator.Between(0, 10000)"
+                        }
+                      }
+                    ]
                   },
                   "name": "retry_timeout"
                 },
                 {
                   "int64": {
                     "computed_optional_required": "required",
-                    "description": "The maximum number of retry attempts."
+                    "description": "The maximum number of retry attempts.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+                            }
+                          ],
+                          "schema_definition": "int64validator.Between(0, 10)"
+                        }
+                      }
+                    ]
                   },
                   "name": "max_retries"
                 },
@@ -354,14 +378,38 @@
                 {
                   "int64": {
                     "computed_optional_required": "required",
-                    "description": "The timeout in milliseconds for retrying the rule invocation."
+                    "description": "The timeout in milliseconds for retrying the rule invocation.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+                            }
+                          ],
+                          "schema_definition": "int64validator.Between(0, 10000)"
+                        }
+                      }
+                    ]
                   },
                   "name": "retry_timeout"
                 },
                 {
                   "int64": {
                     "computed_optional_required": "required",
-                    "description": "The maximum number of retry attempts."
+                    "description": "The maximum number of retry attempts.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+                            }
+                          ],
+                          "schema_definition": "int64validator.Between(0, 10)"
+                        }
+                      }
+                    ]
                   },
                   "name": "max_retries"
                 },
@@ -625,14 +673,38 @@
                 {
                   "int64": {
                     "computed_optional_required": "required",
-                    "description": "The timeout in milliseconds for retrying the rule invocation."
+                    "description": "The timeout in milliseconds for retrying the rule invocation.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+                            }
+                          ],
+                          "schema_definition": "int64validator.Between(0, 10000)"
+                        }
+                      }
+                    ]
                   },
                   "name": "retry_timeout"
                 },
                 {
                   "int64": {
                     "computed_optional_required": "required",
-                    "description": "The maximum number of retry attempts."
+                    "description": "The maximum number of retry attempts.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+                            }
+                          ],
+                          "schema_definition": "int64validator.Between(0, 10)"
+                        }
+                      }
+                    ]
                   },
                   "name": "max_retries"
                 },
@@ -877,14 +949,38 @@
                 {
                   "int64": {
                     "computed_optional_required": "required",
-                    "description": "The timeout in milliseconds for retrying the rule invocation."
+                    "description": "The timeout in milliseconds for retrying the rule invocation.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+                            }
+                          ],
+                          "schema_definition": "int64validator.Between(0, 10000)"
+                        }
+                      }
+                    ]
                   },
                   "name": "retry_timeout"
                 },
                 {
                   "int64": {
                     "computed_optional_required": "required",
-                    "description": "The maximum number of retry attempts."
+                    "description": "The maximum number of retry attempts.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+                            }
+                          ],
+                          "schema_definition": "int64validator.Between(0, 10)"
+                        }
+                      }
+                    ]
                   },
                   "name": "max_retries"
                 },
@@ -1298,14 +1394,38 @@
                 {
                   "int64": {
                     "computed_optional_required": "required",
-                    "description": "The timeout in milliseconds for retrying the rule invocation."
+                    "description": "The timeout in milliseconds for retrying the rule invocation.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+                            }
+                          ],
+                          "schema_definition": "int64validator.Between(0, 10000)"
+                        }
+                      }
+                    ]
                   },
                   "name": "retry_timeout"
                 },
                 {
                   "int64": {
                     "computed_optional_required": "required",
-                    "description": "The maximum number of retry attempts."
+                    "description": "The maximum number of retry attempts.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+                            }
+                          ],
+                          "schema_definition": "int64validator.Between(0, 10)"
+                        }
+                      }
+                    ]
                   },
                   "name": "max_retries"
                 },
@@ -1568,14 +1688,38 @@
                 {
                   "int64": {
                     "computed_optional_required": "required",
-                    "description": "The timeout in milliseconds for retrying the rule invocation."
+                    "description": "The timeout in milliseconds for retrying the rule invocation.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+                            }
+                          ],
+                          "schema_definition": "int64validator.Between(0, 10000)"
+                        }
+                      }
+                    ]
                   },
                   "name": "retry_timeout"
                 },
                 {
                   "int64": {
                     "computed_optional_required": "required",
-                    "description": "The maximum number of retry attempts."
+                    "description": "The maximum number of retry attempts.",
+                    "validators": [
+                      {
+                        "custom": {
+                          "imports": [
+                            {
+                              "path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+                            }
+                          ],
+                          "schema_definition": "int64validator.Between(0, 10)"
+                        }
+                      }
+                    ]
                   },
                   "name": "max_retries"
                 },

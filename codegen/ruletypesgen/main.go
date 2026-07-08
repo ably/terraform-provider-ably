@@ -78,6 +78,7 @@ type override struct {
 
 const (
 	pkgStringValidator    = "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	pkgInt64Validator     = "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	pkgStringPlanModifier = "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	pkgPlanModifiers      = "github.com/ably/terraform-provider-ably/internal/provider/planmodifiers"
 	pkgRegexp             = "regexp"
@@ -292,6 +293,24 @@ func attrsFromStruct(t reflect.Type, props map[string]any) []map[string]any {
 			if desc != "" {
 				n["description"] = desc
 			}
+			// Source minimum/maximum bounds from the spec, mirroring what the
+			// string case does for enums and patterns, so out-of-range values
+			// fail at plan time instead of only at the real API (the echoing
+			// fake accepts anything, so nothing else catches them).
+			minV, hasMin := specBound(props, jsonName, "minimum")
+			maxV, hasMax := specBound(props, jsonName, "maximum")
+			var expr string
+			switch {
+			case hasMin && hasMax:
+				expr = fmt.Sprintf("int64validator.Between(%d, %d)", minV, maxV)
+			case hasMin:
+				expr = fmt.Sprintf("int64validator.AtLeast(%d)", minV)
+			case hasMax:
+				expr = fmt.Sprintf("int64validator.AtMost(%d)", maxV)
+			}
+			if expr != "" {
+				n["validators"] = customList([]customExpr{{[]string{pkgInt64Validator}, expr}})
+			}
 			attr["int64"] = n
 		case reflect.Struct:
 			sn := map[string]any{
@@ -452,6 +471,20 @@ func specEnum(props map[string]any, jsonName string) []string {
 func specPattern(props map[string]any, jsonName string) string {
 	s, _ := asMap(props[jsonName])["pattern"].(string)
 	return s
+}
+
+// specBound returns an integer bound (minimum/maximum) declared for a
+// property. YAML numbers decode as int or float64 depending on their form.
+func specBound(props map[string]any, jsonName, key string) (int64, bool) {
+	switch v := asMap(props[jsonName])[key].(type) {
+	case int:
+		return int64(v), true
+	case int64:
+		return v, true
+	case float64:
+		return int64(v), true
+	}
+	return 0, false
 }
 
 // oneOfExpr builds a stringvalidator.OneOf(...) expression for the given values.

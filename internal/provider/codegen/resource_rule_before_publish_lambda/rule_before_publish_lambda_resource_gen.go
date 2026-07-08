@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/ably/terraform-provider-ably/internal/provider/planmodifiers"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -47,11 +48,17 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 						Required:            true,
 						Description:         "The maximum number of retry attempts.",
 						MarkdownDescription: "The maximum number of retry attempts.",
+						Validators: []validator.Int64{
+							int64validator.Between(0, 10),
+						},
 					},
 					"retry_timeout": schema.Int64Attribute{
 						Required:            true,
 						Description:         "The timeout in milliseconds for retrying the rule invocation.",
 						MarkdownDescription: "The timeout in milliseconds for retrying the rule invocation.",
+						Validators: []validator.Int64{
+							int64validator.Between(0, 10000),
+						},
 					},
 					"too_many_requests_action": schema.StringAttribute{
 						Required:            true,
