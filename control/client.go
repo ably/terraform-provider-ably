@@ -16,7 +16,7 @@
 //	}
 //
 // Requests that fail with 5xx status codes are retried automatically
-// (up to 4 times by default, with exponential backoff). Client errors
+// (up to 2 times by default, with exponential backoff). Client errors
 // (4xx) are never retried.
 package control
 
@@ -30,6 +30,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
 )
@@ -37,6 +38,20 @@ import (
 // Version is the semantic version of this library, used in the default
 // User-Agent header.
 const Version = "0.1.0"
+
+// Default retry configuration. These are deliberately conservative so a
+// struggling API server isn't hammered by a retry storm: a small number of
+// attempts with a comparatively long backoff gives the server room to
+// recover rather than amplifying load while it's already shedding requests.
+const (
+	// DefaultRetryMax is the default maximum number of retries on 5xx and
+	// connection errors.
+	DefaultRetryMax = 2
+	// DefaultRetryWaitMin is the default minimum wait between retries.
+	DefaultRetryWaitMin = 2 * time.Second
+	// DefaultRetryWaitMax is the default maximum wait between retries.
+	DefaultRetryWaitMax = 60 * time.Second
+)
 
 var defaultUserAgent = "ably-control-api/" + Version
 
@@ -52,7 +67,7 @@ type Client struct {
 	//   client.UserAgent += " ably-terraform/1.0.0"
 	UserAgent string
 	// HTTPClient is the retryable HTTP client used for requests.
-	// By default it retries up to 4 times with exponential backoff
+	// By default it retries up to 2 times with exponential backoff
 	// on 5xx responses and connection errors.
 	HTTPClient *retryablehttp.Client
 }
@@ -61,10 +76,26 @@ type Client struct {
 type ClientOption func(*Client)
 
 // WithRetryMax sets the maximum number of retries for failed requests.
-// Set to 0 to disable retries. Default is 4.
+// Set to 0 to disable retries. Default is [DefaultRetryMax].
 func WithRetryMax(n int) ClientOption {
 	return func(c *Client) {
 		c.HTTPClient.RetryMax = n
+	}
+}
+
+// WithRetryWaitMin sets the minimum wait between retries. This is the base
+// for the exponential backoff. Default is [DefaultRetryWaitMin].
+func WithRetryWaitMin(d time.Duration) ClientOption {
+	return func(c *Client) {
+		c.HTTPClient.RetryWaitMin = d
+	}
+}
+
+// WithRetryWaitMax sets the maximum wait between retries, capping the
+// exponential backoff. Default is [DefaultRetryWaitMax].
+func WithRetryWaitMax(d time.Duration) ClientOption {
+	return func(c *Client) {
+		c.HTTPClient.RetryWaitMax = d
 	}
 }
 
@@ -90,13 +121,17 @@ func WithHTTPClient(hc *http.Client) ClientOption {
 // Defaults:
 //   - Base URL: https://control.ably.net/v1
 //   - User-Agent: ably-control-api/<Version>
-//   - Retry: up to 4 attempts with exponential backoff on 5xx and
+//   - Retry: up to [DefaultRetryMax] attempts with exponential backoff
+//     (between [DefaultRetryWaitMin] and [DefaultRetryWaitMax]) on 5xx and
 //     connection errors; 4xx responses are never retried
 //
-// Use [WithRetryMax], [WithUserAgent], or [WithHTTPClient] to override.
+// Use [WithRetryMax], [WithRetryWaitMin], [WithRetryWaitMax],
+// [WithUserAgent], or [WithHTTPClient] to override.
 func NewClient(token string, opts ...ClientOption) *Client {
 	rc := retryablehttp.NewClient()
-	rc.RetryMax = 4
+	rc.RetryMax = DefaultRetryMax
+	rc.RetryWaitMin = DefaultRetryWaitMin
+	rc.RetryWaitMax = DefaultRetryWaitMax
 	rc.Logger = nil // silence default logger
 	rc.CheckRetry = retryPolicy
 	rc.ErrorHandler = retryablehttp.PassthroughErrorHandler

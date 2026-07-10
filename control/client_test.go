@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -120,6 +121,18 @@ func TestRetry_WithRetryMaxOption(t *testing.T) {
 	assert.Equal(t, int32(2), attempts.Load()) // 1 initial + 1 retry
 }
 
+func TestRetry_WithRetryWaitOptions(t *testing.T) {
+	t.Parallel()
+
+	client := NewClient(
+		"test-token",
+		WithRetryWaitMin(5*time.Second),
+		WithRetryWaitMax(90*time.Second),
+	)
+	assert.Equal(t, 5*time.Second, client.HTTPClient.RetryWaitMin)
+	assert.Equal(t, 90*time.Second, client.HTTPClient.RetryWaitMax)
+}
+
 // ---------------------------------------------------------------------------
 // User-Agent
 // ---------------------------------------------------------------------------
@@ -196,7 +209,9 @@ func TestNewClient_Defaults(t *testing.T) {
 	assert.Equal(t, "my-token", client.Token)
 	assert.Equal(t, "https://control.ably.net/v1", client.BaseURL)
 	assert.Equal(t, "ably-control-api/"+Version, client.UserAgent)
-	assert.Equal(t, 4, client.HTTPClient.RetryMax)
+	assert.Equal(t, DefaultRetryMax, client.HTTPClient.RetryMax)
+	assert.Equal(t, DefaultRetryWaitMin, client.HTTPClient.RetryWaitMin)
+	assert.Equal(t, DefaultRetryWaitMax, client.HTTPClient.RetryWaitMax)
 }
 
 // ---------------------------------------------------------------------------
