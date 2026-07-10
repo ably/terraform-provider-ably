@@ -10,6 +10,14 @@ on:
 
 permissions: {}
 
+# The acceptance tests run against a shared staging environment that can't
+# cope with lots of concurrent runs. Serialise everything: only one run at a
+# time across the whole repo, and queue rather than cancel so we don't lose
+# coverage on any given commit.
+concurrency:
+  group: check-staging
+  cancel-in-progress: false
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -17,6 +25,9 @@ jobs:
       contents: read
     strategy:
       fail-fast: false
+      # Run the Go versions one after another rather than in parallel so we
+      # only ever have a single test run hitting staging at once.
+      max-parallel: 1
       matrix:
         go-version: [1.23, 1.24]
 
@@ -53,7 +64,7 @@ jobs:
       - name: Test
         run: |
           echo "provider_installation { dev_overrides { \"registry.terraform.io/ably/ably\" = \"$PWD/bin\", } direct {} }" > ~/.terraformrc
-          TF_ACC=1 go test -v -parallel 4 -timeout 30m ./...
+          TF_ACC=1 go test -v -parallel 1 -timeout 30m ./...
         env:
           ABLY_ACCOUNT_TOKEN: ${{ secrets.ABLY_ACCOUNT_TOKEN }}
           ABLY_URL: 'https://staging-control.ably-dev.net/v1'
