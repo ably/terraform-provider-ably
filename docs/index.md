@@ -88,5 +88,8 @@ This will add the app to your Terraform state file. You can then run `terraform 
 
 ### Optional
 
+- `retry_max` (Number) Maximum number of times a failed Control API request is retried (on 5xx and connection errors; 4xx responses are never retried). Set to 0 to disable retries. Can also be set via the `ABLY_RETRY_MAX` environment variable. Defaults to 2.
+- `retry_wait_max_seconds` (Number) Maximum wait, in seconds, between retries, capping the exponential backoff. Can also be set via the `ABLY_RETRY_WAIT_MAX_SECONDS` environment variable. Defaults to 60.
+- `retry_wait_min_seconds` (Number) Minimum wait, in seconds, between retries. This is the base for the exponential backoff. Can also be set via the `ABLY_RETRY_WAIT_MIN_SECONDS` environment variable. Defaults to 2.
 - `token` (String, Sensitive) The Ably account token used for authentication. Can also be set via the `ABLY_ACCOUNT_TOKEN` environment variable.
 - `url` (String) The Ably Control API URL. Can also be set via the `ABLY_URL` environment variable. Defaults to the production API.
