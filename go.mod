@@ -1,8 +1,8 @@
 module github.com/ably/terraform-provider-ably
 
-go 1.24.0
+go 1.26.0
 
-toolchain go1.24.1
+toolchain go1.26.5
 
 require (
 	github.com/ably/terraform-provider-ably/control v0.0.0
