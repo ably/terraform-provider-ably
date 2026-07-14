@@ -19,10 +19,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        go-version: [1.23, 1.24]
 
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -30,10 +26,10 @@ jobs:
           submodules: 'recursive'
           persist-credentials: false
 
-      - name: Set up Go ${{ matrix.go-version }}
+      - name: Set up Go
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version-file: 'go.mod'
 
       - name: Download Packages
         run: go get -t -v
@@ -48,6 +44,10 @@ jobs:
         run: |
           mkdir bin
           go build -v -o bin
+
+      - name: Test Control API client
+        working-directory: control
+        run: go test -v ./...
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e
