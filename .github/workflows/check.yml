@@ -13,6 +13,7 @@ permissions: {}
 concurrency:
   group: check
   cancel-in-progress: false
+  queue: max
 
 jobs:
   check:
