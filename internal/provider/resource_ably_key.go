@@ -69,9 +69,6 @@ func (r *ResourceKey) Schema(ctx context.Context, req resource.SchemaRequest, re
 			"created": schema.Int64Attribute{
 				Computed:    true,
 				Description: "The timestamp of when the key was created.",
-				PlanModifiers: []planmodifier.Int64{
-					DefaultInt64Attribute(types.Int64Value(0)),
-				},
 			},
 			"key": schema.StringAttribute{
 				Computed:    true,
@@ -92,6 +89,21 @@ func (r *ResourceKey) Schema(ctx context.Context, req resource.SchemaRequest, re
 
 func (r ResourceKey) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "ably_api_key"
+}
+
+// buildKeyState reconciles plan/state input with an API response.
+func buildKeyState(rc *reconciler, input AblyKey, api control.KeyResponse) AblyKey {
+	return AblyKey{
+		ID:              rc.str("id", input.ID, types.StringValue(api.ID), true),
+		AppID:           rc.str("app_id", input.AppID, types.StringValue(api.AppID), false),
+		Name:            rc.str("name", input.Name, types.StringValue(api.Name), false),
+		Key:             rc.str("key", input.Key, types.StringValue(api.Key), true),
+		RevocableTokens: rc.boolean("revocable_tokens", input.RevocableTokens, optBoolValue(api.RevocableTokens), true),
+		Capability:      rc.mapSet("capabilities", input.Capability, mapToTypedSet(api.Capability), false),
+		Status:          rc.int64val("status", input.Status, types.Int64Value(int64(api.Status)), true),
+		Created:         rc.int64val("created", input.Created, types.Int64Value(api.Created), true),
+		Modified:        rc.int64val("modified", input.Modified, types.Int64Value(api.Modified), true),
+	}
 }
 
 // Create creates a new resource.
@@ -148,27 +160,13 @@ func (r ResourceKey) Create(ctx context.Context, req resource.CreateRequest, res
 	}
 
 	// Maps response body to resource schema attributes.
-	// Convert capability map from Go strings to Terraform types
-	tfCapability := mapToTypedSet(ablyKey.Capability)
-
-	respRevocable := false
-	if ablyKey.RevocableTokens != nil {
-		respRevocable = *ablyKey.RevocableTokens
+	rc := newReconciler(&resp.Diagnostics)
+	respKey := buildKeyState(rc, plan, ablyKey)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	respKey := AblyKey{
-		ID:              types.StringValue(ablyKey.ID),
-		AppID:           types.StringValue(ablyKey.AppID),
-		Name:            types.StringValue(ablyKey.Name),
-		Key:             types.StringValue(ablyKey.Key),
-		RevocableTokens: types.BoolValue(respRevocable),
-		Capability:      tfCapability,
-		Status:          types.Int64Value(int64(ablyKey.Status)),
-		Created:         types.Int64Value(int64(ablyKey.Created)),
-		Modified:        types.Int64Value(int64(ablyKey.Modified)),
-	}
-
-	// Sets state for the new Ably App.
+	// Sets state for the new Ably key.
 	diags = resp.State.Set(ctx, respKey)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -214,26 +212,13 @@ func (r ResourceKey) Read(ctx context.Context, req resource.ReadRequest, resp *r
 	// Loops through apps and if account id and key id match, sets state.
 	for _, v := range keys {
 		if v.AppID == appID && v.ID == keyID && v.Status == 0 {
-			// Convert capability map from Go strings to Terraform types
-			tfCapability := mapToTypedSet(v.Capability)
-
-			vRevocable := false
-			if v.RevocableTokens != nil {
-				vRevocable = *v.RevocableTokens
+			rc := newReconciler(&resp.Diagnostics).forRead()
+			respKey := buildKeyState(rc, state, v)
+			if resp.Diagnostics.HasError() {
+				return
 			}
 
-			respKey := AblyKey{
-				ID:              types.StringValue(v.ID),
-				AppID:           types.StringValue(v.AppID),
-				Name:            types.StringValue(v.Name),
-				RevocableTokens: types.BoolValue(vRevocable),
-				Capability:      tfCapability,
-				Status:          types.Int64Value(int64(v.Status)),
-				Key:             types.StringValue(v.Key),
-				Created:         types.Int64Value(int64(v.Created)),
-				Modified:        types.Int64Value(int64(v.Modified)),
-			}
-			// Sets state to app values.
+			// Sets state to key values.
 			diags = resp.State.Set(ctx, &respKey)
 			found = true
 
@@ -294,40 +279,15 @@ func (r ResourceKey) Update(ctx context.Context, req resource.UpdateRequest, res
 		return
 	}
 
-	// Read back via GET to get settled computed fields.
-	keys, err := r.p.client.ListKeys(ctx, appID)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error reading back ably_api_key after update",
-			"Could not read back ably_api_key, unexpected error: "+err.Error(),
-		)
+	// Unlike Create, do not read back via GET here. On update the planned
+	// values of computed fields are the prior state values, so storing a
+	// settled `modified` that differs from the PATCH response would make
+	// Terraform report an inconsistent result after apply. The next Read
+	// picks up the settled values instead.
+	rc := newReconciler(&resp.Diagnostics)
+	respKey := buildKeyState(rc, plan, ablyKey)
+	if resp.Diagnostics.HasError() {
 		return
-	}
-	for _, k := range keys {
-		if k.ID == ablyKey.ID {
-			ablyKey = k
-			break
-		}
-	}
-
-	// Convert capability map from Go strings to Terraform types
-	tfCapability := mapToTypedSet(ablyKey.Capability)
-
-	updateRespRevocable := false
-	if ablyKey.RevocableTokens != nil {
-		updateRespRevocable = *ablyKey.RevocableTokens
-	}
-
-	respKey := AblyKey{
-		ID:              types.StringValue(ablyKey.ID),
-		AppID:           types.StringValue(ablyKey.AppID),
-		Name:            types.StringValue(ablyKey.Name),
-		RevocableTokens: types.BoolValue(updateRespRevocable),
-		Capability:      tfCapability,
-		Status:          types.Int64Value(int64(ablyKey.Status)),
-		Key:             types.StringValue(ablyKey.Key),
-		Created:         types.Int64Value(int64(ablyKey.Created)),
-		Modified:        types.Int64Value(int64(ablyKey.Modified)),
 	}
 
 	// Sets state.
