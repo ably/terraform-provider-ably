@@ -38,9 +38,32 @@ install: build
 	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
 	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
 
+# Hermetic test loop: unit tests plus the full acceptance suite run against an
+# in-process fake Control API (see internal/provider/fake_control_api_test.go).
+# No Ably credentials or network access required, safe to run on every change
+# and in CI on forks. This is the loop an AI agent should run.
 test:
-	go test -i $(TEST) || exit 1
-	echo $(TEST) | xargs -t -n4 go test $(TESTARGS) -timeout=5m -parallel=10
+	go test $(TEST) $(TESTARGS) -timeout=15m
 
+# Acceptance tests against a REAL Control API. Requires ABLY_ACCOUNT_TOKEN and
+# an explicit ABLY_URL (e.g. staging): TestMain refuses a real run that would
+# fall back to the production URL implicitly. Setting TF_ACC makes TestMain
+# stand aside so the suite hits the real API instead of the fake.
 testacc:
 	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m
+
+# Regenerate Terraform schema/model code from the vendored Control API spec
+# (codegen/control-api.yaml) using HashiCorp's tech-preview codegen tools. The
+# generated code lands in internal/provider/codegen/. See codegen/README.md for
+# how to refresh the spec and the current scope/caveats.
+generate:
+	# Track A: simple resources (app, namespace, queue) from the OpenAPI spec.
+	go run github.com/hashicorp/terraform-plugin-codegen-openapi/cmd/tfplugingen-openapi@v0.3.0 generate --config codegen/generator_config.yml --output codegen/spec.json codegen/control-api.yaml
+	go run github.com/hashicorp/terraform-plugin-codegen-framework/cmd/tfplugingen-framework@v0.4.1 generate resources --input codegen/spec.json --output internal/provider/codegen
+	# Track B: rule families from the in-repo control types (the OpenAPI oneOf
+	# union can't be generated, so we reflect the control rule structs instead).
+	go run ./codegen/ruletypesgen
+	go run github.com/hashicorp/terraform-plugin-codegen-framework/cmd/tfplugingen-framework@v0.4.1 generate resources --input codegen/rules_spec.json --output internal/provider/codegen
+	gofmt -w internal/provider/codegen
+
+.PHONY: build release install test testacc generate

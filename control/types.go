@@ -496,6 +496,14 @@ type RuleResponse struct {
 	RequestMode string          `json:"requestMode,omitempty"`
 	Source      *RuleSource     `json:"source,omitempty"`
 	Target      interface{}     `json:"target,omitempty"`
+
+	// Moderation / before-publish rules only. The Control API returns these
+	// alongside the common fields for rule types such as
+	// "bodyguard/text-moderation"; they are absent (nil/empty) for
+	// webhook/firehose rules.
+	InvocationMode      string               `json:"invocationMode,omitempty"`
+	ChatRoomFilter      string               `json:"chatRoomFilter,omitempty"`
+	BeforePublishConfig *BeforePublishConfig `json:"beforePublishConfig,omitempty"`
 }
 
 // StatsResponse is the response for [Client.GetAppStats] and
