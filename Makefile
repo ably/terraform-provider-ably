@@ -59,11 +59,29 @@ testacc:
 generate:
 	# Track A: simple resources (app, namespace, queue) from the OpenAPI spec.
 	go run github.com/hashicorp/terraform-plugin-codegen-openapi/cmd/tfplugingen-openapi@v0.3.0 generate --config codegen/generator_config.yml --output codegen/spec.json codegen/control-api.yaml
-	go run github.com/hashicorp/terraform-plugin-codegen-framework/cmd/tfplugingen-framework@v0.4.1 generate resources --input codegen/spec.json --output internal/provider/codegen
 	# Track B: rule families from the in-repo control types (the OpenAPI oneOf
 	# union can't be generated, so we reflect the control rule structs instead).
+	# Also patches Track A's spec.json with metadata tfplugingen-openapi can't
+	# express (sensitivity), so it must run before the framework generator.
 	go run ./codegen/ruletypesgen
+	go run github.com/hashicorp/terraform-plugin-codegen-framework/cmd/tfplugingen-framework@v0.4.1 generate resources --input codegen/spec.json --output internal/provider/codegen
 	go run github.com/hashicorp/terraform-plugin-codegen-framework/cmd/tfplugingen-framework@v0.4.1 generate resources --input codegen/rules_spec.json --output internal/provider/codegen
 	gofmt -w internal/provider/codegen
 
-.PHONY: build release install test testacc generate
+# Refresh the vendored Control API spec from the public ably/docs repo and
+# re-apply any local fixes (codegen/spec-fixes.patch, if present), then
+# regenerate. Never copy the upstream spec over codegen/control-api.yaml by
+# hand: that silently reverts the fixes and the generators skip the affected
+# attributes without erroring. Pass SPEC_SRC=<path> to use a local ably/docs
+# checkout instead of fetching from GitHub.
+SPEC_URL=https://raw.githubusercontent.com/ably/docs/main/static/open-specs/control-v1.yaml
+refresh-spec:
+ifdef SPEC_SRC
+	cp $(SPEC_SRC) codegen/control-api.yaml
+else
+	curl -fsSL $(SPEC_URL) -o codegen/control-api.yaml
+endif
+	if [ -f codegen/spec-fixes.patch ]; then git apply codegen/spec-fixes.patch; fi
+	$(MAKE) generate
+
+.PHONY: build release install test testacc generate refresh-spec

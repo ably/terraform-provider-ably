@@ -19,6 +19,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"reflect"
 	"regexp"
@@ -50,12 +51,25 @@ var rules = []rule{
 	{"rule_before_publish_lambda", control.BeforePublishAWSLambdaRulePost{}, "before_publish_aws_lambda_rule_post"},
 }
 
-// sensitive field names (by snake_case) that should be marked Sensitive.
+// sensitive field names (by snake_case) that should be marked Sensitive, in
+// both the rule schemas reflected here and the Track A spec.json (see
+// patchSpecJSON). Any credential-bearing attribute name must be listed:
+// nothing else marks sensitivity, and a miss prints the secret in plan
+// output. Matches what the hand-written schemas mark today, except names
+// that are only unambiguously secret in context: the ingress rules mark
+// "url" sensitive because theirs embed database credentials, but listing it
+// here would also mask webhook endpoint URLs.
 var sensitive = map[string]bool{
-	"api_key":           true,
-	"token":             true,
-	"password":          true,
-	"secret_access_key": true,
+	"api_key":             true,
+	"token":               true,
+	"password":            true,
+	"secret_access_key":   true,
+	"access_key_id":       true,
+	"apns_certificate":    true,
+	"apns_private_key":    true,
+	"apns_signing_key":    true,
+	"fcm_key":             true,
+	"fcm_service_account": true,
 }
 
 // customExpr is a code expression plus the imports it needs, used to emit
@@ -70,12 +84,14 @@ type customExpr struct {
 type override struct {
 	mode          string // overrides computed_optional_required when set
 	staticDefault any    // sets a static default when non-nil
+	allowEmpty    bool   // suppresses the LengthAtLeast(1) validator
 	validators    []customExpr
 	planModifiers []customExpr
 }
 
 const (
 	pkgStringValidator    = "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	pkgInt64Validator     = "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	pkgStringPlanModifier = "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	pkgPlanModifiers      = "github.com/ably/terraform-provider-ably/internal/provider/planmodifiers"
 	pkgRegexp             = "regexp"
@@ -99,6 +115,11 @@ var attrOverrides = map[string]override{
 	// chatRoomFilter be "", so an in-place update can never unset it (verified
 	// against the live API, 2026-07-08): removing it must recreate the rule.
 	"chat_room_filter": {planModifiers: []customExpr{{[]string{pkgPlanModifiers}, "planmodifiers.RequiresReplaceWhenCleared()"}}},
+	// "" is a meaningful value for a source channel filter: the spec documents
+	// it as "apply to all channels", and unlike chatRoomFilter it round-trips
+	// (verified against the live API, 2026-07-20: create with "" and update
+	// non-empty -> "" both persist and read back as "").
+	"channel_filter": {allowEmpty: true},
 }
 
 // applyOverride mutates an attribute's type map with any configured metadata.
@@ -138,8 +159,13 @@ func customList(exprs []customExpr) []map[string]any {
 	return out
 }
 
+// specSchemas holds components.schemas from the vendored spec so property
+// lookups can resolve $ref and oneOf nodes anywhere in the tree.
+var specSchemas map[string]any
+
 func main() {
 	schemas := loadSpecSchemas("codegen/control-api.yaml")
+	specSchemas = schemas
 
 	resources := make([]map[string]any, 0, len(rules))
 	for _, r := range rules {
@@ -174,6 +200,53 @@ func main() {
 	}
 	if err := os.WriteFile("codegen/rules_spec.json", append(out, '\n'), 0o644); err != nil {
 		panic(err)
+	}
+
+	patchSpecJSON("codegen/spec.json")
+}
+
+// patchSpecJSON applies metadata to the Track A Provider Code Spec that
+// tfplugingen-openapi cannot express: the shared sensitive-name set. The
+// generate target runs this after tfplugingen-openapi writes spec.json and
+// before tfplugingen-framework consumes it, so both tracks mark secrets from
+// the one list.
+func patchSpecJSON(path string) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		panic(fmt.Sprintf("patch %s: %v (run tfplugingen-openapi first; see the generate target)", path, err))
+	}
+	var doc map[string]any
+	if err := json.Unmarshal(data, &doc); err != nil {
+		panic(fmt.Sprintf("patch %s: %v", path, err))
+	}
+	for _, kind := range []string{"resources", "datasources"} {
+		entries, _ := doc[kind].([]any)
+		for _, e := range entries {
+			markSensitive(asMap(asMap(e)["schema"])["attributes"])
+		}
+	}
+	out, err := json.MarshalIndent(doc, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	if err := os.WriteFile(path, append(out, '\n'), 0o644); err != nil {
+		panic(err)
+	}
+}
+
+// markSensitive walks a Provider Code Spec attribute list, setting
+// sensitive: true on string attributes whose name is in the sensitive set and
+// recursing into nested attribute shapes.
+func markSensitive(attrs any) {
+	list, _ := attrs.([]any)
+	for _, a := range list {
+		attr := asMap(a)
+		name, _ := attr["name"].(string)
+		if s := asMap(attr["string"]); s != nil && sensitive[name] {
+			s["sensitive"] = true
+		}
+		markSensitive(asMap(attr["single_nested"])["attributes"])
+		markSensitive(asMap(asMap(attr["list_nested"])["nested_object"])["attributes"])
 	}
 }
 
@@ -259,8 +332,9 @@ func attrsFromStruct(t reflect.Type, props map[string]any) []map[string]any {
 			// same thing to the Control API, and a known "" in the plan reads
 			// back as null, aborting the apply with an opaque "inconsistent
 			// values" error. A plan-time validator turns that into a clear
-			// message. Enum-valued attributes already exclude "" via OneOf.
-			if len(specEnum(props, jsonName)) == 0 && len(attrOverrides[name].validators) == 0 {
+			// message. Enum-valued attributes already exclude "" via OneOf, and
+			// attributes for which "" is a real value opt out via allowEmpty.
+			if len(specEnum(props, jsonName)) == 0 && len(attrOverrides[name].validators) == 0 && !attrOverrides[name].allowEmpty {
 				specVals = append(specVals, customExpr{[]string{pkgStringValidator}, "stringvalidator.LengthAtLeast(1)"})
 			}
 			if len(specVals) > 0 {
@@ -278,6 +352,24 @@ func attrsFromStruct(t reflect.Type, props map[string]any) []map[string]any {
 			n := map[string]any{"computed_optional_required": mode}
 			if desc != "" {
 				n["description"] = desc
+			}
+			// Source minimum/maximum bounds from the spec, mirroring what the
+			// string case does for enums and patterns, so out-of-range values
+			// fail at plan time instead of only at the real API (the echoing
+			// fake accepts anything, so nothing else catches them).
+			minV, hasMin := specBound(props, jsonName, "minimum")
+			maxV, hasMax := specBound(props, jsonName, "maximum")
+			var expr string
+			switch {
+			case hasMin && hasMax:
+				expr = fmt.Sprintf("int64validator.Between(%d, %d)", minV, maxV)
+			case hasMin:
+				expr = fmt.Sprintf("int64validator.AtLeast(%d)", minV)
+			case hasMax:
+				expr = fmt.Sprintf("int64validator.AtMost(%d)", maxV)
+			}
+			if expr != "" {
+				n["validators"] = customList([]customExpr{{[]string{pkgInt64Validator}, expr}})
 			}
 			attr["int64"] = n
 		case reflect.Struct:
@@ -302,9 +394,24 @@ func attrsFromStruct(t reflect.Type, props map[string]any) []map[string]any {
 					"element_type":               map[string]any{elementType(elem): map[string]any{}},
 				}
 			}
+		case reflect.Map:
+			if ft.Key().Kind() != reflect.String {
+				panic(fmt.Sprintf("ruletypesgen: %s.%s (%s) has non-string map key %s; the generator cannot emit it", t.Name(), f.Name, jsonName, ft.Key().Kind()))
+			}
+			m := map[string]any{
+				"computed_optional_required": mode,
+				"element_type":               map[string]any{elementType(ft.Elem()): map[string]any{}},
+			}
+			if desc != "" {
+				m["description"] = desc
+			}
+			attr["map"] = m
 		default:
-			// maps and anything else are skipped; the families here don't use them.
-			continue
+			// Fail loudly rather than emitting an incomplete schema: a silent
+			// skip here is invisible until a user discovers a field their rule
+			// supports doesn't exist in the provider (this happened to the
+			// moderation thresholds maps).
+			panic(fmt.Sprintf("ruletypesgen: %s.%s (%s) has kind %s which the generator cannot emit; add support or exclude it explicitly", t.Name(), f.Name, jsonName, ft.Kind()))
 		}
 		attrs = append(attrs, attr)
 	}
@@ -318,20 +425,94 @@ func asMap(v any) map[string]any {
 	return m
 }
 
-// description returns the description of a property by its JSON name.
+// resolveNode follows $ref and oneOf on a schema node so lookups see the
+// effective schema. A $ref resolves to the named component (failing loudly if
+// it doesn't exist); a oneOf resolves each variant and merges their
+// properties, unioning enums per property, so a discriminated union (e.g. the
+// lambda target's aws_access_keys/aws_assume_role authentication) yields one
+// property map whose discriminator carries the enum of all variants. Nodes
+// without either pass through unchanged.
+func resolveNode(node map[string]any) map[string]any {
+	if ref, ok := node["$ref"].(string); ok {
+		name := ref[strings.LastIndex(ref, "/")+1:]
+		target := asMap(specSchemas[name])
+		if target == nil {
+			panic(fmt.Sprintf("unresolvable $ref %q in the vendored spec", ref))
+		}
+		return resolveNode(target)
+	}
+	variants, ok := node["oneOf"].([]any)
+	if !ok {
+		return node
+	}
+	merged := map[string]any{}
+	for _, v := range variants {
+		mergeProps(merged, asMap(resolveNode(asMap(v))["properties"]))
+	}
+	out := map[string]any{"properties": merged}
+	if d, ok := node["description"].(string); ok {
+		out["description"] = d
+	}
+	return out
+}
+
+// mergeProps merges src properties into dst: new properties are referenced
+// as-is, existing ones union their enum values (in encounter order) and keep
+// the first description seen. A property is never mutated in place — the
+// values alias the parsed spec, shared by every schema that references them —
+// so a merged property is a fresh copy.
+func mergeProps(dst, src map[string]any) {
+	for name, v := range src {
+		existing, ok := dst[name]
+		if !ok {
+			dst[name] = v
+			continue
+		}
+		vEnum, _ := asMap(v)["enum"].([]any)
+		if len(vEnum) == 0 {
+			continue
+		}
+		em := asMap(existing)
+		merged := make(map[string]any, len(em))
+		maps.Copy(merged, em)
+		eEnum, _ := em["enum"].([]any)
+		combined := append([]any{}, eEnum...)
+		seen := map[any]bool{}
+		for _, e := range combined {
+			seen[e] = true
+		}
+		for _, e := range vEnum {
+			if !seen[e] {
+				combined = append(combined, e)
+			}
+		}
+		merged["enum"] = combined
+		dst[name] = merged
+	}
+}
+
+// description returns the description of a property by its JSON name,
+// following $ref/oneOf to the effective schema when the property itself has
+// no inline description.
 func description(props map[string]any, jsonName string) string {
-	s, _ := asMap(props[jsonName])["description"].(string)
+	node := asMap(props[jsonName])
+	if s, ok := node["description"].(string); ok {
+		return s
+	}
+	s, _ := resolveNode(node)["description"].(string)
 	return s
 }
 
-// childProps returns the nested properties map of an object-typed property.
+// childProps returns the nested properties map of an object-typed property,
+// resolving $ref and oneOf indirection.
 func childProps(props map[string]any, jsonName string) map[string]any {
-	return asMap(asMap(props[jsonName])["properties"])
+	return asMap(resolveNode(asMap(props[jsonName]))["properties"])
 }
 
-// itemProps returns the properties map of an array property's item schema.
+// itemProps returns the properties map of an array property's item schema,
+// resolving $ref and oneOf indirection.
 func itemProps(props map[string]any, jsonName string) map[string]any {
-	return asMap(asMap(asMap(props[jsonName])["items"])["properties"])
+	return asMap(resolveNode(asMap(asMap(props[jsonName])["items"]))["properties"])
 }
 
 // specEnum returns the string enum values declared for a property, if any.
@@ -350,6 +531,20 @@ func specEnum(props map[string]any, jsonName string) []string {
 func specPattern(props map[string]any, jsonName string) string {
 	s, _ := asMap(props[jsonName])["pattern"].(string)
 	return s
+}
+
+// specBound returns an integer bound (minimum/maximum) declared for a
+// property. YAML numbers decode as int or float64 depending on their form.
+func specBound(props map[string]any, jsonName, key string) (int64, bool) {
+	switch v := asMap(props[jsonName])[key].(type) {
+	case int:
+		return int64(v), true
+	case int64:
+		return v, true
+	case float64:
+		return int64(v), true
+	}
+	return 0, false
 }
 
 // oneOfExpr builds a stringvalidator.OneOf(...) expression for the given values.

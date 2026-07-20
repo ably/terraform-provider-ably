@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/ably/terraform-provider-ably/internal/provider/planmodifiers"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -47,11 +48,17 @@ func RuleAzureModerationResourceSchema(ctx context.Context) schema.Schema {
 						Required:            true,
 						Description:         "The maximum number of retry attempts.",
 						MarkdownDescription: "The maximum number of retry attempts.",
+						Validators: []validator.Int64{
+							int64validator.Between(0, 10),
+						},
 					},
 					"retry_timeout": schema.Int64Attribute{
 						Required:            true,
 						Description:         "The timeout in milliseconds for retrying the rule invocation.",
 						MarkdownDescription: "The timeout in milliseconds for retrying the rule invocation.",
+						Validators: []validator.Int64{
+							int64validator.Between(0, 10000),
+						},
 					},
 					"too_many_requests_action": schema.StringAttribute{
 						Required:            true,
@@ -129,6 +136,12 @@ func RuleAzureModerationResourceSchema(ctx context.Context) schema.Schema {
 						Validators: []validator.String{
 							stringvalidator.LengthAtLeast(1),
 						},
+					},
+					"thresholds": schema.MapAttribute{
+						ElementType:         types.Int64Type,
+						Optional:            true,
+						Description:         "A map of moderation categories to threshold levels (0-7). Messages scoring above the threshold for any category will be rejected.",
+						MarkdownDescription: "A map of moderation categories to threshold levels (0-7). Messages scoring above the threshold for any category will be rejected.",
 					},
 				},
 				CustomType: TargetType{
@@ -704,14 +717,33 @@ func (t TargetType) ValueFromObject(ctx context.Context, in basetypes.ObjectValu
 			fmt.Sprintf(`endpoint expected to be basetypes.StringValue, was: %T`, endpointAttribute))
 	}
 
+	thresholdsAttribute, ok := attributes["thresholds"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`thresholds is missing from object`)
+
+		return nil, diags
+	}
+
+	thresholdsVal, ok := thresholdsAttribute.(basetypes.MapValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`thresholds expected to be basetypes.MapValue, was: %T`, thresholdsAttribute))
+	}
+
 	if diags.HasError() {
 		return nil, diags
 	}
 
 	return TargetValue{
-		ApiKey:   apiKeyVal,
-		Endpoint: endpointVal,
-		state:    attr.ValueStateKnown,
+		ApiKey:     apiKeyVal,
+		Endpoint:   endpointVal,
+		Thresholds: thresholdsVal,
+		state:      attr.ValueStateKnown,
 	}, diags
 }
 
@@ -814,14 +846,33 @@ func NewTargetValue(attributeTypes map[string]attr.Type, attributes map[string]a
 			fmt.Sprintf(`endpoint expected to be basetypes.StringValue, was: %T`, endpointAttribute))
 	}
 
+	thresholdsAttribute, ok := attributes["thresholds"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`thresholds is missing from object`)
+
+		return NewTargetValueUnknown(), diags
+	}
+
+	thresholdsVal, ok := thresholdsAttribute.(basetypes.MapValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`thresholds expected to be basetypes.MapValue, was: %T`, thresholdsAttribute))
+	}
+
 	if diags.HasError() {
 		return NewTargetValueUnknown(), diags
 	}
 
 	return TargetValue{
-		ApiKey:   apiKeyVal,
-		Endpoint: endpointVal,
-		state:    attr.ValueStateKnown,
+		ApiKey:     apiKeyVal,
+		Endpoint:   endpointVal,
+		Thresholds: thresholdsVal,
+		state:      attr.ValueStateKnown,
 	}, diags
 }
 
@@ -893,25 +944,29 @@ func (t TargetType) ValueType(ctx context.Context) attr.Value {
 var _ basetypes.ObjectValuable = TargetValue{}
 
 type TargetValue struct {
-	ApiKey   basetypes.StringValue `tfsdk:"api_key"`
-	Endpoint basetypes.StringValue `tfsdk:"endpoint"`
-	state    attr.ValueState
+	ApiKey     basetypes.StringValue `tfsdk:"api_key"`
+	Endpoint   basetypes.StringValue `tfsdk:"endpoint"`
+	Thresholds basetypes.MapValue    `tfsdk:"thresholds"`
+	state      attr.ValueState
 }
 
 func (v TargetValue) ToTerraformValue(ctx context.Context) (tftypes.Value, error) {
-	attrTypes := make(map[string]tftypes.Type, 2)
+	attrTypes := make(map[string]tftypes.Type, 3)
 
 	var val tftypes.Value
 	var err error
 
 	attrTypes["api_key"] = basetypes.StringType{}.TerraformType(ctx)
 	attrTypes["endpoint"] = basetypes.StringType{}.TerraformType(ctx)
+	attrTypes["thresholds"] = basetypes.MapType{
+		ElemType: types.Int64Type,
+	}.TerraformType(ctx)
 
 	objectType := tftypes.Object{AttributeTypes: attrTypes}
 
 	switch v.state {
 	case attr.ValueStateKnown:
-		vals := make(map[string]tftypes.Value, 2)
+		vals := make(map[string]tftypes.Value, 3)
 
 		val, err = v.ApiKey.ToTerraformValue(ctx)
 
@@ -928,6 +983,14 @@ func (v TargetValue) ToTerraformValue(ctx context.Context) (tftypes.Value, error
 		}
 
 		vals["endpoint"] = val
+
+		val, err = v.Thresholds.ToTerraformValue(ctx)
+
+		if err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		vals["thresholds"] = val
 
 		if err := tftypes.ValidateValue(objectType, vals); err != nil {
 			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
@@ -958,9 +1021,34 @@ func (v TargetValue) String() string {
 func (v TargetValue) ToObjectValue(ctx context.Context) (basetypes.ObjectValue, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
+	var thresholdsVal basetypes.MapValue
+	switch {
+	case v.Thresholds.IsUnknown():
+		thresholdsVal = types.MapUnknown(types.Int64Type)
+	case v.Thresholds.IsNull():
+		thresholdsVal = types.MapNull(types.Int64Type)
+	default:
+		var d diag.Diagnostics
+		thresholdsVal, d = types.MapValue(types.Int64Type, v.Thresholds.Elements())
+		diags.Append(d...)
+	}
+
+	if diags.HasError() {
+		return types.ObjectUnknown(map[string]attr.Type{
+			"api_key":  basetypes.StringType{},
+			"endpoint": basetypes.StringType{},
+			"thresholds": basetypes.MapType{
+				ElemType: types.Int64Type,
+			},
+		}), diags
+	}
+
 	attributeTypes := map[string]attr.Type{
 		"api_key":  basetypes.StringType{},
 		"endpoint": basetypes.StringType{},
+		"thresholds": basetypes.MapType{
+			ElemType: types.Int64Type,
+		},
 	}
 
 	if v.IsNull() {
@@ -974,8 +1062,9 @@ func (v TargetValue) ToObjectValue(ctx context.Context) (basetypes.ObjectValue, 
 	objVal, diags := types.ObjectValue(
 		attributeTypes,
 		map[string]attr.Value{
-			"api_key":  v.ApiKey,
-			"endpoint": v.Endpoint,
+			"api_key":    v.ApiKey,
+			"endpoint":   v.Endpoint,
+			"thresholds": thresholdsVal,
 		})
 
 	return objVal, diags
@@ -1004,6 +1093,10 @@ func (v TargetValue) Equal(o attr.Value) bool {
 		return false
 	}
 
+	if !v.Thresholds.Equal(other.Thresholds) {
+		return false
+	}
+
 	return true
 }
 
@@ -1019,5 +1112,8 @@ func (v TargetValue) AttributeTypes(ctx context.Context) map[string]attr.Type {
 	return map[string]attr.Type{
 		"api_key":  basetypes.StringType{},
 		"endpoint": basetypes.StringType{},
+		"thresholds": basetypes.MapType{
+			ElemType: types.Int64Type,
+		},
 	}
 }

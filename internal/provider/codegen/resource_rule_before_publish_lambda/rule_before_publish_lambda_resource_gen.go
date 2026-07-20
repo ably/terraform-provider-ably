@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/ably/terraform-provider-ably/internal/provider/planmodifiers"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -47,11 +48,17 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 						Required:            true,
 						Description:         "The maximum number of retry attempts.",
 						MarkdownDescription: "The maximum number of retry attempts.",
+						Validators: []validator.Int64{
+							int64validator.Between(0, 10),
+						},
 					},
 					"retry_timeout": schema.Int64Attribute{
 						Required:            true,
 						Description:         "The timeout in milliseconds for retrying the rule invocation.",
 						MarkdownDescription: "The timeout in milliseconds for retrying the rule invocation.",
+						Validators: []validator.Int64{
+							int64validator.Between(0, 10000),
+						},
 					},
 					"too_many_requests_action": schema.StringAttribute{
 						Required:            true,
@@ -104,13 +111,14 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 			"source": schema.SingleNestedAttribute{
 				Attributes: map[string]schema.Attribute{
 					"channel_filter": schema.StringAttribute{
-						Required: true,
-						Validators: []validator.String{
-							stringvalidator.LengthAtLeast(1),
-						},
+						Required:            true,
+						Description:         "This field allows you to filter your rule based on a regular expression that is matched against the complete channel name. Leave this empty if you want the rule to apply to all channels.",
+						MarkdownDescription: "This field allows you to filter your rule based on a regular expression that is matched against the complete channel name. Leave this empty if you want the rule to apply to all channels.",
 					},
 					"type": schema.StringAttribute{
-						Required: true,
+						Required:            true,
+						Description:         "Ably currently supports the following sources for all rule types, in both single and batch mode: `channel.message`, `channel.presence`, `channel.lifecycle` and `channel.occupancy`. If the source `channel.message` is selected, you receive notifications when messages are published on a channel. If the source `channel.presence` is selected, you receive notifications of presence events when clients enter, update their data, or leave channels. If the source `channel.lifecycle` is selected, you receive notifications of channel lifecycle events, such as when a channel is created (following the first client attaching to this channel) or discarded (when there are no more clients attached to the channel). If the source `channel.occupancy` is selected, you receive notifications of occupancy events, which relate to the number and type of occupants in the channel.",
+						MarkdownDescription: "Ably currently supports the following sources for all rule types, in both single and batch mode: `channel.message`, `channel.presence`, `channel.lifecycle` and `channel.occupancy`. If the source `channel.message` is selected, you receive notifications when messages are published on a channel. If the source `channel.presence` is selected, you receive notifications of presence events when clients enter, update their data, or leave channels. If the source `channel.lifecycle` is selected, you receive notifications of channel lifecycle events, such as when a channel is created (following the first client attaching to this channel) or discarded (when there are no more clients attached to the channel). If the source `channel.occupancy` is selected, you receive notifications of occupancy events, which relate to the number and type of occupants in the channel.",
 						Validators: []validator.String{
 							stringvalidator.LengthAtLeast(1),
 						},
@@ -138,26 +146,35 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 					"authentication": schema.SingleNestedAttribute{
 						Attributes: map[string]schema.Attribute{
 							"access_key_id": schema.StringAttribute{
-								Optional: true,
+								Optional:            true,
+								Sensitive:           true,
+								Description:         "The AWS key ID for the AWS IAM user. See the Ably <a href=\"https://ably.com/docs/general/aws-authentication/\">AWS authentication docs</a> for details.",
+								MarkdownDescription: "The AWS key ID for the AWS IAM user. See the Ably <a href=\"https://ably.com/docs/general/aws-authentication/\">AWS authentication docs</a> for details.",
 								Validators: []validator.String{
 									stringvalidator.LengthAtLeast(1),
 								},
 							},
 							"assume_role_arn": schema.StringAttribute{
-								Optional: true,
+								Optional:            true,
+								Description:         "If you are using the \"ARN of an assumable role\" authentication method, this is your Assume Role ARN. See the Ably <a href=\"https://ably.com/docs/general/aws-authentication/\">AWS authentication docs</a> for details.",
+								MarkdownDescription: "If you are using the \"ARN of an assumable role\" authentication method, this is your Assume Role ARN. See the Ably <a href=\"https://ably.com/docs/general/aws-authentication/\">AWS authentication docs</a> for details.",
 								Validators: []validator.String{
 									stringvalidator.LengthAtLeast(1),
 								},
 							},
 							"authentication_mode": schema.StringAttribute{
-								Required: true,
+								Required:            true,
+								Description:         "Authentication method is using AWS credentials (AWS key ID and secret key).",
+								MarkdownDescription: "Authentication method is using AWS credentials (AWS key ID and secret key).",
 								Validators: []validator.String{
-									stringvalidator.LengthAtLeast(1),
+									stringvalidator.OneOf("credentials", "assumeRole"),
 								},
 							},
 							"secret_access_key": schema.StringAttribute{
-								Optional:  true,
-								Sensitive: true,
+								Optional:            true,
+								Sensitive:           true,
+								Description:         "The AWS secret key for the AWS IAM user. See the Ably <a href=\"https://ably.com/docs/general/aws-authentication/\">AWS authentication docs</a> for details.",
+								MarkdownDescription: "The AWS secret key for the AWS IAM user. See the Ably <a href=\"https://ably.com/docs/general/aws-authentication/\">AWS authentication docs</a> for details.",
 								Validators: []validator.String{
 									stringvalidator.LengthAtLeast(1),
 								},

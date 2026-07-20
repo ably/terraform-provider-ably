@@ -12,13 +12,19 @@ from the Ably Control API's OpenAPI spec, the first step of the strategy in
   versus ~150 in the `ably/website` rswag output). Generating from it gives the
   generated schemas correct attribute documentation. We vendor a copy so
   generation is self-contained and runnable in CI without checking out that
-  repo; refresh it by copying the latest spec over this file.
-
-  One local patch is applied on top of the upstream copy: `conflationEnabled` in
-  the namespace schemas is missing `type: boolean` upstream (it has a default,
-  description and example but no type), which makes `tfplugingen-openapi` skip
-  it. We add the type back. This should be fixed in `ably/docs` and the patch
-  dropped on the next refresh.
+  repo. Refresh it with `make refresh-spec`, which fetches the latest spec
+  from the public `ably/docs` repo (or copies from a local checkout with
+  `SPEC_SRC=<path>`) and re-applies any local fixes. Never copy the upstream
+  file over this one by hand: that silently reverts the fixes, and the
+  generators skip the affected attributes without erroring.
+- `spec-fixes.patch` — our local fixes to the vendored spec, re-applied by
+  `make refresh-spec` when the file exists. There are none at present (the
+  last one, `conflationEnabled` missing `type: boolean` in the namespace
+  schemas, was fixed upstream in ably/docs#3472), so the file is absent. To
+  add a fix, edit `control-api.yaml` and create the patch with
+  `git diff codegen/control-api.yaml > codegen/spec-fixes.patch`; drop a
+  hunk (or the whole file) once it is fixed in `ably/docs`. Prefer fixing
+  `ably/docs` itself, with a patch here only to bridge until it merges.
 - `generator_config.yml` — maps each simple resource to its
   create/read/update/delete path and method, plus the per-resource aliases
   needed to get past spec quirks.
