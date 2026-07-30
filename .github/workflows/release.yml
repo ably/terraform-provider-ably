@@ -18,6 +18,11 @@
 # a draft GitHub Release. The Terraform Registry webhook fires when the
 # draft is published.
 #
+# The same run attaches the account exporter (cmd/ably-exporter, see EXPORTER.md)
+# as ably-exporter_<version>_<os>_<arch>.zip assets, versioned with the provider.
+# They are excluded from the provider's SHA256SUMS, which is what the Registry
+# verifies against.
+#
 # Control releases are notes-only (no binaries). The Go module proxy
 # indexes new versions from the git tag automatically. Release notes
 # are scoped to PRs that touch control/ paths.

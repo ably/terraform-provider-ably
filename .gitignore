@@ -6,3 +6,5 @@
 *.tfstate*
 .terraform.lock.hcl
 terraform-provider-ably
+dist
+bin
