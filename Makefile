@@ -84,4 +84,15 @@ endif
 	if [ -f codegen/spec-fixes.patch ]; then git apply codegen/spec-fixes.patch; fi
 	$(MAKE) generate
 
-.PHONY: build release install test testacc generate refresh-spec
+# Build the account exporter, which generates Terraform config for the resources
+# already in an Ably account. See EXPORTER.md.
+exporter:
+	go build -ldflags="-X main.VERSION=${VERSION}" -o ./bin/ably-exporter ./cmd/ably-exporter
+
+# Export an account into ./ably-export. Needs ABLY_ACCOUNT_TOKEN; only reads.
+# Extra flags via EXPORTARGS, e.g.
+# make export-account EXPORTARGS="-app my-app -secrets vars".
+export-account: exporter
+	./bin/ably-exporter $(EXPORTARGS)
+
+.PHONY: build release install test testacc generate refresh-spec exporter export-account

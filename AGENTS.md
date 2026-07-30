@@ -54,6 +54,22 @@ Step-by-step runbooks are in `DEVELOPMENT.md`:
 
 and the pipeline details are in `codegen/README.md`.
 
+## The account exporter
+
+`cmd/ably-exporter` (package `internal/exporter`) generates Terraform config for
+an existing account. It drives the provider in-process over protocol v6, so
+schema changes need no work here, but two things do:
+
+- **A new integration rule** needs a line in `RuleTypeResources`
+  (`internal/provider/rule_types.go`) mapping its `ruleType` to the resource type.
+  `TestRuleTypeResources` catches a missing entry.
+- **A new family of resources** needs a lister in `internal/exporter/discover.go`
+  and its type in `SupportedResourceTypes`.
+  `TestSupportedResourceTypesCoverage` catches a gap.
+
+`EXPORTER.md` covers the design, including the validate-and-repair pass for
+provider validators the protocol schema doesn't expose.
+
 ## Things that will bite you (learned the hard way)
 
 - **Stale `dev_overrides`.** A `dev_overrides` block in `~/.terraformrc` takes

@@ -87,6 +87,22 @@ resource "ably_queue" "example_queue" {
 }
 ```
 
+## Exporting an existing account
+
+If your account was built by hand, you don't have to write its configuration. The
+exporter walks an account and generates the Terraform config and `import` blocks
+for everything in it:
+
+```sh
+export ABLY_ACCOUNT_TOKEN=...
+make export-account
+cd ably-export && terraform init && terraform plan
+```
+
+It only reads from the Control API. Prebuilt `ably-exporter` binaries ship as
+assets on each provider release. See [EXPORTER.md](EXPORTER.md) for the flags, how
+secrets are handled, and what it cannot recover.
+
 ## Dependencies
 
 This provider uses the [Ably Control API](https://ably.com/docs/api/control-api) via the [`control`](control/) Go client module in this repository, which replaced the standalone [ably-control-go](https://github.com/ably/ably-control-go) SDK.
