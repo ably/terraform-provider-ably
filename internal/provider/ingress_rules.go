@@ -69,8 +69,13 @@ func GetPlanIngressRule(plan AblyIngressRule) (any, diag.Diagnostics) {
 // GetIngressRuleResponse maps an API rule response to the ingress rule terraform model.
 // Ingress rules use the same generic RuleResponse from the client, with target unmarshalled
 // according to the ruleType.
-func GetIngressRuleResponse(ablyRule *control.RuleResponse, plan *AblyIngressRule) (AblyIngressRule, diag.Diagnostics) {
+func GetIngressRuleResponse(ablyRule *control.RuleResponse, plan *AblyIngressRule, reading bool) (AblyIngressRule, diag.Diagnostics) {
 	var diags diag.Diagnostics
+	rc := newReconciler(&diags)
+	if reading {
+		rc.forRead()
+	}
+
 	var respTarget any
 
 	switch ablyRule.RuleType {
@@ -80,14 +85,18 @@ func GetIngressRuleResponse(ablyRule *control.RuleResponse, plan *AblyIngressRul
 			diags.AddError("Error unmarshalling ingress rule target", fmt.Sprintf("Could not unmarshal ingress/mongodb target: %s", err.Error()))
 			return AblyIngressRule{}, diags
 		}
+		var pt *AblyIngressRuleTargetMongo
+		if p, ok := plan.Target.(*AblyIngressRuleTargetMongo); ok {
+			pt = p
+		}
 		respTarget = &AblyIngressRuleTargetMongo{
-			Url:                      types.StringValue(target.URL),
-			Database:                 types.StringValue(target.Database),
-			Collection:               types.StringValue(target.Collection),
-			Pipeline:                 types.StringValue(target.Pipeline),
-			FullDocument:             types.StringValue(target.FullDocument),
-			FullDocumentBeforeChange: types.StringValue(target.FullDocumentBeforeChange),
-			PrimarySite:              types.StringValue(target.PrimarySite),
+			Url:                      rc.str("target.url", planStr(pt, func(t *AblyIngressRuleTargetMongo) types.String { return t.Url }), types.StringValue(target.URL), false),
+			Database:                 rc.str("target.database", planStr(pt, func(t *AblyIngressRuleTargetMongo) types.String { return t.Database }), types.StringValue(target.Database), false),
+			Collection:               rc.str("target.collection", planStr(pt, func(t *AblyIngressRuleTargetMongo) types.String { return t.Collection }), types.StringValue(target.Collection), false),
+			Pipeline:                 rc.str("target.pipeline", planStr(pt, func(t *AblyIngressRuleTargetMongo) types.String { return t.Pipeline }), types.StringValue(target.Pipeline), false),
+			FullDocument:             rc.str("target.full_document", planStr(pt, func(t *AblyIngressRuleTargetMongo) types.String { return t.FullDocument }), types.StringValue(target.FullDocument), false),
+			FullDocumentBeforeChange: rc.str("target.full_document_before_change", planStr(pt, func(t *AblyIngressRuleTargetMongo) types.String { return t.FullDocumentBeforeChange }), types.StringValue(target.FullDocumentBeforeChange), false),
+			PrimarySite:              rc.str("target.primary_site", planStr(pt, func(t *AblyIngressRuleTargetMongo) types.String { return t.PrimarySite }), types.StringValue(target.PrimarySite), false),
 		}
 	case "ingress-postgres-outbox":
 		target, err := unmarshalTarget[control.IngressPostgresOutboxTarget](ablyRule.Target)
@@ -95,15 +104,19 @@ func GetIngressRuleResponse(ablyRule *control.RuleResponse, plan *AblyIngressRul
 			diags.AddError("Error unmarshalling ingress rule target", fmt.Sprintf("Could not unmarshal ingress-postgres-outbox target: %s", err.Error()))
 			return AblyIngressRule{}, diags
 		}
+		var pt *AblyIngressRuleTargetPostgresOutbox
+		if p, ok := plan.Target.(*AblyIngressRuleTargetPostgresOutbox); ok {
+			pt = p
+		}
 		respTarget = &AblyIngressRuleTargetPostgresOutbox{
-			Url:               types.StringValue(target.URL),
-			OutboxTableSchema: types.StringValue(target.OutboxTableSchema),
-			OutboxTableName:   types.StringValue(target.OutboxTableName),
-			NodesTableSchema:  types.StringValue(target.NodesTableSchema),
-			NodesTableName:    types.StringValue(target.NodesTableName),
-			SslMode:           types.StringValue(target.SSLMode),
-			SslRootCert:       optStringValue(target.SSLRootCert),
-			PrimarySite:       types.StringValue(target.PrimarySite),
+			Url:               rc.str("target.url", planStr(pt, func(t *AblyIngressRuleTargetPostgresOutbox) types.String { return t.Url }), types.StringValue(target.URL), false),
+			OutboxTableSchema: rc.str("target.outbox_table_schema", planStr(pt, func(t *AblyIngressRuleTargetPostgresOutbox) types.String { return t.OutboxTableSchema }), types.StringValue(target.OutboxTableSchema), false),
+			OutboxTableName:   rc.str("target.outbox_table_name", planStr(pt, func(t *AblyIngressRuleTargetPostgresOutbox) types.String { return t.OutboxTableName }), types.StringValue(target.OutboxTableName), false),
+			NodesTableSchema:  rc.str("target.nodes_table_schema", planStr(pt, func(t *AblyIngressRuleTargetPostgresOutbox) types.String { return t.NodesTableSchema }), types.StringValue(target.NodesTableSchema), false),
+			NodesTableName:    rc.str("target.nodes_table_name", planStr(pt, func(t *AblyIngressRuleTargetPostgresOutbox) types.String { return t.NodesTableName }), types.StringValue(target.NodesTableName), false),
+			SslMode:           rc.str("target.ssl_mode", planStr(pt, func(t *AblyIngressRuleTargetPostgresOutbox) types.String { return t.SslMode }), types.StringValue(target.SSLMode), false),
+			SslRootCert:       rc.str("target.ssl_root_cert", planStr(pt, func(t *AblyIngressRuleTargetPostgresOutbox) types.String { return t.SslRootCert }), optStringValue(target.SSLRootCert), false),
+			PrimarySite:       rc.str("target.primary_site", planStr(pt, func(t *AblyIngressRuleTargetPostgresOutbox) types.String { return t.PrimarySite }), types.StringValue(target.PrimarySite), false),
 		}
 	default:
 		diags.AddError(
@@ -114,9 +127,9 @@ func GetIngressRuleResponse(ablyRule *control.RuleResponse, plan *AblyIngressRul
 	}
 
 	respRule := AblyIngressRule{
-		ID:     types.StringValue(ablyRule.ID),
-		AppID:  types.StringValue(ablyRule.AppID),
-		Status: types.StringValue(ablyRule.Status),
+		ID:     rc.str("id", plan.ID, types.StringValue(ablyRule.ID), true),
+		AppID:  rc.str("app_id", plan.AppID, types.StringValue(ablyRule.AppID), false),
+		Status: rc.str("status", plan.Status, types.StringValue(ablyRule.Status), true),
 		Target: respTarget,
 	}
 
@@ -188,7 +201,7 @@ func CreateIngressRule[T any](r Rule, ctx context.Context, req resource.CreateRe
 		return
 	}
 
-	responseValues, respDiags := GetIngressRuleResponse(&rule, &plan)
+	responseValues, respDiags := GetIngressRuleResponse(&rule, &plan, false)
 	resp.Diagnostics.Append(respDiags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -232,7 +245,7 @@ func ReadIngressRule[T any](r Rule, ctx context.Context, req resource.ReadReques
 		return
 	}
 
-	responseValues, respDiags := GetIngressRuleResponse(&rule, &state)
+	responseValues, respDiags := GetIngressRuleResponse(&rule, &state, true)
 	resp.Diagnostics.Append(respDiags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -278,7 +291,7 @@ func UpdateIngressRule[T any](r Rule, ctx context.Context, req resource.UpdateRe
 		return
 	}
 
-	responseValues, respDiags := GetIngressRuleResponse(&rule, &plan)
+	responseValues, respDiags := GetIngressRuleResponse(&rule, &plan, false)
 	resp.Diagnostics.Append(respDiags...)
 	if resp.Diagnostics.HasError() {
 		return

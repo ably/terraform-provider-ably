@@ -136,6 +136,26 @@ func (r ResourceQueue) Metadata(ctx context.Context, req resource.MetadataReques
 	resp.TypeName = "ably_queue"
 }
 
+// buildQueueState reconciles plan/state input with an API response.
+func buildQueueState(rc *reconciler, input AblyQueue, api control.QueueResponse) AblyQueue {
+	return AblyQueue{
+		AppID:            rc.str("app_id", input.AppID, types.StringValue(api.AppID), false),
+		ID:               rc.str("id", input.ID, types.StringValue(api.ID), true),
+		Name:             rc.str("name", input.Name, types.StringValue(api.Name), false),
+		Ttl:              rc.int64val("ttl", input.Ttl, types.Int64Value(int64(api.TTL)), false),
+		MaxLength:        rc.int64val("max_length", input.MaxLength, types.Int64Value(int64(api.MaxLength)), false),
+		Region:           rc.str("region", input.Region, types.StringValue(api.Region), false),
+		AmqpUri:          rc.str("amqp_uri", input.AmqpUri, types.StringValue(api.AMQP.URI), true),
+		AmqpQueueName:    rc.str("amqp_queue_name", input.AmqpQueueName, types.StringValue(api.AMQP.QueueName), true),
+		StompURI:         rc.str("stomp_uri", input.StompURI, types.StringValue(api.Stomp.URI), true),
+		StompHost:        rc.str("stomp_host", input.StompHost, types.StringValue(api.Stomp.Host), true),
+		StompDestination: rc.str("stomp_destination", input.StompDestination, types.StringValue(api.Stomp.Destination), true),
+		State:            rc.str("state", input.State, types.StringValue(api.State), true),
+		Deadletter:       rc.boolean("deadletter", input.Deadletter, types.BoolValue(api.Deadletter), true),
+		DeadletterID:     rc.str("deadletter_id", input.DeadletterID, optStringValue(api.DeadletterID), true),
+	}
+}
+
 // Create creates a new resource.
 func (r ResourceQueue) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.ensureConfigured(&resp.Diagnostics) {
@@ -169,26 +189,14 @@ func (r ResourceQueue) Create(ctx context.Context, req resource.CreateRequest, r
 	}
 
 	// Maps response body to resource schema attributes.
-	respApps := AblyQueue{
-		AppID:     types.StringValue(plan.AppID.ValueString()),
-		ID:        types.StringValue(ablyQueue.ID),
-		Name:      types.StringValue(ablyQueue.Name),
-		Ttl:       types.Int64Value(int64(ablyQueue.TTL)),
-		MaxLength: types.Int64Value(int64(ablyQueue.MaxLength)),
-		Region:    types.StringValue(ablyQueue.Region),
-
-		AmqpUri:          types.StringValue(ablyQueue.AMQP.URI),
-		AmqpQueueName:    types.StringValue(ablyQueue.AMQP.QueueName),
-		StompURI:         types.StringValue(ablyQueue.Stomp.URI),
-		StompHost:        types.StringValue(ablyQueue.Stomp.Host),
-		StompDestination: types.StringValue(ablyQueue.Stomp.Destination),
-		State:            types.StringValue(ablyQueue.State),
-		Deadletter:       types.BoolValue(ablyQueue.Deadletter),
-		DeadletterID:     optStringValue(ablyQueue.DeadletterID),
+	rc := newReconciler(&resp.Diagnostics)
+	respQueue := buildQueueState(rc, plan, ablyQueue)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	// Sets state for the new Ably App.
-	diags = resp.State.Set(ctx, respApps)
+	// Sets state for the new Ably queue.
+	diags = resp.State.Set(ctx, respQueue)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -233,25 +241,14 @@ func (r ResourceQueue) Read(ctx context.Context, req resource.ReadRequest, resp 
 	// Loops through queues and if id matches, sets state.
 	for _, v := range queues {
 		if v.ID == queueID {
-			respQueues := AblyQueue{
-				AppID:     types.StringValue(v.AppID),
-				ID:        types.StringValue(v.ID),
-				Name:      types.StringValue(v.Name),
-				Ttl:       types.Int64Value(int64(v.TTL)),
-				MaxLength: types.Int64Value(int64(v.MaxLength)),
-				Region:    types.StringValue(v.Region),
-
-				AmqpUri:          types.StringValue(v.AMQP.URI),
-				AmqpQueueName:    types.StringValue(v.AMQP.QueueName),
-				StompURI:         types.StringValue(v.Stomp.URI),
-				StompHost:        types.StringValue(v.Stomp.Host),
-				StompDestination: types.StringValue(v.Stomp.Destination),
-				State:            types.StringValue(v.State),
-				Deadletter:       types.BoolValue(v.Deadletter),
-				DeadletterID:     optStringValue(v.DeadletterID),
+			rc := newReconciler(&resp.Diagnostics).forRead()
+			respQueue := buildQueueState(rc, state, v)
+			if resp.Diagnostics.HasError() {
+				return
 			}
+
 			// Sets state to queue values.
-			diags = resp.State.Set(ctx, &respQueues)
+			diags = resp.State.Set(ctx, &respQueue)
 			found = true
 
 			resp.Diagnostics.Append(diags...)

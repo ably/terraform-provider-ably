@@ -103,6 +103,32 @@ func TestAccAblyRuleZapier(t *testing.T) {
 	})
 }
 
+func TestAccAblyRuleZapier_Minimal(t *testing.T) {
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	config := minimalRuleConfig(appName, "ably_rule_zapier", `target = {
+		url = "https://hooks.zapier.com/hooks/catch/000000/aaaaa"
+	}`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("ably_rule_zapier.rule0", "id"),
+					resource.TestCheckResourceAttr("ably_rule_zapier.rule0", "status", "enabled"),
+					resource.TestCheckResourceAttr("ably_rule_zapier.rule0", "request_mode", "single"),
+				),
+			},
+			{
+				Config:   config,
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 // Function with inline HCL to provision an ably_app resource
 func testAccAblyRuleZapierConfig(
 	appName string,
