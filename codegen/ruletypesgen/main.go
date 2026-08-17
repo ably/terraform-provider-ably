@@ -2,9 +2,9 @@
 // integration-rule families that cannot be generated from the OpenAPI spec.
 //
 // The Control API models rules as a oneOf + discriminator union, which
-// tfplugingen-openapi cannot handle (see CODEGEN_STRATEGY.md). Instead we drive
-// generation from the in-repo control rule types, which are already the
-// curated, per-family-correct model: the moderation and before-publish
+// tfplugingen-openapi cannot handle. Instead we drive generation from the
+// in-repo control rule types, which are already the curated,
+// per-family-correct model: the moderation and before-publish
 // families correctly drop the webhook source/request_mode fields and carry
 // before_publish_config/invocation_mode/chat_room_filter instead.
 //

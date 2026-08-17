@@ -2,8 +2,7 @@
 //
 // This file provides an in-process, stateful stand-in for the Ably Control
 // API so the provider's acceptance tests can run with NO credentials and NO
-// network access. It is the "Tier 1" hermetic loop described in
-// CODEGEN_STRATEGY.md: the loop an AI agent (or CI on a fork) can run on every
+// network access. It is the loop an AI agent (or CI on a fork) can run on every
 // change to prove the provider's CRUD/import/diff logic is internally
 // consistent.
 //
@@ -584,7 +583,7 @@ func TestMain(m *testing.M) {
 // pinned to the "ably/ably" namespace, which the in-process reattach factory
 // (keyed by the bare type "ably") cannot satisfy, and any ambient
 // ~/.terraformrc dev_overrides would otherwise run a stale installed binary
-// (the trap that the Phase 0c spike and CODEGEN_STRATEGY.md call out). Building
+// (a trap that has silently run the wrong binary before now). Building
 // here guarantees the tests exercise THIS code with no network install.
 //
 // It returns the temp directory it created so the caller can remove it.
