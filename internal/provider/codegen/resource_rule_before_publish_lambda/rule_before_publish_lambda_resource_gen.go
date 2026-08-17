@@ -110,11 +110,6 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 			},
 			"source": schema.SingleNestedAttribute{
 				Attributes: map[string]schema.Attribute{
-					"channel_filter": schema.StringAttribute{
-						Required:            true,
-						Description:         "This field allows you to filter your rule based on a regular expression that is matched against the complete channel name. Leave this empty if you want the rule to apply to all channels.",
-						MarkdownDescription: "This field allows you to filter your rule based on a regular expression that is matched against the complete channel name. Leave this empty if you want the rule to apply to all channels.",
-					},
 					"type": schema.StringAttribute{
 						Required:            true,
 						Description:         "The source type. Before-publish rules act on chat messages, so `chat.message` is the only supported value.",
@@ -745,24 +740,6 @@ func (t SourceType) ValueFromObject(ctx context.Context, in basetypes.ObjectValu
 
 	attributes := in.Attributes()
 
-	channelFilterAttribute, ok := attributes["channel_filter"]
-
-	if !ok {
-		diags.AddError(
-			"Attribute Missing",
-			`channel_filter is missing from object`)
-
-		return nil, diags
-	}
-
-	channelFilterVal, ok := channelFilterAttribute.(basetypes.StringValue)
-
-	if !ok {
-		diags.AddError(
-			"Attribute Wrong Type",
-			fmt.Sprintf(`channel_filter expected to be basetypes.StringValue, was: %T`, channelFilterAttribute))
-	}
-
 	typeAttribute, ok := attributes["type"]
 
 	if !ok {
@@ -786,9 +763,8 @@ func (t SourceType) ValueFromObject(ctx context.Context, in basetypes.ObjectValu
 	}
 
 	return SourceValue{
-		ChannelFilter: channelFilterVal,
-		SourceType:    typeVal,
-		state:         attr.ValueStateKnown,
+		SourceType: typeVal,
+		state:      attr.ValueStateKnown,
 	}, diags
 }
 
@@ -855,24 +831,6 @@ func NewSourceValue(attributeTypes map[string]attr.Type, attributes map[string]a
 		return NewSourceValueUnknown(), diags
 	}
 
-	channelFilterAttribute, ok := attributes["channel_filter"]
-
-	if !ok {
-		diags.AddError(
-			"Attribute Missing",
-			`channel_filter is missing from object`)
-
-		return NewSourceValueUnknown(), diags
-	}
-
-	channelFilterVal, ok := channelFilterAttribute.(basetypes.StringValue)
-
-	if !ok {
-		diags.AddError(
-			"Attribute Wrong Type",
-			fmt.Sprintf(`channel_filter expected to be basetypes.StringValue, was: %T`, channelFilterAttribute))
-	}
-
 	typeAttribute, ok := attributes["type"]
 
 	if !ok {
@@ -896,9 +854,8 @@ func NewSourceValue(attributeTypes map[string]attr.Type, attributes map[string]a
 	}
 
 	return SourceValue{
-		ChannelFilter: channelFilterVal,
-		SourceType:    typeVal,
-		state:         attr.ValueStateKnown,
+		SourceType: typeVal,
+		state:      attr.ValueStateKnown,
 	}, diags
 }
 
@@ -970,33 +927,23 @@ func (t SourceType) ValueType(ctx context.Context) attr.Value {
 var _ basetypes.ObjectValuable = SourceValue{}
 
 type SourceValue struct {
-	ChannelFilter basetypes.StringValue `tfsdk:"channel_filter"`
-	SourceType    basetypes.StringValue `tfsdk:"type"`
-	state         attr.ValueState
+	SourceType basetypes.StringValue `tfsdk:"type"`
+	state      attr.ValueState
 }
 
 func (v SourceValue) ToTerraformValue(ctx context.Context) (tftypes.Value, error) {
-	attrTypes := make(map[string]tftypes.Type, 2)
+	attrTypes := make(map[string]tftypes.Type, 1)
 
 	var val tftypes.Value
 	var err error
 
-	attrTypes["channel_filter"] = basetypes.StringType{}.TerraformType(ctx)
 	attrTypes["type"] = basetypes.StringType{}.TerraformType(ctx)
 
 	objectType := tftypes.Object{AttributeTypes: attrTypes}
 
 	switch v.state {
 	case attr.ValueStateKnown:
-		vals := make(map[string]tftypes.Value, 2)
-
-		val, err = v.ChannelFilter.ToTerraformValue(ctx)
-
-		if err != nil {
-			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
-		}
-
-		vals["channel_filter"] = val
+		vals := make(map[string]tftypes.Value, 1)
 
 		val, err = v.SourceType.ToTerraformValue(ctx)
 
@@ -1036,8 +983,7 @@ func (v SourceValue) ToObjectValue(ctx context.Context) (basetypes.ObjectValue, 
 	var diags diag.Diagnostics
 
 	attributeTypes := map[string]attr.Type{
-		"channel_filter": basetypes.StringType{},
-		"type":           basetypes.StringType{},
+		"type": basetypes.StringType{},
 	}
 
 	if v.IsNull() {
@@ -1051,8 +997,7 @@ func (v SourceValue) ToObjectValue(ctx context.Context) (basetypes.ObjectValue, 
 	objVal, diags := types.ObjectValue(
 		attributeTypes,
 		map[string]attr.Value{
-			"channel_filter": v.ChannelFilter,
-			"type":           v.SourceType,
+			"type": v.SourceType,
 		})
 
 	return objVal, diags
@@ -1073,10 +1018,6 @@ func (v SourceValue) Equal(o attr.Value) bool {
 		return true
 	}
 
-	if !v.ChannelFilter.Equal(other.ChannelFilter) {
-		return false
-	}
-
 	if !v.SourceType.Equal(other.SourceType) {
 		return false
 	}
@@ -1094,8 +1035,7 @@ func (v SourceValue) Type(ctx context.Context) attr.Type {
 
 func (v SourceValue) AttributeTypes(ctx context.Context) map[string]attr.Type {
 	return map[string]attr.Type{
-		"channel_filter": basetypes.StringType{},
-		"type":           basetypes.StringType{},
+		"type": basetypes.StringType{},
 	}
 }
 

@@ -42,7 +42,7 @@ func TestAccAblyRuleBeforePublishLambda(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
 					resource.TestCheckResourceAttr("ably_rule_before_publish_lambda.rule0", "status", "enabled"),
 					resource.TestCheckResourceAttr("ably_rule_before_publish_lambda.rule0", "invocation_mode", "BEFORE_PUBLISH"),
-					resource.TestCheckResourceAttr("ably_rule_before_publish_lambda.rule0", "source.channel_filter", "^room:"),
+					resource.TestCheckResourceAttr("ably_rule_before_publish_lambda.rule0", "source.type", "chat.message"),
 					resource.TestCheckResourceAttr("ably_rule_before_publish_lambda.rule0", "target.region", "us-west-1"),
 					resource.TestCheckResourceAttr("ably_rule_before_publish_lambda.rule0", "target.function_name", "my-moderation-function"),
 					resource.TestCheckResourceAttr("ably_rule_before_publish_lambda.rule0", "target.authentication.authentication_mode", "credentials"),
@@ -127,8 +127,8 @@ func TestAccAblyRuleBeforePublishLambdaRejectsWebhookSource(t *testing.T) {
 			{
 				Config: strings.Replace(
 					testAccAblyRuleBeforePublishLambdaConfig(appName, "us-west-1", "my-moderation-function"),
-					`type           = "chat.message"`,
-					`type           = "channel.message"`,
+					`type = "chat.message"`,
+					`type = "channel.message"`,
 					1,
 				),
 				ExpectError: regexp.MustCompile(`value must be one of: \["chat.message"\]`),
@@ -167,8 +167,7 @@ resource "ably_rule_before_publish_lambda" "rule0" {
 		too_many_requests_action = "RETRY"
 	}
 	source = {
-		channel_filter = "^room:"
-		type           = "chat.message"
+		type = "chat.message"
 	}
 	target = {
 		region        = %[2]q
