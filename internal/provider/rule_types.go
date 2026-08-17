@@ -35,6 +35,12 @@ var RuleTypeResources = map[string]string{
 	"http/google-cloud-function": "ably_rule_google_function",
 	"http/ifttt":                 "ably_rule_ifttt",
 	"bodyguard/text-moderation":  "ably_rule_bodyguard",
+	"tisane/text-moderation":     "ably_rule_tisane",
+	"azure/text-moderation":      "ably_rule_azure_moderation",
+	"hive/text-model-only":       "ably_rule_hive_text",
+	"hive/dashboard":             "ably_rule_hive_dashboard",
+	"http/before-publish":        "ably_rule_before_publish_webhook",
+	"aws/lambda/before-publish":  "ably_rule_before_publish_lambda",
 	"ingress/mongodb":            "ably_ingress_rule_mongodb",
 	"ingress-postgres-outbox":    "ably_ingress_rule_postgres_outbox",
 }
