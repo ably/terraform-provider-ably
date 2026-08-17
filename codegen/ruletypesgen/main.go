@@ -2,9 +2,9 @@
 // integration-rule families that cannot be generated from the OpenAPI spec.
 //
 // The Control API models rules as a oneOf + discriminator union, which
-// tfplugingen-openapi cannot handle (see CODEGEN_STRATEGY.md). Instead we drive
-// generation from the in-repo control rule types, which are already the
-// curated, per-family-correct model: the moderation and before-publish
+// tfplugingen-openapi cannot handle. Instead we drive generation from the
+// in-repo control rule types, which are already the curated,
+// per-family-correct model: the moderation and before-publish
 // families correctly drop the webhook source/request_mode fields and carry
 // before_publish_config/invocation_mode/chat_room_filter instead.
 //
@@ -60,7 +60,12 @@ var rules = []rule{
 // "url" sensitive because theirs embed database credentials, but listing it
 // here would also mask webhook endpoint URLs.
 var sensitive = map[string]bool{
-	"api_key":             true,
+	"api_key": true,
+	// The complete API key including its secret, as returned by GET
+	// /apps/{app_id}/keys. The hand-written ably_api_key resource already marks
+	// it sensitive; the ably_api_keys data source has to agree or it prints
+	// secrets.
+	"key":                 true,
 	"token":               true,
 	"password":            true,
 	"secret_access_key":   true,
@@ -83,6 +88,7 @@ type customExpr struct {
 // express. Keyed by snake_case attribute name (top-level or nested).
 type override struct {
 	mode          string // overrides computed_optional_required when set
+	description   string // overrides the spec-sourced description when set
 	staticDefault any    // sets a static default when non-nil
 	allowEmpty    bool   // suppresses the LengthAtLeast(1) validator
 	validators    []customExpr
@@ -93,6 +99,7 @@ const (
 	pkgStringValidator    = "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	pkgInt64Validator     = "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	pkgStringPlanModifier = "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	pkgObjectPlanModifier = "github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	pkgPlanModifiers      = "github.com/ably/terraform-provider-ably/internal/provider/planmodifiers"
 	pkgRegexp             = "regexp"
 )
@@ -120,6 +127,43 @@ var attrOverrides = map[string]override{
 	// (verified against the live API, 2026-07-20: create with "" and update
 	// non-empty -> "" both persist and read back as "").
 	"channel_filter": {allowEmpty: true},
+	// Before-publish AWS Lambda is the only generated rule that takes a source,
+	// and the API does not treat it like the webhook/firehose source whose spec
+	// schema it shares ($ref: rule_source). Two differences, both found on
+	// staging (2026-08-17) and neither documented:
+	//
+	//  1. The API defaults the source when you omit it, reading back as
+	//     {"type": "chat.message"}. Optional alone therefore fails with
+	//     "produced inconsistent result after apply: .source: was null, but now
+	//     ...", so it has to be computed as well.
+	//  2. It validates against #/components/schemas/chat_message_rule_source,
+	//     which does not exist anywhere in the spec: it rejects the documented
+	//     channel.message ("isn't part of the enum") and rejects a channelFilter
+	//     outright ("does not define properties: channelFilter"). So the shape is
+	//     type-only (see control.ChatMessageRuleSource) and the inherited
+	//     rule_source description, which tells you to use channel.message, is
+	//     actively wrong.
+	//
+	// TODO(INF-7992): delete the source and type overrides below once ably/docs
+	// documents chat_message_rule_source and the before-publish rules stop
+	// $ref-ing rule_source. The enum, the description and the type-only shape all
+	// generate from the spec at that point; only the computed mode and the plan
+	// modifier need to stay, because those describe API behaviour rather than
+	// schema. chat.message is the only value verified to work, so it is the only
+	// one allowed: being too permissive just moves the failure to apply time,
+	// which is what this validator exists to prevent.
+	// UseStateForUnknown is what stops the server-assigned value being replanned
+	// forever: with the block computed and the config empty, every subsequent plan
+	// would otherwise show `source -> (known after apply)` and never converge.
+	"source": {
+		mode:          "computed_optional",
+		description:   "The source of messages this rule applies to. Optional: the Control API assigns a default source when it is omitted.",
+		planModifiers: []customExpr{{[]string{pkgObjectPlanModifier}, "objectplanmodifier.UseStateForUnknown()"}},
+	},
+	"type": {
+		description: "The source type. Before-publish rules act on chat messages, so `chat.message` is the only supported value.",
+		validators:  []customExpr{{[]string{pkgStringValidator}, `stringvalidator.OneOf("chat.message")`}},
+	},
 }
 
 // applyOverride mutates an attribute's type map with any configured metadata.
@@ -130,6 +174,9 @@ func applyOverride(name string, m map[string]any) {
 	}
 	if ov.mode != "" {
 		m["computed_optional_required"] = ov.mode
+	}
+	if ov.description != "" {
+		m["description"] = ov.description
 	}
 	if ov.staticDefault != nil {
 		m["default"] = map[string]any{"static": ov.staticDefault}
@@ -247,6 +294,10 @@ func markSensitive(attrs any) {
 		}
 		markSensitive(asMap(attr["single_nested"])["attributes"])
 		markSensitive(asMap(asMap(attr["list_nested"])["nested_object"])["attributes"])
+		// The generated data sources model list endpoints as sets, so a secret
+		// inside one (the complete API key on ably_api_keys, say) is only
+		// reachable through set_nested.
+		markSensitive(asMap(asMap(attr["set_nested"])["nested_object"])["attributes"])
 	}
 }
 
@@ -380,6 +431,10 @@ func attrsFromStruct(t reflect.Type, props map[string]any) []map[string]any {
 			if desc != "" {
 				sn["description"] = desc
 			}
+			// Nested blocks take overrides too: a block the API defaults has to be
+			// computed as well as optional, which the Go type cannot express (see
+			// the source entry in attrOverrides).
+			applyOverride(name, sn)
 			attr["single_nested"] = sn
 		case reflect.Slice:
 			elem := ft.Elem()

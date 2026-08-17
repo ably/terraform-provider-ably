@@ -262,6 +262,12 @@ func (p *AblyProvider) Resources(context.Context) []func() resource.Resource {
 		func() resource.Resource { return ResourceRuleAMQP{p} },
 		func() resource.Resource { return ResourceRuleAMQPExternal{p} },
 		func() resource.Resource { return ResourceRuleBodyguard{p} },
+		func() resource.Resource { return ResourceRuleTisane{p} },
+		func() resource.Resource { return ResourceRuleAzureModeration{p} },
+		func() resource.Resource { return ResourceRuleHiveText{p} },
+		func() resource.Resource { return ResourceRuleHiveDashboard{p} },
+		func() resource.Resource { return ResourceRuleBeforePublishWebhook{p} },
+		func() resource.Resource { return ResourceRuleBeforePublishLambda{p} },
 		func() resource.Resource { return ResourceIngressRuleMongo{p} },
 		func() resource.Resource { return ResourceIngressRulePostgresOutbox{p} },
 	}
@@ -270,5 +276,15 @@ func (p *AblyProvider) Resources(context.Context) []func() resource.Resource {
 
 // DataSources - Gets the data sources this provider provides
 func (p *AblyProvider) DataSources(context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{}
+	return []func() datasource.DataSource{
+		func() datasource.DataSource { return DataSourceMe{p} },
+		func() datasource.DataSource { return DataSourceApp{p} },
+		func() datasource.DataSource { return DataSourceApps{p} },
+		func() datasource.DataSource { return DataSourceKey{p} },
+		func() datasource.DataSource { return DataSourceKeys{p} },
+		func() datasource.DataSource { return DataSourceNamespace{p} },
+		func() datasource.DataSource { return DataSourceNamespaces{p} },
+		func() datasource.DataSource { return DataSourceQueue{p} },
+		func() datasource.DataSource { return DataSourceQueues{p} },
+	}
 }

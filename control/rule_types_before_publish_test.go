@@ -270,7 +270,7 @@ func TestCreateRule_BeforePublishAWSLambda_WithSource(t *testing.T) {
 			FailedAction: "allow", TooManyRequestsAction: "allow",
 		},
 		InvocationMode: "single",
-		Source:         &RuleSource{ChannelFilter: "^my-channel", Type: "channel.message"},
+		Source:         &ChatMessageRuleSource{Type: "chat.message"},
 		Target: BeforePublishAWSLambdaTarget{
 			Region: "us-west-2", FunctionName: "handler",
 			Authentication: AWSAuthentication{
@@ -288,8 +288,10 @@ func TestCreateRule_BeforePublishAWSLambda_WithSource(t *testing.T) {
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&raw))
 		source, ok := raw["source"].(map[string]interface{})
 		require.True(t, ok, "source should be present when set")
-		assert.Equal(t, "^my-channel", source["channelFilter"])
-		assert.Equal(t, "channel.message", source["type"])
+		// The chat source is type-only. A channelFilter is rejected by the API
+		// ("does not define properties: channelFilter"), so it must not be sent.
+		assert.Equal(t, "chat.message", source["type"])
+		assert.NotContains(t, source, "channelFilter")
 		writeJSON(w, http.StatusCreated, RuleResponse{ID: "rule021", RuleType: "aws/lambda/before-publish"})
 	})
 
@@ -316,7 +318,7 @@ func TestUpdateRule_BeforePublishAWSLambda_Success(t *testing.T) {
 		BeforePublishConfig: &bpc,
 		InvocationMode:      "single",
 		ChatRoomFilter:      "lobby-*",
-		Source:              &RuleSource{ChannelFilter: "^filtered", Type: "channel.message"},
+		Source:              &ChatMessageRuleSource{Type: "chat.message"},
 		Target: &BeforePublishAWSLambdaTargetPatch{
 			Region: ptr("us-east-1"), FunctionName: ptr("updated-fn"),
 			Authentication: &AWSAuthenticationPatch{
@@ -341,7 +343,9 @@ func TestUpdateRule_BeforePublishAWSLambda_Success(t *testing.T) {
 		require.NotNil(t, got.BeforePublishConfig.RetryTimeout)
 		assert.Equal(t, 20, *got.BeforePublishConfig.RetryTimeout)
 		require.NotNil(t, got.Source)
-		assert.Equal(t, "^filtered", got.Source.ChannelFilter)
+		// The chat source carries a type and nothing else: sending a channelFilter
+		// is rejected by the API (see ChatMessageRuleSource).
+		assert.Equal(t, "chat.message", got.Source.Type)
 		require.NotNil(t, got.Target)
 		require.NotNil(t, got.Target.Authentication)
 		require.NotNil(t, got.Target.Authentication.AuthenticationMode)

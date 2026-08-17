@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -110,17 +111,12 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 			},
 			"source": schema.SingleNestedAttribute{
 				Attributes: map[string]schema.Attribute{
-					"channel_filter": schema.StringAttribute{
-						Required:            true,
-						Description:         "This field allows you to filter your rule based on a regular expression that is matched against the complete channel name. Leave this empty if you want the rule to apply to all channels.",
-						MarkdownDescription: "This field allows you to filter your rule based on a regular expression that is matched against the complete channel name. Leave this empty if you want the rule to apply to all channels.",
-					},
 					"type": schema.StringAttribute{
 						Required:            true,
-						Description:         "Ably currently supports the following sources for all rule types, in both single and batch mode: `channel.message`, `channel.presence`, `channel.lifecycle` and `channel.occupancy`. If the source `channel.message` is selected, you receive notifications when messages are published on a channel. If the source `channel.presence` is selected, you receive notifications of presence events when clients enter, update their data, or leave channels. If the source `channel.lifecycle` is selected, you receive notifications of channel lifecycle events, such as when a channel is created (following the first client attaching to this channel) or discarded (when there are no more clients attached to the channel). If the source `channel.occupancy` is selected, you receive notifications of occupancy events, which relate to the number and type of occupants in the channel.",
-						MarkdownDescription: "Ably currently supports the following sources for all rule types, in both single and batch mode: `channel.message`, `channel.presence`, `channel.lifecycle` and `channel.occupancy`. If the source `channel.message` is selected, you receive notifications when messages are published on a channel. If the source `channel.presence` is selected, you receive notifications of presence events when clients enter, update their data, or leave channels. If the source `channel.lifecycle` is selected, you receive notifications of channel lifecycle events, such as when a channel is created (following the first client attaching to this channel) or discarded (when there are no more clients attached to the channel). If the source `channel.occupancy` is selected, you receive notifications of occupancy events, which relate to the number and type of occupants in the channel.",
+						Description:         "The source type. Before-publish rules act on chat messages, so `chat.message` is the only supported value.",
+						MarkdownDescription: "The source type. Before-publish rules act on chat messages, so `chat.message` is the only supported value.",
 						Validators: []validator.String{
-							stringvalidator.LengthAtLeast(1),
+							stringvalidator.OneOf("chat.message"),
 						},
 					},
 				},
@@ -129,7 +125,13 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 						AttrTypes: SourceValue{}.AttributeTypes(ctx),
 					},
 				},
-				Optional: true,
+				Optional:            true,
+				Computed:            true,
+				Description:         "The source of messages this rule applies to. Optional: the Control API assigns a default source when it is omitted.",
+				MarkdownDescription: "The source of messages this rule applies to. Optional: the Control API assigns a default source when it is omitted.",
+				PlanModifiers: []planmodifier.Object{
+					objectplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"status": schema.StringAttribute{
 				Optional:            true,
@@ -742,24 +744,6 @@ func (t SourceType) ValueFromObject(ctx context.Context, in basetypes.ObjectValu
 
 	attributes := in.Attributes()
 
-	channelFilterAttribute, ok := attributes["channel_filter"]
-
-	if !ok {
-		diags.AddError(
-			"Attribute Missing",
-			`channel_filter is missing from object`)
-
-		return nil, diags
-	}
-
-	channelFilterVal, ok := channelFilterAttribute.(basetypes.StringValue)
-
-	if !ok {
-		diags.AddError(
-			"Attribute Wrong Type",
-			fmt.Sprintf(`channel_filter expected to be basetypes.StringValue, was: %T`, channelFilterAttribute))
-	}
-
 	typeAttribute, ok := attributes["type"]
 
 	if !ok {
@@ -783,9 +767,8 @@ func (t SourceType) ValueFromObject(ctx context.Context, in basetypes.ObjectValu
 	}
 
 	return SourceValue{
-		ChannelFilter: channelFilterVal,
-		SourceType:    typeVal,
-		state:         attr.ValueStateKnown,
+		SourceType: typeVal,
+		state:      attr.ValueStateKnown,
 	}, diags
 }
 
@@ -852,24 +835,6 @@ func NewSourceValue(attributeTypes map[string]attr.Type, attributes map[string]a
 		return NewSourceValueUnknown(), diags
 	}
 
-	channelFilterAttribute, ok := attributes["channel_filter"]
-
-	if !ok {
-		diags.AddError(
-			"Attribute Missing",
-			`channel_filter is missing from object`)
-
-		return NewSourceValueUnknown(), diags
-	}
-
-	channelFilterVal, ok := channelFilterAttribute.(basetypes.StringValue)
-
-	if !ok {
-		diags.AddError(
-			"Attribute Wrong Type",
-			fmt.Sprintf(`channel_filter expected to be basetypes.StringValue, was: %T`, channelFilterAttribute))
-	}
-
 	typeAttribute, ok := attributes["type"]
 
 	if !ok {
@@ -893,9 +858,8 @@ func NewSourceValue(attributeTypes map[string]attr.Type, attributes map[string]a
 	}
 
 	return SourceValue{
-		ChannelFilter: channelFilterVal,
-		SourceType:    typeVal,
-		state:         attr.ValueStateKnown,
+		SourceType: typeVal,
+		state:      attr.ValueStateKnown,
 	}, diags
 }
 
@@ -967,33 +931,23 @@ func (t SourceType) ValueType(ctx context.Context) attr.Value {
 var _ basetypes.ObjectValuable = SourceValue{}
 
 type SourceValue struct {
-	ChannelFilter basetypes.StringValue `tfsdk:"channel_filter"`
-	SourceType    basetypes.StringValue `tfsdk:"type"`
-	state         attr.ValueState
+	SourceType basetypes.StringValue `tfsdk:"type"`
+	state      attr.ValueState
 }
 
 func (v SourceValue) ToTerraformValue(ctx context.Context) (tftypes.Value, error) {
-	attrTypes := make(map[string]tftypes.Type, 2)
+	attrTypes := make(map[string]tftypes.Type, 1)
 
 	var val tftypes.Value
 	var err error
 
-	attrTypes["channel_filter"] = basetypes.StringType{}.TerraformType(ctx)
 	attrTypes["type"] = basetypes.StringType{}.TerraformType(ctx)
 
 	objectType := tftypes.Object{AttributeTypes: attrTypes}
 
 	switch v.state {
 	case attr.ValueStateKnown:
-		vals := make(map[string]tftypes.Value, 2)
-
-		val, err = v.ChannelFilter.ToTerraformValue(ctx)
-
-		if err != nil {
-			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
-		}
-
-		vals["channel_filter"] = val
+		vals := make(map[string]tftypes.Value, 1)
 
 		val, err = v.SourceType.ToTerraformValue(ctx)
 
@@ -1033,8 +987,7 @@ func (v SourceValue) ToObjectValue(ctx context.Context) (basetypes.ObjectValue, 
 	var diags diag.Diagnostics
 
 	attributeTypes := map[string]attr.Type{
-		"channel_filter": basetypes.StringType{},
-		"type":           basetypes.StringType{},
+		"type": basetypes.StringType{},
 	}
 
 	if v.IsNull() {
@@ -1048,8 +1001,7 @@ func (v SourceValue) ToObjectValue(ctx context.Context) (basetypes.ObjectValue, 
 	objVal, diags := types.ObjectValue(
 		attributeTypes,
 		map[string]attr.Value{
-			"channel_filter": v.ChannelFilter,
-			"type":           v.SourceType,
+			"type": v.SourceType,
 		})
 
 	return objVal, diags
@@ -1070,10 +1022,6 @@ func (v SourceValue) Equal(o attr.Value) bool {
 		return true
 	}
 
-	if !v.ChannelFilter.Equal(other.ChannelFilter) {
-		return false
-	}
-
 	if !v.SourceType.Equal(other.SourceType) {
 		return false
 	}
@@ -1091,8 +1039,7 @@ func (v SourceValue) Type(ctx context.Context) attr.Type {
 
 func (v SourceValue) AttributeTypes(ctx context.Context) map[string]attr.Type {
 	return map[string]attr.Type{
-		"channel_filter": basetypes.StringType{},
-		"type":           basetypes.StringType{},
+		"type": basetypes.StringType{},
 	}
 }
 

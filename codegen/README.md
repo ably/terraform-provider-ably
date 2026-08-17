@@ -1,8 +1,7 @@
 # Code generation
 
 This directory holds the inputs for generating Terraform schema and model code
-from the Ably Control API's OpenAPI spec, the first step of the strategy in
-[`../CODEGEN_STRATEGY.md`](../CODEGEN_STRATEGY.md).
+from the Ably Control API's OpenAPI spec.
 
 ## What's here
 
@@ -63,24 +62,41 @@ assert that regeneration produces no diff.
 
 This is deliberately limited right now:
 
-- **Two tracks.** Simple resources (`app`, `namespace`, `queue`) generate from
-  the OpenAPI spec. The integration rules use an OpenAPI `oneOf` + discriminator
-  that `tfplugingen-openapi` cannot handle, so the moderation and before-publish
-  rule families are generated from the in-repo `control` types instead via
-  `ruletypesgen` (see the strategy doc). The webhook/firehose rule families are
-  not generated yet.
+- **Two tracks.** Simple resources (`app`, `namespace`, `queue`) and the data
+  sources generate from the OpenAPI spec. The integration rules use an OpenAPI
+  `oneOf` + discriminator that `tfplugingen-openapi` cannot handle, so the
+  moderation and before-publish rule families are generated from the in-repo
+  `control` types instead via `ruletypesgen`. The webhook/firehose rule families
+  are not generated yet.
 - **Schema + model only.** The tools do not emit CRUD wiring. All wiring to the
   `control` client stays hand-written and is not generated here.
 - **Both tools are tech preview.** `tfplugingen-openapi` last shipped v0.3.0
   (Jan 2024). It works on our spec today; we are not betting anything load
   bearing on a future release.
-- **The generated code is wired into one live resource so far.**
-  `ably_rule_bodyguard` is ported onto it; the rest of the generated packages
-  are committed as the reviewable output of the pipeline. Retrofitting the
-  remaining resources is a separate, deliberate step, partly because some
-  diverge from the spec shape on purpose (e.g. `queue` flattens the API's
-  nested `amqp`/`stomp` objects into flat attributes). See the Phase 1 findings
-  in the strategy doc.
+
+## Don't port app, namespace or queue onto the generated schemas yet
+
+Every rule resource and every data source is on generated schema. The three
+simple resources are not, and the generated versions of them are not
+contract-complete: adopting one as-is is a breaking change. What each would need
+reconciling first (all metadata the spec cannot express):
+
+- **namespace**: no `identified` attribute, and a bare `authenticated` bool
+  defaulting to `false`. The hand-written schema carries the whole INF-7589
+  migration (canonical `identified`, deprecated `authenticated` alias, alias plan
+  modifiers, `ConflictsWith`, deprecation message) that a port must preserve.
+  `batching_interval` also gains a spurious default of 20, where the hand-written
+  schema has null plus an `AtLeast(0)` validator, and `id`/`app_id` lose
+  `RequiresReplace`.
+- **queue**: every `RequiresReplace` is lost (`app_id`, `name`, `ttl`,
+  `max_length`, `region`), and the Control API has no queue-update endpoint, so a
+  ported resource would plan in-place updates it cannot execute. The resource also
+  flattens the API's nested `amqp`/`stomp` objects into flat attributes on
+  purpose, which the generator faithfully un-flattens.
+- **app**: generated `created`/`modified` are Int64 where the hand-written schema
+  has RFC3339 strings, which breaks decoding of every existing state file.
+  `UseStateForUnknown` on `id`/`account_id`/`created` and the
+  `status`/`tls_only`/`apns_use_sandbox_endpoint` defaults are all dropped.
 
 ## Known per-resource quirks (encoded in `generator_config.yml`)
 

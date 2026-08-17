@@ -1837,17 +1837,10 @@
             "single_nested": {
               "attributes": [
                 {
-                  "name": "channel_filter",
-                  "string": {
-                    "computed_optional_required": "required",
-                    "description": "This field allows you to filter your rule based on a regular expression that is matched against the complete channel name. Leave this empty if you want the rule to apply to all channels."
-                  }
-                },
-                {
                   "name": "type",
                   "string": {
                     "computed_optional_required": "required",
-                    "description": "Ably currently supports the following sources for all rule types, in both single and batch mode: `channel.message`, `channel.presence`, `channel.lifecycle` and `channel.occupancy`. If the source `channel.message` is selected, you receive notifications when messages are published on a channel. If the source `channel.presence` is selected, you receive notifications of presence events when clients enter, update their data, or leave channels. If the source `channel.lifecycle` is selected, you receive notifications of channel lifecycle events, such as when a channel is created (following the first client attaching to this channel) or discarded (when there are no more clients attached to the channel). If the source `channel.occupancy` is selected, you receive notifications of occupancy events, which relate to the number and type of occupants in the channel.",
+                    "description": "The source type. Before-publish rules act on chat messages, so `chat.message` is the only supported value.",
                     "validators": [
                       {
                         "custom": {
@@ -1856,14 +1849,27 @@
                               "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
                             }
                           ],
-                          "schema_definition": "stringvalidator.LengthAtLeast(1)"
+                          "schema_definition": "stringvalidator.OneOf(\"chat.message\")"
                         }
                       }
                     ]
                   }
                 }
               ],
-              "computed_optional_required": "optional"
+              "computed_optional_required": "computed_optional",
+              "description": "The source of messages this rule applies to. Optional: the Control API assigns a default source when it is omitted.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
+                      }
+                    ],
+                    "schema_definition": "objectplanmodifier.UseStateForUnknown()"
+                  }
+                }
+              ]
             }
           },
           {
