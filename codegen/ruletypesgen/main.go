@@ -99,6 +99,7 @@ const (
 	pkgStringValidator    = "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	pkgInt64Validator     = "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	pkgStringPlanModifier = "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	pkgObjectPlanModifier = "github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	pkgPlanModifiers      = "github.com/ably/terraform-provider-ably/internal/provider/planmodifiers"
 	pkgRegexp             = "regexp"
 )
@@ -132,23 +133,32 @@ var attrOverrides = map[string]override{
 	// staging (2026-08-17) and neither documented:
 	//
 	//  1. The API defaults the source when you omit it, reading back as
-	//     chat.message with an empty channel filter. Optional alone therefore
-	//     fails with "produced inconsistent result after apply: .source: was
-	//     null, but now ...", so it has to be computed as well.
-	//  2. It validates type against a chat-specific enum, rejecting
-	//     channel.message with `"channel.message" isn't part of the enum in
-	//     #/components/schemas/chat_message_rule_source`. That schema does not
-	//     exist anywhere in the spec, so there is no enum to generate from and
-	//     the inherited rule_source description (which tells you to use
-	//     channel.message) is actively wrong.
+	//     {"type": "chat.message"}. Optional alone therefore fails with
+	//     "produced inconsistent result after apply: .source: was null, but now
+	//     ...", so it has to be computed as well.
+	//  2. It validates against #/components/schemas/chat_message_rule_source,
+	//     which does not exist anywhere in the spec: it rejects the documented
+	//     channel.message ("isn't part of the enum") and rejects a channelFilter
+	//     outright ("does not define properties: channelFilter"). So the shape is
+	//     type-only (see control.ChatMessageRuleSource) and the inherited
+	//     rule_source description, which tells you to use channel.message, is
+	//     actively wrong.
 	//
-	// Both overrides go away once ably/docs documents the real schema; see
-	// INF-7992. chat.message is the only value verified to work, so it is the
-	// only one allowed: being too permissive here just moves the failure to
-	// apply time, which is what this validator exists to prevent.
+	// TODO(INF-7992): delete the source and type overrides below once ably/docs
+	// documents chat_message_rule_source and the before-publish rules stop
+	// $ref-ing rule_source. The enum, the description and the type-only shape all
+	// generate from the spec at that point; only the computed mode and the plan
+	// modifier need to stay, because those describe API behaviour rather than
+	// schema. chat.message is the only value verified to work, so it is the only
+	// one allowed: being too permissive just moves the failure to apply time,
+	// which is what this validator exists to prevent.
+	// UseStateForUnknown is what stops the server-assigned value being replanned
+	// forever: with the block computed and the config empty, every subsequent plan
+	// would otherwise show `source -> (known after apply)` and never converge.
 	"source": {
-		mode:        "computed_optional",
-		description: "The source of messages this rule applies to. Optional: the Control API assigns a default source when it is omitted.",
+		mode:          "computed_optional",
+		description:   "The source of messages this rule applies to. Optional: the Control API assigns a default source when it is omitted.",
+		planModifiers: []customExpr{{[]string{pkgObjectPlanModifier}, "objectplanmodifier.UseStateForUnknown()"}},
 	},
 	"type": {
 		description: "The source type. Before-publish rules act on chat messages, so `chat.message` is the only supported value.",

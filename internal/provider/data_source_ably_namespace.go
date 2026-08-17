@@ -74,9 +74,10 @@ func namespaceDataSourceModel(namespace control.NamespaceResponse) AblyNamespace
 // to serve.
 //
 // The vendored spec documents only the deprecated authenticated flag, not the
-// canonical identified one the API now returns, so identified is added here. When
-// ably/docs catches up this can come from the generated schema and the addition
-// can go; the spec-drift workflow is what will tell us it has.
+// canonical identified one the API now returns, so identified is added here.
+//
+// TODO(INF-7992): delete this addition once the spec documents identified; it
+// then comes from the generated schema.
 func namespacesDataSourceSchema(ctx context.Context) schema.Schema {
 	s := datasource_namespaces.NamespacesDataSourceSchema(ctx)
 	stripSetNestedCustomTypes(&s, "namespaces")
