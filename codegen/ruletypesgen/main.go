@@ -60,7 +60,12 @@ var rules = []rule{
 // "url" sensitive because theirs embed database credentials, but listing it
 // here would also mask webhook endpoint URLs.
 var sensitive = map[string]bool{
-	"api_key":             true,
+	"api_key": true,
+	// The complete API key including its secret, as returned by GET
+	// /apps/{app_id}/keys. The hand-written ably_api_key resource already marks
+	// it sensitive; the ably_api_keys data source has to agree or it prints
+	// secrets.
+	"key":                 true,
 	"token":               true,
 	"password":            true,
 	"secret_access_key":   true,
@@ -247,6 +252,10 @@ func markSensitive(attrs any) {
 		}
 		markSensitive(asMap(attr["single_nested"])["attributes"])
 		markSensitive(asMap(asMap(attr["list_nested"])["nested_object"])["attributes"])
+		// The generated data sources model list endpoints as sets, so a secret
+		// inside one (the complete API key on ably_api_keys, say) is only
+		// reachable through set_nested.
+		markSensitive(asMap(asMap(attr["set_nested"])["nested_object"])["attributes"])
 	}
 }
 
