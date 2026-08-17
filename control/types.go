@@ -527,11 +527,15 @@ type Me struct {
 	Account *MeAccount `json:"account,omitempty"`
 }
 
-// MeToken holds token information from GET /me.
+// MeToken holds token information from GET /me. ExpiresAt and LastUsedAt are
+// ISO 8601 timestamps and are nil when the token never expires, or has not been
+// used since Ably began tracking that.
 type MeToken struct {
 	ID           string   `json:"id"`
 	Name         string   `json:"name"`
 	Capabilities []string `json:"capabilities"`
+	ExpiresAt    *string  `json:"expires_at,omitempty"`
+	LastUsedAt   *string  `json:"last_used_at,omitempty"`
 }
 
 // MeUser holds user information from GET /me.

@@ -66,6 +66,8 @@ generate:
 	go run ./codegen/ruletypesgen
 	go run github.com/hashicorp/terraform-plugin-codegen-framework/cmd/tfplugingen-framework@v0.4.1 generate resources --input codegen/spec.json --output internal/provider/codegen
 	go run github.com/hashicorp/terraform-plugin-codegen-framework/cmd/tfplugingen-framework@v0.4.1 generate resources --input codegen/rules_spec.json --output internal/provider/codegen
+	# Data sources (Track A only): the list endpoints, plus /me.
+	go run github.com/hashicorp/terraform-plugin-codegen-framework/cmd/tfplugingen-framework@v0.4.1 generate data-sources --input codegen/spec.json --output internal/provider/codegen
 	gofmt -w internal/provider/codegen
 
 # Refresh the vendored Control API spec from the public ably/docs repo and

@@ -1,6 +1,34 @@
 provider:
   name: ably
 
+# Data sources come from the list endpoints, because the Control API has no
+# GET-by-ID for apps, keys, namespaces or queues (only rules have one). So each
+# entity generates a plural data source: the parent path parameter as an input,
+# and a computed set of whole objects. The singular by-id-or-name data sources
+# lift their attributes from these generated sets at runtime, so there is one
+# source of truth per entity; see internal/provider/data_sources.go.
+data_sources:
+  apps:
+    read:
+      path: /accounts/{account_id}/apps
+      method: GET
+  keys:
+    read:
+      path: /apps/{app_id}/keys
+      method: GET
+  namespaces:
+    read:
+      path: /apps/{app_id}/namespaces
+      method: GET
+  queues:
+    read:
+      path: /apps/{app_id}/queues
+      method: GET
+  me:
+    read:
+      path: /me
+      method: GET
+
 resources:
   app:
     create:

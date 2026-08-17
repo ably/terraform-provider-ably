@@ -1,4 +1,681 @@
 {
+  "datasources": [
+    {
+      "name": "apps",
+      "schema": {
+        "attributes": [
+          {
+            "name": "account_id",
+            "string": {
+              "computed_optional_required": "required",
+              "description": "The account ID for which to retrieve the associated applications."
+            }
+          },
+          {
+            "name": "apps",
+            "set_nested": {
+              "computed_optional_required": "computed",
+              "nested_object": {
+                "attributes": [
+                  {
+                    "name": "_links",
+                    "single_nested": {
+                      "computed_optional_required": "computed",
+                      "description": "A link self-referencing the app that has been created."
+                    }
+                  },
+                  {
+                    "name": "account_id",
+                    "string": {
+                      "computed_optional_required": "computed",
+                      "description": "The ID of your Ably account."
+                    }
+                  },
+                  {
+                    "name": "apns_auth_type",
+                    "string": {
+                      "computed_optional_required": "computed",
+                      "description": "The Apple Push Notification service authentication type. Use `certificate` for p12 certificate-based auth, or `token` for p8 key-based auth."
+                    }
+                  },
+                  {
+                    "bool": {
+                      "computed_optional_required": "computed",
+                      "description": "Whether a certificate-based APNs configuration is currently active."
+                    },
+                    "name": "apns_certificate_configured"
+                  },
+                  {
+                    "name": "apns_issuer_key",
+                    "string": {
+                      "computed_optional_required": "computed",
+                      "description": "The Team ID from the Apple Developer account. Used as the issuer when generating APNs authentication tokens."
+                    }
+                  },
+                  {
+                    "bool": {
+                      "computed_optional_required": "computed",
+                      "description": "Whether a token-based (p8) APNs signing key is currently configured."
+                    },
+                    "name": "apns_signing_key_configured"
+                  },
+                  {
+                    "name": "apns_signing_key_id",
+                    "string": {
+                      "computed_optional_required": "computed",
+                      "description": "The 10-character Key ID from the Apple Developer portal, associated with the `.p8` signing key."
+                    }
+                  },
+                  {
+                    "name": "apns_topic_header",
+                    "string": {
+                      "computed_optional_required": "computed",
+                      "description": "The app's bundle ID (for example, `com.example.myapp`). Used as the `apns-topic` header when sending push notifications."
+                    }
+                  },
+                  {
+                    "bool": {
+                      "computed_optional_required": "computed",
+                      "description": "Use the Apple Push Notification service sandbox endpoint."
+                    },
+                    "name": "apns_use_sandbox_endpoint"
+                  },
+                  {
+                    "int64": {
+                      "computed_optional_required": "computed",
+                      "description": "Unix timestamp representing the date and time of creation of the application."
+                    },
+                    "name": "created"
+                  },
+                  {
+                    "name": "fcm_project_id",
+                    "string": {
+                      "computed_optional_required": "computed",
+                      "description": "The unique identifier for the Firebase Cloud Messaging (FCM) project. This ID is used to specify the Firebase project when configuring FCM or other Firebase services."
+                    }
+                  },
+                  {
+                    "bool": {
+                      "computed_optional_required": "computed",
+                      "description": "Whether Firebase Cloud Messaging (FCM) service account credentials are currently configured."
+                    },
+                    "name": "fcm_service_account_configured"
+                  },
+                  {
+                    "name": "id",
+                    "string": {
+                      "computed_optional_required": "computed",
+                      "description": "The application ID."
+                    }
+                  },
+                  {
+                    "int64": {
+                      "computed_optional_required": "computed",
+                      "description": "Unix timestamp representing the date and time of last modification of the application."
+                    },
+                    "name": "modified"
+                  },
+                  {
+                    "name": "name",
+                    "string": {
+                      "computed_optional_required": "computed",
+                      "description": "The application name."
+                    }
+                  },
+                  {
+                    "name": "status",
+                    "string": {
+                      "computed_optional_required": "computed",
+                      "description": "The status of the application. Can be `enabled` or `disabled`. Enabled means available to accept inbound connections and all services are available."
+                    }
+                  },
+                  {
+                    "bool": {
+                      "computed_optional_required": "computed",
+                      "description": "Enforce TLS for all connections. This setting overrides any channel setting."
+                    },
+                    "name": "tls_only"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "keys",
+      "schema": {
+        "attributes": [
+          {
+            "name": "app_id",
+            "string": {
+              "computed_optional_required": "required",
+              "description": "The application ID."
+            }
+          },
+          {
+            "name": "keys",
+            "set_nested": {
+              "computed_optional_required": "computed",
+              "nested_object": {
+                "attributes": [
+                  {
+                    "name": "app_id",
+                    "string": {
+                      "computed_optional_required": "computed",
+                      "description": "The Ably application ID which this key is associated with."
+                    }
+                  },
+                  {
+                    "map": {
+                      "computed_optional_required": "computed",
+                      "description": "The capabilities that this key has. More information on capabilities can be found in the Ably \u003ca href=\"https://ably.com/docs/auth/capabilities\"\u003ecapabilities docs\u003c/a\u003e.",
+                      "element_type": {
+                        "list": {
+                          "element_type": {
+                            "string": {}
+                          }
+                        }
+                      }
+                    },
+                    "name": "capability"
+                  },
+                  {
+                    "int64": {
+                      "computed_optional_required": "computed",
+                      "description": "Unix timestamp representing the date and time of creation of the key."
+                    },
+                    "name": "created"
+                  },
+                  {
+                    "name": "id",
+                    "string": {
+                      "computed_optional_required": "computed",
+                      "description": "The key ID."
+                    }
+                  },
+                  {
+                    "name": "key",
+                    "string": {
+                      "computed_optional_required": "computed",
+                      "description": "The complete API key including API secret.",
+                      "sensitive": true
+                    }
+                  },
+                  {
+                    "int64": {
+                      "computed_optional_required": "computed",
+                      "description": "Unix timestamp representing the date and time of the last modification of the key."
+                    },
+                    "name": "modified"
+                  },
+                  {
+                    "name": "name",
+                    "string": {
+                      "computed_optional_required": "computed",
+                      "description": "The name for your API key. This is a friendly name for your reference."
+                    }
+                  },
+                  {
+                    "bool": {
+                      "computed_optional_required": "computed",
+                      "description": "If `true`, tokens issued by this key can be individually revoked. See the \u003ca href=\"https://ably.com/docs/auth/revocation\"\u003etoken revocation\u003c/a\u003e documentation for more details."
+                    },
+                    "name": "revocable_tokens"
+                  },
+                  {
+                    "int64": {
+                      "computed_optional_required": "computed",
+                      "description": "The status of the key. `0` is enabled, `1` is revoked."
+                    },
+                    "name": "status"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "me",
+      "schema": {
+        "attributes": [
+          {
+            "name": "account",
+            "single_nested": {
+              "attributes": [
+                {
+                  "name": "id",
+                  "string": {
+                    "computed_optional_required": "computed",
+                    "description": "The account ID."
+                  }
+                },
+                {
+                  "name": "name",
+                  "string": {
+                    "computed_optional_required": "computed",
+                    "description": "The name of the account."
+                  }
+                }
+              ],
+              "computed_optional_required": "computed"
+            }
+          },
+          {
+            "name": "token",
+            "single_nested": {
+              "attributes": [
+                {
+                  "list": {
+                    "computed_optional_required": "computed",
+                    "description": "An array containing the access capabilities associated with the access token.",
+                    "element_type": {
+                      "string": {}
+                    }
+                  },
+                  "name": "capabilities"
+                },
+                {
+                  "name": "expires_at",
+                  "string": {
+                    "computed_optional_required": "computed",
+                    "description": "The date and time at which the access token expires, in ISO 8601 format. A value of `null` indicates the token does not expire."
+                  }
+                },
+                {
+                  "name": "id",
+                  "string": {
+                    "computed_optional_required": "computed",
+                    "description": "The token ID."
+                  }
+                },
+                {
+                  "name": "last_used_at",
+                  "string": {
+                    "computed_optional_required": "computed",
+                    "description": "The date and time at which the access token was last used to authenticate a Control API request, in ISO 8601 format. Updated at most once per 10-minute window. A value of `null` indicates the token has not been used since tracking began."
+                  }
+                },
+                {
+                  "name": "name",
+                  "string": {
+                    "computed_optional_required": "computed",
+                    "description": "The friendly name for the token."
+                  }
+                }
+              ],
+              "computed_optional_required": "computed"
+            }
+          },
+          {
+            "name": "user",
+            "single_nested": {
+              "attributes": [
+                {
+                  "name": "email",
+                  "string": {
+                    "computed_optional_required": "computed",
+                    "description": "Email address of the user associated with the account."
+                  }
+                },
+                {
+                  "int64": {
+                    "computed_optional_required": "computed",
+                    "description": "The user ID associated with the account."
+                  },
+                  "name": "id"
+                }
+              ],
+              "computed_optional_required": "computed"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "namespaces",
+      "schema": {
+        "attributes": [
+          {
+            "name": "app_id",
+            "string": {
+              "computed_optional_required": "required",
+              "description": "The application ID."
+            }
+          },
+          {
+            "name": "namespaces",
+            "set_nested": {
+              "computed_optional_required": "computed",
+              "nested_object": {
+                "attributes": [
+                  {
+                    "name": "app_id",
+                    "string": {
+                      "computed_optional_required": "computed",
+                      "description": "The ID of the application the namespace belongs to."
+                    }
+                  },
+                  {
+                    "bool": {
+                      "computed_optional_required": "computed",
+                      "description": "If `true`, clients will not be permitted to use (including to attach, publish, or subscribe) any channels within this namespace unless they are identified, that is, authenticated using a client ID. See the documentation for \u003ca href=\"https://ably.com/docs/auth/identified-clients\"\u003eidentified clients\u003c/a\u003e for more details."
+                    },
+                    "name": "authenticated"
+                  },
+                  {
+                    "bool": {
+                      "computed_optional_required": "computed",
+                      "description": "If `true`, channels within this namespace will start batching inbound messages instead of sending them out immediately to subscribers."
+                    },
+                    "name": "batching_enabled"
+                  },
+                  {
+                    "int64": {
+                      "computed_optional_required": "computed",
+                      "description": "If `true`, the batching interval, configurable from 20ms to 1s, temporarily holds and aggregates incoming messages. These messages are then combined and delivered as a single batch once the interval elapses or a size limit is reached (before the interval elapses)."
+                    },
+                    "name": "batching_interval"
+                  },
+                  {
+                    "bool": {
+                      "computed_optional_required": "computed",
+                      "description": "If `true`, enables \u003ca href=\"https://ably.com/docs/messages#conflation\"\u003econflation\u003c/a\u003e for channels within this namespace. Conflation will aggregate published messages for a set period of time and evaluate them against a conflation key. Only the most recent message that satisfies the key will be sent to subscribers at the end of the conflation interval."
+                    },
+                    "name": "conflation_enabled"
+                  },
+                  {
+                    "int64": {
+                      "computed_optional_required": "computed",
+                      "description": "The interval in milliseconds over which messages are held and evaluated for conflation."
+                    },
+                    "name": "conflation_interval"
+                  },
+                  {
+                    "name": "conflation_key",
+                    "string": {
+                      "computed_optional_required": "computed",
+                      "description": "The \u003ca href=\"https://ably.com/docs/messages#routing\"\u003ekey\u003c/a\u003e used to determine which messages should be conflated."
+                    }
+                  },
+                  {
+                    "int64": {
+                      "computed_optional_required": "computed",
+                      "description": "Unix timestamp representing the date and time of creation of the namespace."
+                    },
+                    "name": "created"
+                  },
+                  {
+                    "bool": {
+                      "computed_optional_required": "computed",
+                      "description": "If `true`, messages received on a channel will contain a unique `timeserial` that can be referenced by later messages for use with message interactions."
+                    },
+                    "name": "expose_timeserial"
+                  },
+                  {
+                    "name": "id",
+                    "string": {
+                      "computed_optional_required": "computed",
+                      "description": "The namespace or channel name that the channel rule will apply to. For example, if you specify `namespace` the namespace will be set to `namespace` and will match with channels `namespace:*` and `namespace`."
+                    }
+                  },
+                  {
+                    "int64": {
+                      "computed_optional_required": "computed",
+                      "description": "Unix timestamp representing the date and time of last modification of the namespace."
+                    },
+                    "name": "modified"
+                  },
+                  {
+                    "bool": {
+                      "computed_optional_required": "computed",
+                      "description": "If `true`, messages published on channels within this namespace can be updated or deleted after publishing. See the \u003ca href=\"https://ably.com/docs/messages#update\"\u003emessage interactions\u003c/a\u003e documentation for more details."
+                    },
+                    "name": "mutable_messages"
+                  },
+                  {
+                    "bool": {
+                      "computed_optional_required": "computed",
+                      "description": "If `true`, the last message published on a channel will be stored for 365 days. You can access the stored message only by using the channel rewind mechanism and attaching with rewind=1. Please note that for each message stored, an additional message is deducted from your monthly allocation."
+                    },
+                    "name": "persist_last"
+                  },
+                  {
+                    "bool": {
+                      "computed_optional_required": "computed",
+                      "description": "If `true`, all messages on a channel will be stored for 24 hours. You can access stored messages via the History API. Please note that for each message stored, an additional message is deducted from your monthly allocation."
+                    },
+                    "name": "persisted"
+                  },
+                  {
+                    "bool": {
+                      "computed_optional_required": "computed",
+                      "description": "If `true`, channels within this namespace are included in the channel registry, enabling channel enumeration via the \u003ca href=\"https://ably.com/docs/metadata-stats/metadata/subscribe#channel-lifecycle\"\u003eChannel Metadata API\u003c/a\u003e."
+                    },
+                    "name": "populate_channel_registry"
+                  },
+                  {
+                    "bool": {
+                      "computed_optional_required": "computed",
+                      "description": "If `true`, publishing messages with a push payload in the extras field is permitted and can trigger the delivery of a native push notification to registered devices for the channel."
+                    },
+                    "name": "push_enabled"
+                  },
+                  {
+                    "bool": {
+                      "computed_optional_required": "computed",
+                      "description": "If `true`, only clients that are connected using TLS will be permitted to subscribe to any channels within this namespace."
+                    },
+                    "name": "tls_only"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "queues",
+      "schema": {
+        "attributes": [
+          {
+            "name": "app_id",
+            "string": {
+              "computed_optional_required": "required",
+              "description": "The application ID."
+            }
+          },
+          {
+            "name": "queues",
+            "set_nested": {
+              "computed_optional_required": "computed",
+              "nested_object": {
+                "attributes": [
+                  {
+                    "name": "amqp",
+                    "single_nested": {
+                      "attributes": [
+                        {
+                          "name": "queue_name",
+                          "string": {
+                            "computed_optional_required": "computed",
+                            "description": "Name of the Ably queue."
+                          }
+                        },
+                        {
+                          "name": "uri",
+                          "string": {
+                            "computed_optional_required": "computed",
+                            "description": "URI for the AMQP queue interface."
+                          }
+                        }
+                      ],
+                      "computed_optional_required": "computed"
+                    }
+                  },
+                  {
+                    "name": "app_id",
+                    "string": {
+                      "computed_optional_required": "computed",
+                      "description": "The Ably application ID."
+                    }
+                  },
+                  {
+                    "bool": {
+                      "computed_optional_required": "computed",
+                      "description": "A boolean that indicates whether this is a dead letter queue or not."
+                    },
+                    "name": "deadletter"
+                  },
+                  {
+                    "name": "deadletter_id",
+                    "string": {
+                      "computed_optional_required": "computed",
+                      "description": "The ID of the dead letter queue."
+                    }
+                  },
+                  {
+                    "name": "id",
+                    "string": {
+                      "computed_optional_required": "computed",
+                      "description": "The ID of the Ably queue"
+                    }
+                  },
+                  {
+                    "int64": {
+                      "computed_optional_required": "computed",
+                      "description": "Message limit in number of messages."
+                    },
+                    "name": "max_length"
+                  },
+                  {
+                    "name": "messages",
+                    "single_nested": {
+                      "attributes": [
+                        {
+                          "int64": {
+                            "computed_optional_required": "computed",
+                            "description": "The number of ready messages in the queue."
+                          },
+                          "name": "ready"
+                        },
+                        {
+                          "int64": {
+                            "computed_optional_required": "computed",
+                            "description": "The total number of messages in the queue."
+                          },
+                          "name": "total"
+                        },
+                        {
+                          "int64": {
+                            "computed_optional_required": "computed",
+                            "description": "The number of unacknowledged messages in the queue."
+                          },
+                          "name": "unacknowledged"
+                        }
+                      ],
+                      "computed_optional_required": "computed",
+                      "description": "Details of messages in the queue."
+                    }
+                  },
+                  {
+                    "name": "name",
+                    "string": {
+                      "computed_optional_required": "computed",
+                      "description": "The friendly name of the queue."
+                    }
+                  },
+                  {
+                    "name": "region",
+                    "string": {
+                      "computed_optional_required": "computed",
+                      "description": "The data center region for the queue."
+                    }
+                  },
+                  {
+                    "name": "state",
+                    "string": {
+                      "computed_optional_required": "computed",
+                      "description": "The current state of the queue."
+                    }
+                  },
+                  {
+                    "name": "stats",
+                    "single_nested": {
+                      "attributes": [
+                        {
+                          "name": "acknowledgement_rate",
+                          "number": {
+                            "computed_optional_required": "computed",
+                            "description": "The rate at which messages are acknowledged. Rate is messages per minute."
+                          }
+                        },
+                        {
+                          "name": "delivery_rate",
+                          "number": {
+                            "computed_optional_required": "computed",
+                            "description": "The rate at which messages are delivered from the queue. Rate is messages per minute."
+                          }
+                        },
+                        {
+                          "name": "publish_rate",
+                          "number": {
+                            "computed_optional_required": "computed",
+                            "description": "The rate at which messages are published to the queue. Rate is messages per minute."
+                          }
+                        }
+                      ],
+                      "computed_optional_required": "computed"
+                    }
+                  },
+                  {
+                    "name": "stomp",
+                    "single_nested": {
+                      "attributes": [
+                        {
+                          "name": "destination",
+                          "string": {
+                            "computed_optional_required": "computed",
+                            "description": "Destination queue."
+                          }
+                        },
+                        {
+                          "name": "host",
+                          "string": {
+                            "computed_optional_required": "computed",
+                            "description": "The host type for the queue."
+                          }
+                        },
+                        {
+                          "name": "uri",
+                          "string": {
+                            "computed_optional_required": "computed",
+                            "description": "URI for the STOMP queue interface."
+                          }
+                        }
+                      ],
+                      "computed_optional_required": "computed"
+                    }
+                  },
+                  {
+                    "int64": {
+                      "computed_optional_required": "computed",
+                      "description": "TTL in minutes."
+                    },
+                    "name": "ttl"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
   "provider": {
     "name": "ably"
   },
