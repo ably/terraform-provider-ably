@@ -456,6 +456,17 @@ func (f *fakeControlAPI) createRule(w http.ResponseWriter, r *http.Request) {
 			t["format"] = "json"
 		}
 	}
+	// Before-publish AWS Lambda rules get a source whether or not one was sent:
+	// the real API assigns {"type": "chat.message"} when it is omitted (verified
+	// against staging, 2026-08-17). Mirroring it is worth the exception to this
+	// fake's echo-only rule, because the provider has to keep that value stable
+	// across plans, and without it here nothing catches a regression until a
+	// staging run does.
+	if body["ruleType"] == "aws/lambda/before-publish" {
+		if _, has := body["source"]; !has {
+			body["source"] = map[string]any{"type": "chat.message"}
+		}
+	}
 	if f.rules[appID] == nil {
 		f.rules[appID] = map[string]record{}
 	}

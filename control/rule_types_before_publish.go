@@ -71,7 +71,11 @@ type BeforePublishWebhookRulePatch struct {
 // this source itself when a rule is created without one.
 //
 // None of that is in the published spec, which $refs rule_source here; all of it
-// was found against staging (2026-08-17). See INF-7992.
+// was found against staging (2026-08-17).
+//
+// TODO(INF-7992): revisit once the spec documents chat_message_rule_source. The
+// type stays either way, but its name should match whatever the spec settles on,
+// and the comment below can shrink to a pointer at the docs.
 type ChatMessageRuleSource struct {
 	Type string `json:"type"`
 }

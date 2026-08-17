@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -128,6 +129,9 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 				Computed:            true,
 				Description:         "The source of messages this rule applies to. Optional: the Control API assigns a default source when it is omitted.",
 				MarkdownDescription: "The source of messages this rule applies to. Optional: the Control API assigns a default source when it is omitted.",
+				PlanModifiers: []planmodifier.Object{
+					objectplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"status": schema.StringAttribute{
 				Optional:            true,

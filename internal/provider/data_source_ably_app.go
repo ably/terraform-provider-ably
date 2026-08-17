@@ -73,6 +73,9 @@ func appDataSourceModel(app control.AppResponse) AblyAppDataSourceModel {
 // The generated schema models the API's self link as a typed nested object. It is
 // no use to anyone in Terraform, so both app data sources drop it rather than
 // carry it in their models.
+//
+// TODO(INF-7992): delete this strip once the spec marks _links opaque or omits
+// it.
 func appsDataSourceSchema(ctx context.Context) schema.Schema {
 	s := datasource_apps.AppsDataSourceSchema(ctx)
 	stripSetNestedCustomTypes(&s, "apps")

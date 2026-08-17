@@ -1857,7 +1857,19 @@
                 }
               ],
               "computed_optional_required": "computed_optional",
-              "description": "The source of messages this rule applies to. Optional: the Control API assigns a default source when it is omitted."
+              "description": "The source of messages this rule applies to. Optional: the Control API assigns a default source when it is omitted.",
+              "plan_modifiers": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
+                      }
+                    ],
+                    "schema_definition": "objectplanmodifier.UseStateForUnknown()"
+                  }
+                }
+              ]
             }
           },
           {
