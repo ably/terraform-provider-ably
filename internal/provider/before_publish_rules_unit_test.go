@@ -323,7 +323,7 @@ func TestGetPlanBeforePublishLambdaPost_AuthModes(t *testing.T) {
 	}
 
 	plan := sampleBeforePublishLambdaPlan()
-	plan.Source = nil
+	plan.Source = types.ObjectNull(beforePublishLambdaSourceAttrTypes)
 	plan.Target.Authentication = &AblyRuleBeforePublishLambdaAuth{
 		AuthenticationMode: types.StringValue("assumeRole"),
 		AssumeRoleArn:      types.StringValue("arn:aws:iam::123456789012:role/ably-moderation"),
@@ -415,6 +415,20 @@ func TestGetBeforePublishLambdaResponse_PreservesSecret(t *testing.T) {
 	}
 }
 
+// sampleBeforePublishLambdaSource returns the source block as Terraform holds
+// it. chat.message is the only value the API accepts for a before-publish rule
+// (see the source override in codegen/ruletypesgen).
+func sampleBeforePublishLambdaSource() types.Object {
+	source, diags := types.ObjectValueFrom(context.Background(), beforePublishLambdaSourceAttrTypes, AblyRuleSource{
+		ChannelFilter: types.StringValue("^room:"),
+		Type:          types.StringValue("chat.message"),
+	})
+	if diags.HasError() {
+		panic(diags.Errors()[0].Detail())
+	}
+	return source
+}
+
 // sampleBeforePublishLambdaPlan returns a credentials-mode Lambda plan.
 func sampleBeforePublishLambdaPlan() AblyRuleBeforePublishLambda {
 	return AblyRuleBeforePublishLambda{
@@ -423,10 +437,7 @@ func sampleBeforePublishLambdaPlan() AblyRuleBeforePublishLambda {
 		Status:              types.StringValue("enabled"),
 		InvocationMode:      types.StringValue("BEFORE_PUBLISH"),
 		BeforePublishConfig: sampleBeforePublishConfig(),
-		Source: &AblyRuleSource{
-			ChannelFilter: types.StringValue("^room:"),
-			Type:          types.StringValue("channel.message"),
-		},
+		Source:              sampleBeforePublishLambdaSource(),
 		Target: &AblyRuleBeforePublishLambdaTarget{
 			Region:       types.StringValue("us-west-1"),
 			FunctionName: types.StringValue("my-moderation-function"),

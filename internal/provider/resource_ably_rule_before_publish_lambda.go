@@ -7,9 +7,11 @@ import (
 
 	"github.com/ably/terraform-provider-ably/control"
 	"github.com/ably/terraform-provider-ably/internal/provider/codegen/resource_rule_before_publish_lambda"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 // beforePublishLambdaRuleType is the Control API discriminator for
@@ -45,14 +47,17 @@ type AblyRuleBeforePublishLambdaTarget struct {
 // still has no `request_mode`, so it does not use the AblyRule plumbing; see
 // before_publish_rules.go.
 type AblyRuleBeforePublishLambda struct {
-	ID                  types.String                       `tfsdk:"id"`
-	AppID               types.String                       `tfsdk:"app_id"`
-	Status              types.String                       `tfsdk:"status"`
-	InvocationMode      types.String                       `tfsdk:"invocation_mode"`
-	ChatRoomFilter      types.String                       `tfsdk:"chat_room_filter"`
-	BeforePublishConfig *AblyBeforePublishConfig           `tfsdk:"before_publish_config"`
-	Source              *AblyRuleSource                    `tfsdk:"source"`
-	Target              *AblyRuleBeforePublishLambdaTarget `tfsdk:"target"`
+	ID                  types.String             `tfsdk:"id"`
+	AppID               types.String             `tfsdk:"app_id"`
+	Status              types.String             `tfsdk:"status"`
+	InvocationMode      types.String             `tfsdk:"invocation_mode"`
+	ChatRoomFilter      types.String             `tfsdk:"chat_room_filter"`
+	BeforePublishConfig *AblyBeforePublishConfig `tfsdk:"before_publish_config"`
+	// Source is types.Object rather than a plain struct because the API defaults
+	// it: the schema is Optional AND Computed, so an omitted block reaches the
+	// provider as unknown, which a *AblyRuleSource cannot represent.
+	Source types.Object                       `tfsdk:"source"`
+	Target *AblyRuleBeforePublishLambdaTarget `tfsdk:"target"`
 }
 
 type ResourceRuleBeforePublishLambda struct {
@@ -125,14 +130,30 @@ func beforePublishLambdaAuthPost(auth *AblyRuleBeforePublishLambdaAuth) control.
 	return control.AWSAuthentication{}
 }
 
+// beforePublishLambdaSourceAttrTypes is the attribute type map of the source
+// block, needed to build its object value.
+var beforePublishLambdaSourceAttrTypes = map[string]attr.Type{
+	"channel_filter": types.StringType,
+	"type":           types.StringType,
+}
+
 // getPlanBeforePublishLambdaPost converts the plan model into the Control API
 // create body.
-func getPlanBeforePublishLambdaPost(_ context.Context, plan AblyRuleBeforePublishLambda) (any, diag.Diagnostics) {
+func getPlanBeforePublishLambdaPost(ctx context.Context, plan AblyRuleBeforePublishLambda) (any, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	// An omitted source is unknown, not null, because the API assigns a default
+	// one. Either way we send nothing and let the API decide.
 	var source *control.RuleSource
-	if plan.Source != nil {
+	if !plan.Source.IsNull() && !plan.Source.IsUnknown() {
+		var planSource AblyRuleSource
+		diags.Append(plan.Source.As(ctx, &planSource, basetypes.ObjectAsOptions{})...)
+		if diags.HasError() {
+			return nil, diags
+		}
 		source = &control.RuleSource{
-			ChannelFilter: plan.Source.ChannelFilter.ValueString(),
-			Type:          plan.Source.Type.ValueString(),
+			ChannelFilter: planSource.ChannelFilter.ValueString(),
+			Type:          planSource.Type.ValueString(),
 		}
 	}
 
@@ -148,7 +169,7 @@ func getPlanBeforePublishLambdaPost(_ context.Context, plan AblyRuleBeforePublis
 			FunctionName:   plan.Target.FunctionName.ValueString(),
 			Authentication: beforePublishLambdaAuthPost(plan.Target.Authentication),
 		},
-	}, nil
+	}, diags
 }
 
 // beforePublishLambdaAuthResponse maps the API's authentication object back onto
@@ -192,7 +213,7 @@ func beforePublishLambdaAuthResponse(auth control.AWSAuthentication, prior *Ably
 
 // getBeforePublishLambdaResponse maps an API rule response back onto the tfsdk
 // model, using the plan or prior state for the write-only secret_access_key.
-func getBeforePublishLambdaResponse(_ context.Context, rule *control.RuleResponse, prior *AblyRuleBeforePublishLambda) (AblyRuleBeforePublishLambda, diag.Diagnostics) {
+func getBeforePublishLambdaResponse(ctx context.Context, rule *control.RuleResponse, prior *AblyRuleBeforePublishLambda) (AblyRuleBeforePublishLambda, diag.Diagnostics) {
 	diags := checkRuleType(rule, beforePublishLambdaRuleType)
 	if diags.HasError() {
 		return AblyRuleBeforePublishLambda{}, diags
@@ -209,11 +230,18 @@ func getBeforePublishLambdaResponse(_ context.Context, rule *control.RuleRespons
 		priorAuth = prior.Target.Authentication
 	}
 
-	var source *AblyRuleSource
+	// The API returns a source whether or not one was sent, so this is normally
+	// the value it assigned. It stays null only where the API omits it.
+	source := types.ObjectNull(beforePublishLambdaSourceAttrTypes)
 	if rule.Source != nil {
-		source = &AblyRuleSource{
+		var sourceDiags diag.Diagnostics
+		source, sourceDiags = types.ObjectValueFrom(ctx, beforePublishLambdaSourceAttrTypes, AblyRuleSource{
 			ChannelFilter: types.StringValue(rule.Source.ChannelFilter),
 			Type:          types.StringValue(rule.Source.Type),
+		})
+		diags.Append(sourceDiags...)
+		if diags.HasError() {
+			return AblyRuleBeforePublishLambda{}, diags
 		}
 	}
 

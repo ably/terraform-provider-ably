@@ -24,6 +24,11 @@ resource "ably_rule_before_publish_lambda" "rule0" {
     failed_action            = "PUBLISH"
     too_many_requests_action = "RETRY"
   }
+  # Optional: the Control API assigns a default source if you leave this out.
+  source = {
+    channel_filter = "^room:"
+    type           = "chat.message"
+  }
   target = {
     region        = "us-west-1"
     function_name = "my-moderation-function"
@@ -49,7 +54,7 @@ resource "ably_rule_before_publish_lambda" "rule0" {
 
 - `chat_room_filter` (String) A regular expression that filters messages based on the chat room ID. Only messages matching this pattern will trigger the rule.
 - `invocation_mode` (String) The invocation mode for this rule. Before-publish rules are invoked before a message is published.
-- `source` (Attributes) (see [below for nested schema](#nestedatt--source))
+- `source` (Attributes) The source of messages this rule applies to. Optional: the Control API assigns a default source when it is omitted. (see [below for nested schema](#nestedatt--source))
 - `status` (String) The status of the rule. Rules can be enabled or disabled.
 
 ### Read-Only
@@ -97,4 +102,4 @@ Optional:
 Required:
 
 - `channel_filter` (String) This field allows you to filter your rule based on a regular expression that is matched against the complete channel name. Leave this empty if you want the rule to apply to all channels.
-- `type` (String) Ably currently supports the following sources for all rule types, in both single and batch mode: `channel.message`, `channel.presence`, `channel.lifecycle` and `channel.occupancy`. If the source `channel.message` is selected, you receive notifications when messages are published on a channel. If the source `channel.presence` is selected, you receive notifications of presence events when clients enter, update their data, or leave channels. If the source `channel.lifecycle` is selected, you receive notifications of channel lifecycle events, such as when a channel is created (following the first client attaching to this channel) or discarded (when there are no more clients attached to the channel). If the source `channel.occupancy` is selected, you receive notifications of occupancy events, which relate to the number and type of occupants in the channel.
+- `type` (String) The source type. Before-publish rules act on chat messages, so `chat.message` is the only supported value.

@@ -117,10 +117,10 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 					},
 					"type": schema.StringAttribute{
 						Required:            true,
-						Description:         "Ably currently supports the following sources for all rule types, in both single and batch mode: `channel.message`, `channel.presence`, `channel.lifecycle` and `channel.occupancy`. If the source `channel.message` is selected, you receive notifications when messages are published on a channel. If the source `channel.presence` is selected, you receive notifications of presence events when clients enter, update their data, or leave channels. If the source `channel.lifecycle` is selected, you receive notifications of channel lifecycle events, such as when a channel is created (following the first client attaching to this channel) or discarded (when there are no more clients attached to the channel). If the source `channel.occupancy` is selected, you receive notifications of occupancy events, which relate to the number and type of occupants in the channel.",
-						MarkdownDescription: "Ably currently supports the following sources for all rule types, in both single and batch mode: `channel.message`, `channel.presence`, `channel.lifecycle` and `channel.occupancy`. If the source `channel.message` is selected, you receive notifications when messages are published on a channel. If the source `channel.presence` is selected, you receive notifications of presence events when clients enter, update their data, or leave channels. If the source `channel.lifecycle` is selected, you receive notifications of channel lifecycle events, such as when a channel is created (following the first client attaching to this channel) or discarded (when there are no more clients attached to the channel). If the source `channel.occupancy` is selected, you receive notifications of occupancy events, which relate to the number and type of occupants in the channel.",
+						Description:         "The source type. Before-publish rules act on chat messages, so `chat.message` is the only supported value.",
+						MarkdownDescription: "The source type. Before-publish rules act on chat messages, so `chat.message` is the only supported value.",
 						Validators: []validator.String{
-							stringvalidator.LengthAtLeast(1),
+							stringvalidator.OneOf("chat.message"),
 						},
 					},
 				},
@@ -129,7 +129,10 @@ func RuleBeforePublishLambdaResourceSchema(ctx context.Context) schema.Schema {
 						AttrTypes: SourceValue{}.AttributeTypes(ctx),
 					},
 				},
-				Optional: true,
+				Optional:            true,
+				Computed:            true,
+				Description:         "The source of messages this rule applies to. Optional: the Control API assigns a default source when it is omitted.",
+				MarkdownDescription: "The source of messages this rule applies to. Optional: the Control API assigns a default source when it is omitted.",
 			},
 			"status": schema.StringAttribute{
 				Optional:            true,

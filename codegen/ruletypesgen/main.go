@@ -88,6 +88,7 @@ type customExpr struct {
 // express. Keyed by snake_case attribute name (top-level or nested).
 type override struct {
 	mode          string // overrides computed_optional_required when set
+	description   string // overrides the spec-sourced description when set
 	staticDefault any    // sets a static default when non-nil
 	allowEmpty    bool   // suppresses the LengthAtLeast(1) validator
 	validators    []customExpr
@@ -125,6 +126,34 @@ var attrOverrides = map[string]override{
 	// (verified against the live API, 2026-07-20: create with "" and update
 	// non-empty -> "" both persist and read back as "").
 	"channel_filter": {allowEmpty: true},
+	// Before-publish AWS Lambda is the only generated rule that takes a source,
+	// and the API does not treat it like the webhook/firehose source whose spec
+	// schema it shares ($ref: rule_source). Two differences, both found on
+	// staging (2026-08-17) and neither documented:
+	//
+	//  1. The API defaults the source when you omit it, reading back as
+	//     chat.message with an empty channel filter. Optional alone therefore
+	//     fails with "produced inconsistent result after apply: .source: was
+	//     null, but now ...", so it has to be computed as well.
+	//  2. It validates type against a chat-specific enum, rejecting
+	//     channel.message with `"channel.message" isn't part of the enum in
+	//     #/components/schemas/chat_message_rule_source`. That schema does not
+	//     exist anywhere in the spec, so there is no enum to generate from and
+	//     the inherited rule_source description (which tells you to use
+	//     channel.message) is actively wrong.
+	//
+	// Both overrides go away once ably/docs documents the real schema; see
+	// INF-7992. chat.message is the only value verified to work, so it is the
+	// only one allowed: being too permissive here just moves the failure to
+	// apply time, which is what this validator exists to prevent.
+	"source": {
+		mode:        "computed_optional",
+		description: "The source of messages this rule applies to. Optional: the Control API assigns a default source when it is omitted.",
+	},
+	"type": {
+		description: "The source type. Before-publish rules act on chat messages, so `chat.message` is the only supported value.",
+		validators:  []customExpr{{[]string{pkgStringValidator}, `stringvalidator.OneOf("chat.message")`}},
+	},
 }
 
 // applyOverride mutates an attribute's type map with any configured metadata.
@@ -135,6 +164,9 @@ func applyOverride(name string, m map[string]any) {
 	}
 	if ov.mode != "" {
 		m["computed_optional_required"] = ov.mode
+	}
+	if ov.description != "" {
+		m["description"] = ov.description
 	}
 	if ov.staticDefault != nil {
 		m["default"] = map[string]any{"static": ov.staticDefault}
@@ -389,6 +421,10 @@ func attrsFromStruct(t reflect.Type, props map[string]any) []map[string]any {
 			if desc != "" {
 				sn["description"] = desc
 			}
+			// Nested blocks take overrides too: a block the API defaults has to be
+			// computed as well as optional, which the Go type cannot express (see
+			// the source entry in attrOverrides).
+			applyOverride(name, sn)
 			attr["single_nested"] = sn
 		case reflect.Slice:
 			elem := ft.Elem()
