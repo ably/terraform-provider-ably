@@ -5,11 +5,22 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/ably/terraform-provider-ably/control"
+
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccAblyRuleBeforePublishWebhook(t *testing.T) {
+	skipIfRuleTypeUnavailable(t, beforePublishWebhookRuleType, control.BeforePublishWebhookRulePost{
+		RuleType:            beforePublishWebhookRuleType,
+		InvocationMode:      "BEFORE_PUBLISH",
+		BeforePublishConfig: beforePublishProbeConfig(),
+		Target: control.BeforePublishWebhookTarget{
+			URL: "https://example.com/moderate",
+		},
+	})
+
 	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
 	updateAppName := "acc-test-" + appName
 

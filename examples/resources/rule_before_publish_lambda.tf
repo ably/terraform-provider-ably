@@ -9,6 +9,11 @@ resource "ably_rule_before_publish_lambda" "rule0" {
     failed_action            = "PUBLISH"
     too_many_requests_action = "RETRY"
   }
+  # Optional: the Control API assigns a default source if you leave this out.
+  source = {
+    channel_filter = "^room:"
+    type           = "chat.message"
+  }
   target = {
     region        = "us-west-1"
     function_name = "my-moderation-function"

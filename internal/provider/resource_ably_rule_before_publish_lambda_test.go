@@ -3,13 +3,31 @@ package provider
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 	"testing"
+
+	"github.com/ably/terraform-provider-ably/control"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccAblyRuleBeforePublishLambda(t *testing.T) {
+	skipIfRuleTypeUnavailable(t, beforePublishLambdaRuleType, control.BeforePublishAWSLambdaRulePost{
+		RuleType:            beforePublishLambdaRuleType,
+		InvocationMode:      "BEFORE_PUBLISH",
+		BeforePublishConfig: beforePublishProbeConfig(),
+		Target: control.BeforePublishAWSLambdaTarget{
+			Region:       "us-west-1",
+			FunctionName: "my-moderation-function",
+			Authentication: control.AWSAuthentication{
+				AuthenticationMode: string(control.AWSAuthModeAssumeRole),
+				AssumeRoleArn:      "arn:aws:iam::123456789012:role/ably-moderation",
+			},
+		},
+	})
+
 	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
 	updateAppName := "acc-test-" + appName
 
@@ -60,6 +78,20 @@ func TestAccAblyRuleBeforePublishLambda(t *testing.T) {
 // assumeRole sends only the ARN, and the credentials attributes must be absent
 // from state rather than empty strings.
 func TestAccAblyRuleBeforePublishLambdaAssumeRole(t *testing.T) {
+	skipIfRuleTypeUnavailable(t, beforePublishLambdaRuleType, control.BeforePublishAWSLambdaRulePost{
+		RuleType:            beforePublishLambdaRuleType,
+		InvocationMode:      "BEFORE_PUBLISH",
+		BeforePublishConfig: beforePublishProbeConfig(),
+		Target: control.BeforePublishAWSLambdaTarget{
+			Region:       "us-west-1",
+			FunctionName: "my-moderation-function",
+			Authentication: control.AWSAuthentication{
+				AuthenticationMode: string(control.AWSAuthModeAssumeRole),
+				AssumeRoleArn:      "arn:aws:iam::123456789012:role/ably-moderation",
+			},
+		},
+	})
+
 	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
 
 	resource.Test(t, resource.TestCase{
@@ -74,6 +106,32 @@ func TestAccAblyRuleBeforePublishLambdaAssumeRole(t *testing.T) {
 					resource.TestCheckNoResourceAttr("ably_rule_before_publish_lambda.rule0", "target.authentication.access_key_id"),
 					resource.TestCheckNoResourceAttr("ably_rule_before_publish_lambda.rule0", "target.authentication.secret_access_key"),
 				),
+			},
+		},
+	})
+}
+
+// TestAccAblyRuleBeforePublishLambdaRejectsWebhookSource pins the source type at
+// plan time. This rule shares its spec schema with the webhook/firehose source,
+// whose documented values are channel.message and friends, but the API validates
+// it against an undocumented chat-specific enum and rejects channel.message
+// outright. The hermetic fake echoes whatever it is sent, so nothing but a
+// plan-time validator catches this before a real apply does.
+func TestAccAblyRuleBeforePublishLambdaRejectsWebhookSource(t *testing.T) {
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: strings.Replace(
+					testAccAblyRuleBeforePublishLambdaConfig(appName, "us-west-1", "my-moderation-function"),
+					`type           = "chat.message"`,
+					`type           = "channel.message"`,
+					1,
+				),
+				ExpectError: regexp.MustCompile(`value must be one of: \["chat.message"\]`),
 			},
 		},
 	})
@@ -110,7 +168,7 @@ resource "ably_rule_before_publish_lambda" "rule0" {
 	}
 	source = {
 		channel_filter = "^room:"
-		type           = "channel.message"
+		type           = "chat.message"
 	}
 	target = {
 		region        = %[2]q
