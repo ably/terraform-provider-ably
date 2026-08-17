@@ -7,7 +7,7 @@ toolchain go1.26.5
 require (
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/stretchr/testify v1.11.1
-	software.sslmate.com/src/go-pkcs12 v0.7.0
+	software.sslmate.com/src/go-pkcs12 v0.7.2
 )
 
 require (
