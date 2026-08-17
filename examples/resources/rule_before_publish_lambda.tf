@@ -11,8 +11,7 @@ resource "ably_rule_before_publish_lambda" "rule0" {
   }
   # Optional: the Control API assigns a default source if you leave this out.
   source = {
-    channel_filter = "^room:"
-    type           = "chat.message"
+    type = "chat.message"
   }
   target = {
     region        = "us-west-1"

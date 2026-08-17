@@ -63,6 +63,19 @@ type BeforePublishWebhookRulePatch struct {
 // Before-Publish AWS Lambda (ruleType: "aws/lambda/before-publish")
 // ---------------------------------------------------------------------------
 
+// ChatMessageRuleSource is the source for before-publish rules. It is NOT the
+// webhook/firehose RuleSource: the API validates it against its own schema
+// (#/components/schemas/chat_message_rule_source), which carries only a type and
+// rejects a channelFilter outright with "does not define properties:
+// channelFilter". The only accepted type is "chat.message", and the API assigns
+// this source itself when a rule is created without one.
+//
+// None of that is in the published spec, which $refs rule_source here; all of it
+// was found against staging (2026-08-17). See INF-7992.
+type ChatMessageRuleSource struct {
+	Type string `json:"type"`
+}
+
 // BeforePublishAWSLambdaTarget is the target configuration for before-publish AWS Lambda rules.
 type BeforePublishAWSLambdaTarget struct {
 	Region         string            `json:"region"`
@@ -77,7 +90,7 @@ type BeforePublishAWSLambdaRulePost struct {
 	BeforePublishConfig BeforePublishConfig          `json:"beforePublishConfig"`
 	InvocationMode      string                       `json:"invocationMode"`
 	ChatRoomFilter      string                       `json:"chatRoomFilter,omitempty"`
-	Source              *RuleSource                  `json:"source,omitempty"`
+	Source              *ChatMessageRuleSource       `json:"source,omitempty"`
 	Target              BeforePublishAWSLambdaTarget `json:"target"`
 }
 
@@ -96,6 +109,6 @@ type BeforePublishAWSLambdaRulePatch struct {
 	BeforePublishConfig *BeforePublishConfigPatch          `json:"beforePublishConfig,omitempty"`
 	InvocationMode      string                             `json:"invocationMode,omitempty"`
 	ChatRoomFilter      string                             `json:"chatRoomFilter,omitempty"`
-	Source              *RuleSource                        `json:"source,omitempty"`
+	Source              *ChatMessageRuleSource             `json:"source,omitempty"`
 	Target              *BeforePublishAWSLambdaTargetPatch `json:"target,omitempty"`
 }

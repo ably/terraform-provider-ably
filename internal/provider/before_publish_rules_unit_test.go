@@ -419,9 +419,8 @@ func TestGetBeforePublishLambdaResponse_PreservesSecret(t *testing.T) {
 // it. chat.message is the only value the API accepts for a before-publish rule
 // (see the source override in codegen/ruletypesgen).
 func sampleBeforePublishLambdaSource() types.Object {
-	source, diags := types.ObjectValueFrom(context.Background(), beforePublishLambdaSourceAttrTypes, AblyRuleSource{
-		ChannelFilter: types.StringValue("^room:"),
-		Type:          types.StringValue("chat.message"),
+	source, diags := types.ObjectValueFrom(context.Background(), beforePublishLambdaSourceAttrTypes, AblyChatMessageSource{
+		Type: types.StringValue("chat.message"),
 	})
 	if diags.HasError() {
 		panic(diags.Errors()[0].Detail())

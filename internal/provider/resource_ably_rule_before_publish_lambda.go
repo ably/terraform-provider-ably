@@ -130,11 +130,17 @@ func beforePublishLambdaAuthPost(auth *AblyRuleBeforePublishLambdaAuth) control.
 	return control.AWSAuthentication{}
 }
 
+// AblyChatMessageSource is the tfsdk model for a before-publish rule's source.
+// It carries only a type: the API's chat source schema has no channel filter (see
+// control.ChatMessageRuleSource).
+type AblyChatMessageSource struct {
+	Type types.String `tfsdk:"type"`
+}
+
 // beforePublishLambdaSourceAttrTypes is the attribute type map of the source
 // block, needed to build its object value.
 var beforePublishLambdaSourceAttrTypes = map[string]attr.Type{
-	"channel_filter": types.StringType,
-	"type":           types.StringType,
+	"type": types.StringType,
 }
 
 // getPlanBeforePublishLambdaPost converts the plan model into the Control API
@@ -144,17 +150,14 @@ func getPlanBeforePublishLambdaPost(ctx context.Context, plan AblyRuleBeforePubl
 
 	// An omitted source is unknown, not null, because the API assigns a default
 	// one. Either way we send nothing and let the API decide.
-	var source *control.RuleSource
+	var source *control.ChatMessageRuleSource
 	if !plan.Source.IsNull() && !plan.Source.IsUnknown() {
-		var planSource AblyRuleSource
+		var planSource AblyChatMessageSource
 		diags.Append(plan.Source.As(ctx, &planSource, basetypes.ObjectAsOptions{})...)
 		if diags.HasError() {
 			return nil, diags
 		}
-		source = &control.RuleSource{
-			ChannelFilter: planSource.ChannelFilter.ValueString(),
-			Type:          planSource.Type.ValueString(),
-		}
+		source = &control.ChatMessageRuleSource{Type: planSource.Type.ValueString()}
 	}
 
 	return control.BeforePublishAWSLambdaRulePost{
@@ -235,9 +238,8 @@ func getBeforePublishLambdaResponse(ctx context.Context, rule *control.RuleRespo
 	source := types.ObjectNull(beforePublishLambdaSourceAttrTypes)
 	if rule.Source != nil {
 		var sourceDiags diag.Diagnostics
-		source, sourceDiags = types.ObjectValueFrom(ctx, beforePublishLambdaSourceAttrTypes, AblyRuleSource{
-			ChannelFilter: types.StringValue(rule.Source.ChannelFilter),
-			Type:          types.StringValue(rule.Source.Type),
+		source, sourceDiags = types.ObjectValueFrom(ctx, beforePublishLambdaSourceAttrTypes, AblyChatMessageSource{
+			Type: types.StringValue(rule.Source.Type),
 		})
 		diags.Append(sourceDiags...)
 		if diags.HasError() {

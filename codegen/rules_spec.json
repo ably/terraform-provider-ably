@@ -1837,13 +1837,6 @@
             "single_nested": {
               "attributes": [
                 {
-                  "name": "channel_filter",
-                  "string": {
-                    "computed_optional_required": "required",
-                    "description": "This field allows you to filter your rule based on a regular expression that is matched against the complete channel name. Leave this empty if you want the rule to apply to all channels."
-                  }
-                },
-                {
                   "name": "type",
                   "string": {
                     "computed_optional_required": "required",

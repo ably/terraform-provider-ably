@@ -26,8 +26,7 @@ resource "ably_rule_before_publish_lambda" "rule0" {
   }
   # Optional: the Control API assigns a default source if you leave this out.
   source = {
-    channel_filter = "^room:"
-    type           = "chat.message"
+    type = "chat.message"
   }
   target = {
     region        = "us-west-1"
@@ -101,5 +100,4 @@ Optional:
 
 Required:
 
-- `channel_filter` (String) This field allows you to filter your rule based on a regular expression that is matched against the complete channel name. Leave this empty if you want the rule to apply to all channels.
 - `type` (String) The source type. Before-publish rules act on chat messages, so `chat.message` is the only supported value.
