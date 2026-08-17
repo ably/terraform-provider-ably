@@ -262,6 +262,12 @@ func (p *AblyProvider) Resources(context.Context) []func() resource.Resource {
 		func() resource.Resource { return ResourceRuleAMQP{p} },
 		func() resource.Resource { return ResourceRuleAMQPExternal{p} },
 		func() resource.Resource { return ResourceRuleBodyguard{p} },
+		func() resource.Resource { return ResourceRuleTisane{p} },
+		func() resource.Resource { return ResourceRuleAzureModeration{p} },
+		func() resource.Resource { return ResourceRuleHiveText{p} },
+		func() resource.Resource { return ResourceRuleHiveDashboard{p} },
+		func() resource.Resource { return ResourceRuleBeforePublishWebhook{p} },
+		func() resource.Resource { return ResourceRuleBeforePublishLambda{p} },
 		func() resource.Resource { return ResourceIngressRuleMongo{p} },
 		func() resource.Resource { return ResourceIngressRulePostgresOutbox{p} },
 	}
