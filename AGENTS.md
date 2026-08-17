@@ -1,9 +1,8 @@
 # Working in this repo (for AI agents)
 
 This is the Ably Terraform provider. It manages Ably resources (apps, keys,
-namespaces, queues, integration rules) via the Ably Control API. The provider's
-schema and model code is being moved onto code generation from the Control API
-spec; `CODEGEN_STRATEGY.md` explains the why, the decisions, and the plan.
+namespaces, queues, integration rules) via the Ably Control API. Its schema and
+model code is generated from the Control API's OpenAPI spec.
 
 ## The test loop (run this on every change)
 
@@ -28,31 +27,17 @@ CI also enforces `gofmt` and `go vet`, so keep `gofmt -l .` clean and
 
 ## Code generation
 
-Schema and model code is generated. Regenerate with:
+Schema and model code for resources and data sources is generated with `make
+generate`, and the output is committed under `internal/provider/codegen/`. **Do
+not hand-edit it**: change the inputs in `codegen/` and regenerate. Generation
+produces schema + model only, so **CRUD wiring to the control client is always
+hand-written**. The pipeline is described in `codegen/README.md`, and
+`DEVELOPMENT.md` has the runbooks for adding a rule or a data source and for
+porting a resource onto generated code.
 
-```sh
-make generate
-```
-
-Generated code lives under `internal/provider/codegen/` and **is committed; do
-not hand-edit it**. Change the inputs and regenerate:
-
-- Simple resources (app, namespace, queue) are generated from the vendored
-  OpenAPI spec `codegen/control-api.yaml` (sourced from the `ably/docs` repo).
-- Integration-rule families are generated from the in-repo `control` rule types
-  via `codegen/ruletypesgen`, with descriptions and metadata sourced from the
-  spec and an overrides table.
-
-Generation produces schema + model only. **CRUD wiring to the control client is
-always hand-written.**
-
-Step-by-step runbooks are in `DEVELOPMENT.md`:
-
-- "Adding a new integration rule"
-- "Porting a resource onto generated code" (reference example:
-  `internal/provider/resource_ably_rule_bodyguard.go`)
-
-and the pipeline details are in `codegen/README.md`.
+`internal/provider/spec_coverage_test.go` fails when the Control API spec carries
+rule types or operations the provider hasn't accounted for, so new API surface has
+to be a decision someone writes down rather than something we miss.
 
 ## The account exporter
 

@@ -66,11 +66,40 @@ stays hand-written.
 4. Write the resource shim in `internal/provider/` (see "Porting" below for the
    pattern): a `Schema()` that adopts the generated schema, the CRUD methods
    delegating to the `control` client, and `Metadata`/`ImportState`.
+   For a moderation or before-publish rule, take the shared plumbing in
+   `internal/provider/before_publish_rules.go` instead of writing CRUD by hand:
+   supply the model plus a create-body function and a response-mapping function,
+   and delegate the four CRUD methods to `beforePublishCRUD`. Reference example:
+   `resource_ably_rule_tisane.go`. Do **not** copy a webhook rule for these
+   families; the generic `AblyRule` plumbing bakes in `source` and
+   `request_mode`, which these rules do not have and the API rejects.
 5. Register the resource in `internal/provider/provider.go`.
 6. Add an example under `examples/resources/`, a template under
    `templates/resources/`, and run `tfplugindocs` to generate the doc.
 7. Add an acceptance test and a unit test for any preserve-from-plan / write-only
    handling. Run `make test`.
+
+## Adding a data source
+
+The Control API has no fetch-by-ID endpoint for apps, keys, namespaces or queues,
+only list endpoints, so every entity has a plural data source generated from its
+list response and a singular one that lists and filters locally.
+
+1. Add the read path to the `data_sources` block in `codegen/generator_config.yml`
+   and run `make generate`. That produces
+   `internal/provider/codegen/datasource_<name>/`.
+2. Write the data source in `internal/provider/data_source_ably_<entity>.go`:
+   a model mirroring the generated element attributes, the plural data source
+   adopting the generated schema, and the singular one built with
+   `elementAttributes` (see `data_sources.go`) so both serve the same generated
+   attribute set. Use `findOne` for the lookup: it enforces exactly one of
+   id/name and refuses to guess when a name matches more than one record.
+3. Register both in `DataSources()` in `internal/provider/provider.go`.
+4. Name them after the existing resource, not the spec. The key data sources are
+   `ably_api_key`/`ably_api_keys` because the resource is `ably_api_key`, and the
+   key permissions map is `capabilities` for the same reason.
+5. Add an example under `examples/data-sources/`, a template under
+   `templates/data-sources/`, run `tfplugindocs`, and add an acceptance test.
 
 ## Porting a resource onto generated code
 
