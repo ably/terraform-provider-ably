@@ -41,6 +41,18 @@ jobs:
       - name: Vet
         run: go vet ./...
 
+      # The generated schema/model code under internal/provider/codegen is
+      # committed, so it can silently drift from its inputs (the vendored spec and
+      # codegen/ruletypesgen). Regenerating here proves the committed output is
+      # what the inputs actually produce.
+      - name: Generated code is up to date
+        run: |
+          make generate
+          if ! git diff --exit-code; then
+            echo "::error::make generate produced a diff. Run it locally and commit the result."
+            exit 1
+          fi
+
       - name: Build
         run: |
           mkdir bin
