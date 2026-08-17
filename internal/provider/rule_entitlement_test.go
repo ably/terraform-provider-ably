@@ -21,6 +21,15 @@ import (
 // type (http/before-publish, 2026-08-17). The alternative to handling it is a
 // permanently red build, which teaches everyone to ignore the build.
 //
+// The remedy is in ably/website, not here. Rule-type availability is
+// `account.current_package.supported_webhooks_types`, a persisted array on
+// `package_histories`. Both before-publish types are already in
+// `default_supported_webhooks_types` in `config/config.yml`, so newly-provisioned
+// accounts get them; accounts created before they were added keep their old array
+// and need the data migration (`rake data_migrations:append_new_default_supported_webhooks_types`,
+// or the DX-530 pulsar task as precedent). Run that against staging and these
+// tests start covering the rule type on their own. Tracked in INF-7994.
+//
 // So the affected tests probe first and skip with a loud message if the rule type
 // isn't available. The probe is a real create against a throwaway app, so it
 // starts passing by itself the day the entitlement is added: no test is silently
