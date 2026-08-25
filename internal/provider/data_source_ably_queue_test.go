@@ -31,6 +31,10 @@ func TestAccAblyQueueDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr("data.ably_queue.by_id", "region", "us-east-1-a"),
 					resource.TestCheckResourceAttr("data.ably_queue.by_id", "ttl", "60"),
 					resource.TestCheckResourceAttrSet("data.ably_queue.by_id", "amqp.uri"),
+					// app_id is configured, so it has to come back as given rather
+					// than from the response, which may omit it.
+					resource.TestCheckResourceAttrPair(
+						"data.ably_queue.by_id", "app_id", "ably_app.app0", "id"),
 					resource.TestCheckResourceAttrPair(
 						"data.ably_queue.by_name", "id", "ably_queue.queue0", "id"),
 					resource.TestCheckResourceAttrSet("data.ably_queues.all", "queues.#"),

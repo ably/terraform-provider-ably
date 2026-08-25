@@ -27,6 +27,10 @@ func TestAccAblyNamespaceDataSource(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.ably_namespace.by_id", "id", "chat"),
 					resource.TestCheckResourceAttr("data.ably_namespace.by_id", "persisted", "true"),
+					// app_id is configured, so it has to come back as given rather
+					// than from the response, which may omit it.
+					resource.TestCheckResourceAttrPair(
+						"data.ably_namespace.by_id", "app_id", "ably_app.app0", "id"),
 					resource.TestCheckResourceAttr("data.ably_namespace.by_id", "identified", "true"),
 					resource.TestCheckResourceAttr("data.ably_namespace.by_id", "authenticated", "true"),
 					resource.TestCheckResourceAttr("data.ably_namespace.by_id", "expose_timeserial", "false"),

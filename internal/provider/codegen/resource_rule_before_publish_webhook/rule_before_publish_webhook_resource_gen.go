@@ -133,6 +133,7 @@ func RuleBeforePublishWebhookResourceSchema(ctx context.Context) schema.Schema {
 								},
 								"value": schema.StringAttribute{
 									Optional:            true,
+									Sensitive:           true,
 									Description:         "The value of the header.",
 									MarkdownDescription: "The value of the header.",
 									Validators: []validator.String{

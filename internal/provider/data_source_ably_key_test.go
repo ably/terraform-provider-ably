@@ -26,6 +26,10 @@ func TestAccAblyAPIKeyDataSource(t *testing.T) {
 						"data.ably_api_key.by_id", "id", "ably_api_key.key0", "id"),
 					resource.TestCheckResourceAttr("data.ably_api_key.by_id", "name", "key0"),
 					resource.TestCheckResourceAttr("data.ably_api_key.by_id", "capabilities.channel1.#", "2"),
+					// app_id is configured, so it has to come back as given rather
+					// than from the response, which may omit it.
+					resource.TestCheckResourceAttrPair(
+						"data.ably_api_key.by_id", "app_id", "ably_app.app0", "id"),
 					resource.TestCheckResourceAttrPair(
 						"data.ably_api_key.by_name", "id", "ably_api_key.key0", "id"),
 					resource.TestCheckResourceAttrSet("data.ably_api_keys.all", "keys.#"),

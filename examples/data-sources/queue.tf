@@ -8,7 +8,3 @@ output "events_queue_amqp_uri" {
   value     = data.ably_queue.events.amqp.uri
   sensitive = true
 }
-
-data "ably_queues" "all" {
-  app_id = data.ably_app.existing.id
-}

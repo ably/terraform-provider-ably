@@ -13,19 +13,13 @@ The `ably_queues` data source lists every queue in an Ably app, including queues
 ## Example Usage
 
 ```terraform
-# Look up a queue and use its AMQP connection details.
-data "ably_queue" "events" {
-  app_id = data.ably_app.existing.id
-  name   = "events"
-}
-
-output "events_queue_amqp_uri" {
-  value     = data.ably_queue.events.amqp.uri
-  sensitive = true
-}
-
+# Every queue in an app, with connection details and live message counts.
 data "ably_queues" "all" {
   app_id = data.ably_app.existing.id
+}
+
+output "queue_backlogs" {
+  value = { for queue in data.ably_queues.all.queues : queue.name => queue.messages.total }
 }
 ```
 

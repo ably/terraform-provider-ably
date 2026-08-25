@@ -210,5 +210,11 @@ func (d DataSourceNamespace) Read(ctx context.Context, req datasource.ReadReques
 	}
 
 	state := namespaceDataSourceModel(namespace)
+	// app_id is a configured value, so it has to come back exactly as given.
+	// control.NamespaceResponse tags AppID omitempty, so a response omitting it would
+	// otherwise write "" into state and fail with "provider produced
+	// inconsistent result". The plural data sources reuse config.AppID for the
+	// same reason.
+	state.AppID = config.AppID
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }

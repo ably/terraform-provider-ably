@@ -83,4 +83,4 @@ Optional:
 Optional:
 
 - `name` (String) The name of the header.
-- `value` (String) The value of the header.
+- `value` (String, Sensitive) The value of the header.

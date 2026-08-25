@@ -3,6 +3,8 @@ package provider
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -51,6 +53,34 @@ func TestAccAblyRuleTisane(t *testing.T) {
 				),
 			},
 			// Delete testing automatically occurs in TestCase
+		},
+	})
+}
+
+// TestAccAblyRuleTisaneEmptyThresholds pins the rejection of an explicit empty
+// thresholds map. The control types tag thresholds omitempty, so `{}` is sent as
+// absent, comes back absent, and reads as null, which would abort the apply with
+// "inconsistent result after apply" naming an attribute the user did set. The
+// generated mapvalidator.SizeAtLeast(1) turns that into a plan-time message. The
+// echoing fake cannot catch this on its own, which is why it is pinned here.
+func TestAccAblyRuleTisaneEmptyThresholds(t *testing.T) {
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: strings.Replace(
+					testAccAblyRuleTisaneConfig(appName, "/room-.*/", "RETRY", "en", 2),
+					`thresholds = {
+			abuse = 2
+		}`,
+					"thresholds = {}",
+					1,
+				),
+				ExpectError: regexp.MustCompile(`map must contain at least 1 element`),
+			},
 		},
 	})
 }
