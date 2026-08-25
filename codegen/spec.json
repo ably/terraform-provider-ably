@@ -1047,7 +1047,32 @@
             "name": "name",
             "string": {
               "computed_optional_required": "required",
-              "description": "A friendly name for your queue."
+              "description": "A friendly name for your queue. May only contain letters, numbers, hyphens and underscores, up to 64 characters.",
+              "validators": [
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.LengthAtMost(64)"
+                  }
+                },
+                {
+                  "custom": {
+                    "imports": [
+                      {
+                        "path": "regexp"
+                      },
+                      {
+                        "path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+                      }
+                    ],
+                    "schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^[A-Za-z0-9_-]+$\"), \"\")"
+                  }
+                }
+              ]
             }
           },
           {

@@ -5,11 +5,14 @@ package resource_queue
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
+	"regexp"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -92,8 +95,12 @@ func QueueResourceSchema(ctx context.Context) schema.Schema {
 			},
 			"name": schema.StringAttribute{
 				Required:            true,
-				Description:         "A friendly name for your queue.",
-				MarkdownDescription: "A friendly name for your queue.",
+				Description:         "A friendly name for your queue. May only contain letters, numbers, hyphens and underscores, up to 64 characters.",
+				MarkdownDescription: "A friendly name for your queue. May only contain letters, numbers, hyphens and underscores, up to 64 characters.",
+				Validators: []validator.String{
+					stringvalidator.LengthAtMost(64),
+					stringvalidator.RegexMatches(regexp.MustCompile("^[A-Za-z0-9_-]+$"), ""),
+				},
 			},
 			"parent_app_id": schema.StringAttribute{
 				Optional:            true,

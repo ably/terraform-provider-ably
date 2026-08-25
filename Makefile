@@ -70,13 +70,13 @@ generate:
 	go run github.com/hashicorp/terraform-plugin-codegen-framework/cmd/tfplugingen-framework@v0.4.1 generate data-sources --input codegen/spec.json --output internal/provider/codegen
 	gofmt -w internal/provider/codegen
 
-# Refresh the vendored Control API spec from the public ably/docs repo and
+# Refresh the vendored Control API spec from the published copy on ably.com and
 # re-apply any local fixes (codegen/spec-fixes.patch, if present), then
 # regenerate. Never copy the upstream spec over codegen/control-api.yaml by
 # hand: that silently reverts the fixes and the generators skip the affected
 # attributes without erroring. Pass SPEC_SRC=<path> to use a local ably/docs
-# checkout instead of fetching from GitHub.
-SPEC_URL=https://raw.githubusercontent.com/ably/docs/main/static/open-specs/control-v1.yaml
+# checkout instead of fetching over the network.
+SPEC_URL=https://ably.com/docs/open-specs/control-v1.yaml
 refresh-spec:
 ifdef SPEC_SRC
 	cp $(SPEC_SRC) codegen/control-api.yaml
