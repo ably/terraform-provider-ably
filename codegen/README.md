@@ -5,17 +5,18 @@ from the Ably Control API's OpenAPI spec.
 
 ## What's here
 
-- `control-api.yaml` — a vendored snapshot of the Control API OpenAPI spec. We
-  source it from the `ably/docs` repo (`static/open-specs/control-v1.yaml`),
-  which is the published, description-rich version (~1,160 field descriptions
-  versus ~150 in the `ably/website` rswag output). Generating from it gives the
-  generated schemas correct attribute documentation. We vendor a copy so
-  generation is self-contained and runnable in CI without checking out that
-  repo. Refresh it with `make refresh-spec`, which fetches the latest spec
-  from the public `ably/docs` repo (or copies from a local checkout with
-  `SPEC_SRC=<path>`) and re-applies any local fixes. Never copy the upstream
-  file over this one by hand: that silently reverts the fixes, and the
-  generators skip the affected attributes without erroring.
+- `control-api.yaml` — a vendored snapshot of the Control API OpenAPI spec,
+  taken from the copy the docs site publishes at
+  <https://ably.com/docs/open-specs/control-v1.yaml>. That is the same file as
+  `static/open-specs/control-v1.yaml` in `ably/docs`, as served, so we track what
+  is published rather than what is merged. It is the description-rich version
+  (~1,160 field descriptions versus ~150 in the `ably/website` rswag output),
+  which is what gives the generated schemas usable attribute documentation. We
+  vendor a copy so generation is self-contained and runnable in CI. Refresh it
+  with `make refresh-spec`, which fetches the published spec (or copies from a
+  local checkout with `SPEC_SRC=<path>`) and re-applies any local fixes. Never
+  copy the upstream file over this one by hand: that silently reverts the fixes,
+  and the generators skip the affected attributes without erroring.
 - `spec-fixes.patch` — our local fixes to the vendored spec, re-applied by
   `make refresh-spec` when the file exists. There are none at present (the
   last one, `conflationEnabled` missing `type: boolean` in the namespace

@@ -8,7 +8,7 @@ info:
     </br></br>
     Detailed information on using this API can be found in the Ably <a href="https://ably.com/docs/platform/account/control-api">Control API docs</a>.
     </br></br>
-    The <a href="https://swagger.io/specification/">OpenAPI specification</a> file used to generate this REST API is available to view <a href="https://github.com/ably/docs/blob/main/static/open-specs/control-v1.yaml">here</a>.
+    The <a href="https://swagger.io/specification/">OpenAPI specification</a> file used to generate this REST API is available to view <a href="https://ably.com/docs/open-specs/control-v1.yaml">here</a>.
 servers:
 - url: https://control.ably.net/v1
 paths:
@@ -6689,8 +6689,10 @@ TOfReTlUQzgpXRW5h3n2LVXbXQhPGcVitb88Cm2R8cxQwgB1VncM8yvmKhREo2tz
       properties:
         name:
           type: string
-          description: A friendly name for your queue.
-          example: My queue
+          maxLength: 64
+          pattern: "^[A-Za-z0-9_-]+$"
+          description: A friendly name for your queue. May only contain letters, numbers, hyphens and underscores, up to 64 characters.
+          example: my-queue
         ttl:
           type: integer
           description: TTL in minutes.
@@ -6715,7 +6717,7 @@ TOfReTlUQzgpXRW5h3n2LVXbXQhPGcVitb88Cm2R8cxQwgB1VncM8yvmKhREo2tz
         id:
           type: string
           description: The ID of the Ably queue
-          example: 28AB6w:us-east-1-a:My queue
+          example: 28AB6w:us-east-1-a:my-queue
         appId:
           type: string
           description: The Ably application ID.
@@ -6723,7 +6725,7 @@ TOfReTlUQzgpXRW5h3n2LVXbXQhPGcVitb88Cm2R8cxQwgB1VncM8yvmKhREo2tz
         name:
           type: string
           description: The friendly name of the queue.
-          example: My queue
+          example: my-queue
         region:
           type: string
           description: The data center region for the queue.
@@ -6739,7 +6741,7 @@ TOfReTlUQzgpXRW5h3n2LVXbXQhPGcVitb88Cm2R8cxQwgB1VncM8yvmKhREo2tz
             queueName:
               type: string
               description: Name of the Ably queue.
-              example: 28AB6w:My queue
+              example: 28AB6w:my-queue
         stomp:
           type: object
           additionalProperties: false
@@ -6755,7 +6757,7 @@ TOfReTlUQzgpXRW5h3n2LVXbXQhPGcVitb88Cm2R8cxQwgB1VncM8yvmKhREo2tz
             destination:
               type: string
               description: Destination queue.
-              example: /amqp/queue/28AB6w:My queue
+              example: /amqp/queue/28AB6w:my-queue
         state:
           type: string
           description: The current state of the queue.
