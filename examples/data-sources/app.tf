@@ -7,10 +7,3 @@ data "ably_app" "existing" {
 data "ably_app" "by_id" {
   id = "abcdef"
 }
-
-# Every app in the account the provider's token belongs to.
-data "ably_apps" "all" {}
-
-output "app_ids" {
-  value = [for app in data.ably_apps.all.apps : app.id]
-}

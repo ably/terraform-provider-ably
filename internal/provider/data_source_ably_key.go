@@ -204,6 +204,12 @@ func (d DataSourceKey) Read(ctx context.Context, req datasource.ReadRequest, res
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	// app_id is a configured value, so it has to come back exactly as given.
+	// control.KeyResponse tags AppID omitempty, so a response omitting it would
+	// otherwise write "" into state and fail with "provider produced
+	// inconsistent result". The plural data sources reuse config.AppID for the
+	// same reason.
+	state.AppID = config.AppID
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }

@@ -4,7 +4,3 @@ data "ably_namespace" "chat" {
   app_id = data.ably_app.existing.id
   id     = "chat"
 }
-
-data "ably_namespaces" "all" {
-  app_id = data.ably_app.existing.id
-}

@@ -77,6 +77,23 @@ var sensitive = map[string]bool{
 	"fcm_service_account": true,
 }
 
+// sensitivePaths marks credential-bearing attributes whose own name is too
+// generic to put in `sensitive` above. Keys are dotted path suffixes, matched
+// against an attribute's path within its rule, so only the intended attribute is
+// affected wherever its parent block happens to sit (a header value is
+// target.headers.value today).
+//
+// Webhook header values routinely carry an authorization token (the spec's own
+// example header name is "Authorization"), so they should not appear in plan
+// output. "value" on its own would mark every future attribute of that name.
+//
+// Note the hand-written webhook rules (ably_rule_http and friends, schemas in
+// rules.go) do NOT mark their header values sensitive. Bringing them into line is
+// a user-visible change to GA resources and belongs in its own change.
+var sensitivePaths = map[string]bool{
+	"headers.value": true,
+}
+
 // customExpr is a code expression plus the imports it needs, used to emit
 // validators, defaults and plan modifiers into the Provider Code Spec.
 type customExpr struct {
@@ -98,6 +115,7 @@ type override struct {
 const (
 	pkgStringValidator    = "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	pkgInt64Validator     = "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	pkgMapValidator       = "github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	pkgStringPlanModifier = "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	pkgObjectPlanModifier = "github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	pkgPlanModifiers      = "github.com/ably/terraform-provider-ably/internal/provider/planmodifiers"
@@ -127,6 +145,13 @@ var attrOverrides = map[string]override{
 	// (verified against the live API, 2026-07-20: create with "" and update
 	// non-empty -> "" both persist and read back as "").
 	"channel_filter": {allowEmpty: true},
+	// An explicit empty thresholds map cannot round-trip: the control types tag
+	// the field omitempty, so `thresholds = {}` is sent as absent, comes back
+	// absent, and reads as null, which aborts the apply with an opaque
+	// "inconsistent result after apply". Same reasoning as the LengthAtLeast(1)
+	// on optional strings below: reject it at plan time with a message that says
+	// what is wrong.
+	"thresholds": {validators: []customExpr{{[]string{pkgMapValidator}, "mapvalidator.SizeAtLeast(1)"}}},
 	// Before-publish AWS Lambda is the only generated rule that takes a source,
 	// and the API does not treat it like the webhook/firehose source whose spec
 	// schema it shares ($ref: rule_source). Two differences, both found on
@@ -164,6 +189,17 @@ var attrOverrides = map[string]override{
 		description: "The source type. Before-publish rules act on chat messages, so `chat.message` is the only supported value.",
 		validators:  []customExpr{{[]string{pkgStringValidator}, `stringvalidator.OneOf("chat.message")`}},
 	},
+}
+
+// isSensitivePath reports whether an attribute path matches a sensitivePaths
+// suffix, so "headers.value" covers "target.headers.value".
+func isSensitivePath(path string) bool {
+	for suffix := range sensitivePaths {
+		if path == suffix || strings.HasSuffix(path, "."+suffix) {
+			return true
+		}
+	}
+	return false
 }
 
 // applyOverride mutates an attribute's type map with any configured metadata.
@@ -217,7 +253,7 @@ func main() {
 	resources := make([]map[string]any, 0, len(rules))
 	for _, r := range rules {
 		props := schemaProps(schemas, r.specSchema)
-		attrs := attrsFromStruct(reflect.TypeOf(r.post), props)
+		attrs := attrsFromStruct(reflect.TypeOf(r.post), props, "")
 		// Every rule resource carries the same envelope: a computed id and the
 		// required parent app_id. These are not on the create body.
 		idMap := map[string]any{"computed_optional_required": "computed", "description": "The rule ID."}
@@ -328,7 +364,7 @@ func schemaProps(schemas map[string]any, name string) map[string]any {
 
 // attrsFromStruct reflects a struct type into Provider Code Spec attributes,
 // pulling each field's description from the matching OpenAPI properties map.
-func attrsFromStruct(t reflect.Type, props map[string]any) []map[string]any {
+func attrsFromStruct(t reflect.Type, props map[string]any, path string) []map[string]any {
 	var attrs []map[string]any
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
@@ -342,6 +378,10 @@ func attrsFromStruct(t reflect.Type, props map[string]any) []map[string]any {
 			continue
 		}
 		desc := description(props, jsonName)
+		fieldPath := name
+		if path != "" {
+			fieldPath = path + "." + name
+		}
 
 		ft := f.Type
 		optional := omitempty
@@ -361,7 +401,7 @@ func attrsFromStruct(t reflect.Type, props map[string]any) []map[string]any {
 			if desc != "" {
 				s["description"] = desc
 			}
-			if sensitive[name] {
+			if sensitive[name] || isSensitivePath(fieldPath) {
 				s["sensitive"] = true
 			}
 			applyOverride(name, s)
@@ -426,7 +466,7 @@ func attrsFromStruct(t reflect.Type, props map[string]any) []map[string]any {
 		case reflect.Struct:
 			sn := map[string]any{
 				"computed_optional_required": mode,
-				"attributes":                 attrsFromStruct(ft, childProps(props, jsonName)),
+				"attributes":                 attrsFromStruct(ft, childProps(props, jsonName), fieldPath),
 			}
 			if desc != "" {
 				sn["description"] = desc
@@ -441,7 +481,7 @@ func attrsFromStruct(t reflect.Type, props map[string]any) []map[string]any {
 			if elem.Kind() == reflect.Struct {
 				attr["list_nested"] = map[string]any{
 					"computed_optional_required": mode,
-					"nested_object":              map[string]any{"attributes": attrsFromStruct(elem, itemProps(props, jsonName))},
+					"nested_object":              map[string]any{"attributes": attrsFromStruct(elem, itemProps(props, jsonName), fieldPath)},
 				}
 			} else {
 				attr["list"] = map[string]any{
@@ -460,6 +500,7 @@ func attrsFromStruct(t reflect.Type, props map[string]any) []map[string]any {
 			if desc != "" {
 				m["description"] = desc
 			}
+			applyOverride(name, m)
 			attr["map"] = m
 		default:
 			// Fail loudly rather than emitting an incomplete schema: a silent

@@ -13,15 +13,14 @@ The `ably_namespaces` data source lists every namespace (channel rule) in an Abl
 ## Example Usage
 
 ```terraform
-# Read the settings of a namespace (channel rule) this configuration does not
-# manage. A namespace's ID is its channel name prefix.
-data "ably_namespace" "chat" {
-  app_id = data.ably_app.existing.id
-  id     = "chat"
-}
-
+# Every namespace (channel rule) in an app, including ones Terraform does not
+# manage.
 data "ably_namespaces" "all" {
   app_id = data.ably_app.existing.id
+}
+
+output "persisted_namespaces" {
+  value = [for ns in data.ably_namespaces.all.namespaces : ns.id if ns.persisted]
 }
 ```
 

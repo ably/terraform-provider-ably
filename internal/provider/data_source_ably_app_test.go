@@ -43,9 +43,11 @@ func TestAccAblyAppDataSource(t *testing.T) {
 	})
 }
 
-// TestAccAblyAppDataSourceLookupErrors covers the two ways a lookup is invalid.
-// Both are caught before any API call, so the message has to say which mistake
-// was made rather than surfacing an opaque API error.
+// TestAccAblyAppDataSourceLookupErrors covers the three ways a lookup fails.
+// Setting both keys, and setting neither, are caught before any API call. A id
+// that matches nothing is only knowable after listing the account's apps. All
+// three have to say which mistake was made rather than surface an opaque API
+// error.
 func TestAccAblyAppDataSourceLookupErrors(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },

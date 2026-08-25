@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/ably/terraform-provider-ably/internal/provider/planmodifiers"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -142,6 +143,9 @@ func RuleAzureModerationResourceSchema(ctx context.Context) schema.Schema {
 						Optional:            true,
 						Description:         "A map of moderation categories to threshold levels (0-7). Messages scoring above the threshold for any category will be rejected.",
 						MarkdownDescription: "A map of moderation categories to threshold levels (0-7). Messages scoring above the threshold for any category will be rejected.",
+						Validators: []validator.Map{
+							mapvalidator.SizeAtLeast(1),
+						},
 					},
 				},
 				CustomType: TargetType{

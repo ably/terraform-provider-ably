@@ -13,21 +13,16 @@ The `ably_apps` data source lists every Ably app in an account, including apps T
 ## Example Usage
 
 ```terraform
-# Look up an app this configuration does not manage, by name.
-data "ably_app" "existing" {
-  name = "my-existing-app"
-}
-
-# Or by ID, if you have it.
-data "ably_app" "by_id" {
-  id = "abcdef"
-}
-
 # Every app in the account the provider's token belongs to.
 data "ably_apps" "all" {}
 
 output "app_ids" {
   value = [for app in data.ably_apps.all.apps : app.id]
+}
+
+# A different account, if the token can see it.
+data "ably_apps" "other_account" {
+  account_id = "abcdef"
 }
 ```
 
