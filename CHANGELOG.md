@@ -1,5 +1,105 @@
 # Changelog
 
+## [v1.1.0](https://github.com/ably/terraform-provider-ably/tree/v1.1.0)
+
+[Full Changelog](https://github.com/ably/terraform-provider-ably/compare/v1.0.0...v1.1.0)
+
+**Closed issues:**
+
+- ably_app: "inconsistent result after apply" on fcm_project_id (was null, now "") with v1.0.0 [#252](https://github.com/ably/terraform-provider-ably/issues/252)
+
+**Merged pull requests:**
+
+- build(deps): bump google.golang.org/grpc from 1.82.1 to 1.83.1 [#251](https://github.com/ably/terraform-provider-ably/pull/251)
+- build(deps): bump software.sslmate.com/src/go-pkcs12 from 0.7.0 to 0.7.2 in /control [#250](https://github.com/ably/terraform-provider-ably/pull/250)
+- \[INF-8060\] Generate remaining resources and add data sources [#249](https://github.com/ably/terraform-provider-ably/pull/249)
+- exporter: generate Terraform config from an existing Ably account [#248](https://github.com/ably/terraform-provider-ably/pull/248)
+- build(deps): bump google.golang.org/grpc from 1.79.3 to 1.82.1 [#247](https://github.com/ably/terraform-provider-ably/pull/247)
+- Reduce concurrency in CI [#246](https://github.com/ably/terraform-provider-ably/pull/246)
+- Bump golang.org/x/crypto from 0.50.0 to 0.52.0 [#245](https://github.com/ably/terraform-provider-ably/pull/245)
+- \[INF-7769\] Make retries more conservative [#244](https://github.com/ably/terraform-provider-ably/pull/244)
+- Bump golang.org/x/crypto from 0.45.0 to 0.52.0 in /control [#242](https://github.com/ably/terraform-provider-ably/pull/242)
+- codegen: fail loudly or emit completely [#241](https://github.com/ably/terraform-provider-ably/pull/241)
+- Update README [#240](https://github.com/ably/terraform-provider-ably/pull/240)
+- Bump golang.org/x/net from 0.52.0 to 0.55.0 [#239](https://github.com/ably/terraform-provider-ably/pull/239)
+- \[INF-7589\] Switch from `authenticated` field to `identified` [#238](https://github.com/ably/terraform-provider-ably/pull/238)
+- Control API code generation: strategy, hermetic tests, and first resources [#237](https://github.com/ably/terraform-provider-ably/pull/237)
+- ci: GHA workflow security cleanup [#236](https://github.com/ably/terraform-provider-ably/pull/236)
+- Bump the terraform-plugin group across 1 directory with 5 updates [#235](https://github.com/ably/terraform-provider-ably/pull/235)
+- \[INF-5286\] Write reconciliation functions that pave over inconsistencies in API responses [#233](https://github.com/ably/terraform-provider-ably/pull/233)
+- Bump golang.org/x/crypto from 0.11.0 to 0.45.0 in /control [#230](https://github.com/ably/terraform-provider-ably/pull/230)
+- Bump google.golang.org/grpc from 1.75.1 to 1.79.3 [#228](https://github.com/ably/terraform-provider-ably/pull/228)
+- Bump github.com/cloudflare/circl from 1.6.1 to 1.6.3 [#224](https://github.com/ably/terraform-provider-ably/pull/224)
+
+**Note:**
+Adds read-only data sources, exposes the moderation and before-publish rule
+families, moves provider schemas onto a code generation pipeline driven by the
+Control API spec, and reconciles resource state field by field against Control
+API responses.
+
+Data sources: `ably_app`, `ably_apps`, `ably_api_key`, `ably_api_keys`,
+`ably_namespace`, `ably_namespaces`, `ably_queue`, `ably_queues`, and `ably_me`
+for account information. Singular forms look up one object by ID; plural forms
+list everything in scope. The provider can now read account state it did not
+create.
+
+Moderation and before-publish rules: `ably_rule_hive_text`,
+`ably_rule_hive_dashboard`, `ably_rule_bodyguard`, `ably_rule_tisane` and
+`ably_rule_azure_moderation` for moderation; `ably_rule_before_publish_webhook`
+and `ably_rule_before_publish_lambda` for before-publish. The Control API
+assigns the before-publish source, so the provider stores the server value
+rather than setting it.
+
+Code generation: schemas for the rule families and the data sources are
+generated from the Control API spec, taken from the published docs site rather
+than a vendored copy. Field descriptions, integer bounds, sensitivity and
+validators all come from the spec. Generation fails on spec drift or an
+unmappable type rather than emitting a partial schema.
+
+Account exporter: `cmd/ably-exporter` generates Terraform configuration from an
+existing Ably account. It ships as `ably-exporter_<version>_<os>_<arch>.zip`
+release assets alongside the provider binaries. See EXPORTER.md for usage.
+
+State reconciliation: after create, update and read, each field's state value
+is decided by comparing what the provider sent with what the Control API
+returned, in place of hand-rolled field copies. The API is authoritative where
+it returns a value, write-only secrets survive from the plan, server-owned
+fields come from the response, and an optional-only field the API fills in
+unexpectedly is reported rather than silently stored. This removes a class of
+"inconsistent result after apply" errors and spurious in-place updates,
+including `fcm_project_id` on `ably_app`
+([#252](https://github.com/ably/terraform-provider-ably/issues/252)), which the
+Control API returns as an empty string for apps last written by the pre-1.0
+client and which v1.0.0 stored verbatim instead of normalising to null. Three
+related fixes come with it:
+
+- Default plan modifiers apply a default only when there is no prior state
+  value, and keep the prior value otherwise. Previously they never fired for an
+  unconfigured optional-and-computed attribute, and firing them naively would
+  have re-sent the default on every unrelated change, overwriting values set
+  server-side or out of band. `tls_only` on `ably_app` therefore drops its
+  client-side default and records the server's choice, and `created` on
+  `ably_api_key` drops its `0` default and stays unknown until apply.
+- Create records the resource identity as soon as the remote create succeeds. A
+  later read-back or reconciliation failure now taints the resource rather than
+  returning no state, which made Terraform forget the resource and leak another
+  one on each retry.
+- Switching a rule between AWS credentials and assume-role clears the fields of
+  the mode that is no longer active, rather than leaving both in state.
+
+Namespace `identified`: `identified` is the canonical name for the flag the
+Control API also reports as `authenticated`. The `authenticated` attribute is
+deprecated, still functional, and mirrors `identified`. It will be removed in a
+future major release. This fixes a defect where the two names could disagree on
+update.
+
+Reliability and testing: client retries are more conservative. A credential-free
+test loop covers schema, diff, import and CRUD wiring, and an end-to-end
+acceptance test verifies the provider still covers the full Control API surface.
+Every resource also has a minimal-config acceptance test that applies a
+required-only configuration, checks the computed defaults, confirms
+optional-only fields are absent from state, and re-plans expecting no changes.
+
 ## [v1.0.0](https://github.com/ably/terraform-provider-ably/tree/v1.0.0)
 
 [Full Changelog](https://github.com/ably/terraform-provider-ably/compare/v0.12.0...v1.0.0)

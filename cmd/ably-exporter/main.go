@@ -22,7 +22,7 @@ var hiddenFlags = map[string]bool{"url": true}
 
 // VERSION is reported in the exporter's User-Agent. Overridden at release time
 // with -ldflags="-X main.VERSION=x.y.z", as the provider binary is.
-var VERSION = "1.0.0"
+var VERSION = "1.1.0"
 
 // appList collects a repeatable -app flag, also accepting a comma-separated
 // list in one go.
