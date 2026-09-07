@@ -37,7 +37,7 @@ import (
 
 // Version is the semantic version of this library, used in the default
 // User-Agent header.
-const Version = "0.1.0"
+const Version = "0.2.0"
 
 // Default retry configuration. These are deliberately conservative so a
 // struggling API server isn't hammered by a retry storm: a small number of
