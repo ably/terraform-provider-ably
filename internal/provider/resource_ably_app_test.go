@@ -230,3 +230,45 @@ resource "ably_app" "app0" {
 		},
 	})
 }
+
+// The Control API returns fcmProjectId as an empty string for apps whose FCM
+// project was never set (any app created or patched by the pre-1.0 client is in
+// this state). An app that does not configure fcm_project_id must therefore
+// apply cleanly and produce an empty follow-up plan.
+func TestAccAblyAppEmptyFCMProjectID(t *testing.T) {
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	config := fmt.Sprintf(`
+terraform {
+	required_providers {
+		ably = {
+			source = "registry.terraform.io/ably/ably"
+		}
+	}
+}
+provider "ably" {}
+
+resource "ably_app" "app0" {
+	name     = %[1]q
+	status   = "enabled"
+	tls_only = true
+}
+`, appName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("ably_app.app0", "name", appName),
+					resource.TestCheckNoResourceAttr("ably_app.app0", "fcm_project_id"),
+				),
+			},
+			{
+				Config:   config,
+				PlanOnly: true,
+			},
+		},
+	})
+}

@@ -286,6 +286,7 @@ func (r ResourceApp) Create(ctx context.Context, req resource.CreateRequest, res
 	emptyStringToNull(&respApps.ApnsCertificate)
 	emptyStringToNull(&respApps.ApnsPrivateKey)
 	emptyStringToNull(&respApps.ApnsSigningKey)
+	emptyStringToNull(&respApps.FcmProjectId)
 
 	// Sets state for the new Ably App.
 	diags = resp.State.Set(ctx, respApps)
@@ -355,6 +356,7 @@ func (r ResourceApp) Read(ctx context.Context, req resource.ReadRequest, resp *r
 			emptyStringToNull(&respApps.ApnsCertificate)
 			emptyStringToNull(&respApps.ApnsPrivateKey)
 			emptyStringToNull(&respApps.ApnsSigningKey)
+			emptyStringToNull(&respApps.FcmProjectId)
 			found = true
 
 			// Sets state to app values.
@@ -480,6 +482,7 @@ func (r ResourceApp) Update(ctx context.Context, req resource.UpdateRequest, res
 	emptyStringToNull(&respApps.ApnsCertificate)
 	emptyStringToNull(&respApps.ApnsPrivateKey)
 	emptyStringToNull(&respApps.ApnsSigningKey)
+	emptyStringToNull(&respApps.FcmProjectId)
 
 	// Sets state to new app.
 	diags = resp.State.Set(ctx, respApps)

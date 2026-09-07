@@ -195,6 +195,9 @@ func (f *fakeControlAPI) createApp(w http.ResponseWriter, r *http.Request) {
 	body["id"] = id
 	body["accountId"] = fakeAccountID
 	body["created"] = ts
+	if _, ok := body["fcmProjectId"]; !ok {
+		body["fcmProjectId"] = ""
+	}
 	body["modified"] = ts
 	f.apps[id] = body
 	fakeWriteJSON(w, http.StatusCreated, body)
@@ -218,6 +221,9 @@ func (f *fakeControlAPI) updateApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	maps.Copy(rec, body)
+	if _, ok := rec["fcmProjectId"]; !ok {
+		rec["fcmProjectId"] = ""
+	}
 	rec["modified"] = fakeNow()
 	fakeWriteJSON(w, http.StatusOK, rec)
 }
