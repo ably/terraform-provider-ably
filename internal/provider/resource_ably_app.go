@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -90,10 +91,14 @@ func (r ResourceApp) Schema(ctx context.Context, req resource.SchemaRequest, res
 			},
 			"tls_only": schema.BoolAttribute{
 				Optional:    true,
-				Description: "Enforce TLS for all connections. This setting overrides any channel setting.",
+				Description: "Enforce TLS for all connections. This setting overrides any channel setting. When unset, the Control API's default applies.",
 				Computed:    true,
+				// No client-side default: the vendored spec defines none for
+				// app-level tlsOnly, so when unset the field is omitted from
+				// the request and the server's choice is recorded. Prior state
+				// is kept on update so the value round-trips unchanged.
 				PlanModifiers: []planmodifier.Bool{
-					DefaultBoolAttribute(types.BoolValue(false)),
+					boolplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"fcm_key": schema.StringAttribute{

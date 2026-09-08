@@ -55,7 +55,7 @@ resource "ably_app" "app1" {
 - `fcm_project_id` (String) The unique identifier for the Firebase Cloud Messaging(FCM) project. This ID is used to specify the Firebase project when configuring FCM or other Firebase services.
 - `fcm_service_account` (String, Sensitive) Used to specify the Firebase Cloud Messaging(FCM) service account credentials used for authentication and enabling communication with FCM to send push notifications to devices.
 - `status` (String) The application status. Disabled applications will not accept new connections and will return an error to all clients. When creating a new application, ensure that its status is set to enabled.
-- `tls_only` (Boolean) Enforce TLS for all connections. This setting overrides any channel setting.
+- `tls_only` (Boolean) Enforce TLS for all connections. This setting overrides any channel setting. When unset, the Control API's default applies.
 
 ### Read-Only
 

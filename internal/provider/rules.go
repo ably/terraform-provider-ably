@@ -695,7 +695,6 @@ func GetRuleSchema(target map[string]schema.Attribute, markdownDescription strin
 				Description: "This is Single Request mode or Batch Request mode. Single Request mode sends each event separately to the endpoint specified by the rule",
 				PlanModifiers: []planmodifier.String{
 					DefaultStringAttribute(types.StringValue("single")),
-					stringplanmodifier.UseStateForUnknown(),
 				},
 				Validators: []validator.String{
 					stringvalidator.OneOf("single", "batch"),

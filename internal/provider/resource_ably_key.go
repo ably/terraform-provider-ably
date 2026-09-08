@@ -69,9 +69,6 @@ func (r *ResourceKey) Schema(ctx context.Context, req resource.SchemaRequest, re
 			"created": schema.Int64Attribute{
 				Computed:    true,
 				Description: "The timestamp of when the key was created.",
-				PlanModifiers: []planmodifier.Int64{
-					DefaultInt64Attribute(types.Int64Value(0)),
-				},
 			},
 			"key": schema.StringAttribute{
 				Computed:    true,

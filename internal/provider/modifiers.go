@@ -11,7 +11,22 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// defaultBoolModifier implements planmodifier.Bool using the built-in pattern.
+// The default* modifiers implement "default on create, keep on update" for
+// Optional+Computed attributes:
+//
+//   - configured (known or unknown): the configured value stands;
+//   - not configured and no prior state (Create, or a replacement): the default;
+//   - not configured with prior state (Update): the prior state value.
+//
+// The last rule matters because the framework marks an unconfigured computed
+// attribute unknown whenever anything else in the resource changes, and the
+// CRUD code serialises plan values into requests. Re-applying the default there
+// would send it to the API on every unrelated update, silently overwriting a
+// value set server-side or out of band (an app's tls_only, a namespace flag, an
+// imported rule's request_mode). Keeping the prior state value instead mirrors
+// UseStateForUnknown, so a refreshed state round-trips unchanged.
+
+// defaultBoolModifier implements planmodifier.Bool.
 type defaultBoolModifier struct {
 	value types.Bool
 }
@@ -25,13 +40,16 @@ func (m defaultBoolModifier) MarkdownDescription(ctx context.Context) string {
 }
 
 func (m defaultBoolModifier) PlanModifyBool(_ context.Context, req planmodifier.BoolRequest, resp *planmodifier.BoolResponse) {
-	if resp.PlanValue.IsUnknown() || req.ConfigValue.IsUnknown() {
+	if !req.ConfigValue.IsNull() {
 		return
 	}
-	if !req.ConfigValue.IsNull() || !req.PlanValue.IsNull() {
+	if req.StateValue.IsNull() {
+		resp.PlanValue = m.value
 		return
 	}
-	resp.PlanValue = m.value
+	if resp.PlanValue.IsUnknown() {
+		resp.PlanValue = req.StateValue
+	}
 }
 
 // DefaultBoolAttribute returns a plan modifier that sets a default bool value.
@@ -109,13 +127,16 @@ func (m defaultInt64Modifier) MarkdownDescription(ctx context.Context) string {
 }
 
 func (m defaultInt64Modifier) PlanModifyInt64(_ context.Context, req planmodifier.Int64Request, resp *planmodifier.Int64Response) {
-	if resp.PlanValue.IsUnknown() || req.ConfigValue.IsUnknown() {
+	if !req.ConfigValue.IsNull() {
 		return
 	}
-	if !req.ConfigValue.IsNull() || !req.PlanValue.IsNull() {
+	if req.StateValue.IsNull() {
+		resp.PlanValue = m.value
 		return
 	}
-	resp.PlanValue = m.value
+	if resp.PlanValue.IsUnknown() {
+		resp.PlanValue = req.StateValue
+	}
 }
 
 // DefaultInt64Attribute returns a plan modifier that sets a default int64 value.
@@ -137,13 +158,16 @@ func (m defaultStringModifier) MarkdownDescription(ctx context.Context) string {
 }
 
 func (m defaultStringModifier) PlanModifyString(_ context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
-	if resp.PlanValue.IsUnknown() || req.ConfigValue.IsUnknown() {
+	if !req.ConfigValue.IsNull() {
 		return
 	}
-	if !req.ConfigValue.IsNull() || !req.PlanValue.IsNull() {
+	if req.StateValue.IsNull() {
+		resp.PlanValue = m.value
 		return
 	}
-	resp.PlanValue = m.value
+	if resp.PlanValue.IsUnknown() {
+		resp.PlanValue = req.StateValue
+	}
 }
 
 // DefaultStringAttribute returns a plan modifier that sets a default string value.
