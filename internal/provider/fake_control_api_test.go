@@ -185,6 +185,27 @@ func (f *fakeControlAPI) handleMe(w http.ResponseWriter, _ *http.Request) {
 
 // --- apps ------------------------------------------------------------------
 
+// hermeticFake is the in-process Control API the suite runs against, or nil
+// when TF_ACC points the suite at a real Control API. Tests that need the API
+// to return something the provider would never send it (for example records
+// written by an older client) reach the fake through here, and must skip when
+// it is nil.
+var hermeticFake *fakeControlAPI
+
+// setAppField sets one JSON field on the stored app with the given name, as if
+// another client had written it. It reports whether such an app exists.
+func (f *fakeControlAPI) setAppField(appName, field string, value any) bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for _, rec := range f.apps {
+		if rec["name"] == appName {
+			rec[field] = value
+			return true
+		}
+	}
+	return false
+}
+
 func (f *fakeControlAPI) createApp(w http.ResponseWriter, r *http.Request) {
 	body := fakeDecodeBody(r)
 	f.mu.Lock()
@@ -566,6 +587,7 @@ func TestMain(m *testing.M) {
 	var hermeticDir string
 	if tfAcc == "" {
 		fake = newFakeControlAPI()
+		hermeticFake = fake
 		_ = os.Setenv("ABLY_URL", fake.server.URL)
 		_ = os.Setenv("ABLY_ACCOUNT_TOKEN", "fake-token")
 		_ = os.Setenv("TF_ACC", "1")
