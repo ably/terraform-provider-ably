@@ -66,61 +66,63 @@ func GetPlanIngressRule(plan AblyIngressRule) (any, diag.Diagnostics) {
 	return nil, diags
 }
 
-// GetIngressRuleResponse maps an API rule response to the ingress rule terraform model.
-// Ingress rules use the same generic RuleResponse from the client, with target unmarshalled
-// according to the ruleType.
-func GetIngressRuleResponse(ablyRule *control.RuleResponse, plan *AblyIngressRule) (AblyIngressRule, diag.Diagnostics) {
-	var diags diag.Diagnostics
+// GetIngressRuleResponse maps an API rule response onto the ingress rule
+// resource schema. Ingress rules share the generic RuleResponse, with the
+// target unmarshalled according to the rule type. See GetRuleResponse for the
+// reconciliation contract.
+func GetIngressRuleResponse(rc *reconciler, ablyRule *control.RuleResponse, plan *AblyIngressRule) AblyIngressRule {
 	var respTarget any
 
 	switch ablyRule.RuleType {
 	case "ingress/mongodb":
 		target, err := unmarshalTarget[control.IngressMongoDBTarget](ablyRule.Target)
 		if err != nil {
-			diags.AddError("Error unmarshalling ingress rule target", fmt.Sprintf("Could not unmarshal ingress/mongodb target: %s", err.Error()))
-			return AblyIngressRule{}, diags
+			rc.diags.AddError("Error unmarshalling ingress rule target", fmt.Sprintf("Could not unmarshal ingress/mongodb target: %s", err.Error()))
+			return AblyIngressRule{}
 		}
+		pt := planTarget[AblyIngressRuleTargetMongo](plan.Target)
 		respTarget = &AblyIngressRuleTargetMongo{
-			Url:                      types.StringValue(target.URL),
-			Database:                 types.StringValue(target.Database),
-			Collection:               types.StringValue(target.Collection),
-			Pipeline:                 types.StringValue(target.Pipeline),
-			FullDocument:             types.StringValue(target.FullDocument),
-			FullDocumentBeforeChange: types.StringValue(target.FullDocumentBeforeChange),
-			PrimarySite:              types.StringValue(target.PrimarySite),
+			Url:                      rcVal(rc, "target.url", pt.Url, types.StringValue(target.URL), false),
+			Database:                 rcVal(rc, "target.database", pt.Database, types.StringValue(target.Database), false),
+			Collection:               rcVal(rc, "target.collection", pt.Collection, types.StringValue(target.Collection), false),
+			Pipeline:                 rcVal(rc, "target.pipeline", pt.Pipeline, types.StringValue(target.Pipeline), false),
+			FullDocument:             rcVal(rc, "target.full_document", pt.FullDocument, types.StringValue(target.FullDocument), false),
+			FullDocumentBeforeChange: rcVal(rc, "target.full_document_before_change", pt.FullDocumentBeforeChange, types.StringValue(target.FullDocumentBeforeChange), false),
+			PrimarySite:              rcVal(rc, "target.primary_site", pt.PrimarySite, types.StringValue(target.PrimarySite), false),
 		}
 	case "ingress-postgres-outbox":
 		target, err := unmarshalTarget[control.IngressPostgresOutboxTarget](ablyRule.Target)
 		if err != nil {
-			diags.AddError("Error unmarshalling ingress rule target", fmt.Sprintf("Could not unmarshal ingress-postgres-outbox target: %s", err.Error()))
-			return AblyIngressRule{}, diags
+			rc.diags.AddError("Error unmarshalling ingress rule target", fmt.Sprintf("Could not unmarshal ingress-postgres-outbox target: %s", err.Error()))
+			return AblyIngressRule{}
 		}
+		pt := planTarget[AblyIngressRuleTargetPostgresOutbox](plan.Target)
 		respTarget = &AblyIngressRuleTargetPostgresOutbox{
-			Url:               types.StringValue(target.URL),
-			OutboxTableSchema: types.StringValue(target.OutboxTableSchema),
-			OutboxTableName:   types.StringValue(target.OutboxTableName),
-			NodesTableSchema:  types.StringValue(target.NodesTableSchema),
-			NodesTableName:    types.StringValue(target.NodesTableName),
-			SslMode:           types.StringValue(target.SSLMode),
-			SslRootCert:       optStringValue(target.SSLRootCert),
-			PrimarySite:       types.StringValue(target.PrimarySite),
+			Url:               rcVal(rc, "target.url", pt.Url, types.StringValue(target.URL), false),
+			OutboxTableSchema: rcVal(rc, "target.outbox_table_schema", pt.OutboxTableSchema, types.StringValue(target.OutboxTableSchema), false),
+			OutboxTableName:   rcVal(rc, "target.outbox_table_name", pt.OutboxTableName, types.StringValue(target.OutboxTableName), false),
+			NodesTableSchema:  rcVal(rc, "target.nodes_table_schema", pt.NodesTableSchema, types.StringValue(target.NodesTableSchema), false),
+			NodesTableName:    rcVal(rc, "target.nodes_table_name", pt.NodesTableName, types.StringValue(target.NodesTableName), false),
+			SslMode:           rcVal(rc, "target.ssl_mode", pt.SslMode, types.StringValue(target.SSLMode), false),
+			SslRootCert:       rcVal(rc, "target.ssl_root_cert", pt.SslRootCert, optStringValue(target.SSLRootCert), false),
+			PrimarySite:       rcVal(rc, "target.primary_site", pt.PrimarySite, types.StringValue(target.PrimarySite), false),
 		}
 	default:
-		diags.AddError(
+		rc.diags.AddError(
 			"Unknown ingress rule type in response",
 			fmt.Sprintf("Received unrecognized ingress rule type from API: %q", ablyRule.RuleType),
 		)
-		return AblyIngressRule{}, diags
+		return AblyIngressRule{}
 	}
 
 	respRule := AblyIngressRule{
-		ID:     types.StringValue(ablyRule.ID),
-		AppID:  types.StringValue(ablyRule.AppID),
-		Status: types.StringValue(ablyRule.Status),
+		ID:     rcVal(rc, "id", plan.ID, types.StringValue(ablyRule.ID), true),
+		AppID:  rcVal(rc, "app_id", plan.AppID, types.StringValue(ablyRule.AppID), false),
+		Status: rcVal(rc, "status", plan.Status, types.StringValue(ablyRule.Status), true),
 		Target: respTarget,
 	}
 
-	return respRule, diags
+	return respRule
 }
 
 func GetIngressRuleSchema(target map[string]schema.Attribute, markdownDescription string) schema.Schema {
@@ -187,9 +189,9 @@ func CreateIngressRule[T any](r Rule, ctx context.Context, req resource.CreateRe
 		)
 		return
 	}
+	recordCreatedIdentity(ctx, resp, map[string]string{"app_id": plan.AppID.ValueString(), "id": rule.ID})
 
-	responseValues, respDiags := GetIngressRuleResponse(&rule, &plan)
-	resp.Diagnostics.Append(respDiags...)
+	responseValues := GetIngressRuleResponse(newReconciler(&resp.Diagnostics), &rule, &plan)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -232,8 +234,7 @@ func ReadIngressRule[T any](r Rule, ctx context.Context, req resource.ReadReques
 		return
 	}
 
-	responseValues, respDiags := GetIngressRuleResponse(&rule, &state)
-	resp.Diagnostics.Append(respDiags...)
+	responseValues := GetIngressRuleResponse(newReconciler(&resp.Diagnostics).forRead(), &rule, &state)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -278,8 +279,7 @@ func UpdateIngressRule[T any](r Rule, ctx context.Context, req resource.UpdateRe
 		return
 	}
 
-	responseValues, respDiags := GetIngressRuleResponse(&rule, &plan)
-	resp.Diagnostics.Append(respDiags...)
+	responseValues := GetIngressRuleResponse(newReconciler(&resp.Diagnostics), &rule, &plan)
 	if resp.Diagnostics.HasError() {
 		return
 	}
