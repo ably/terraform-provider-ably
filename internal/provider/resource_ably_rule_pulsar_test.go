@@ -10,6 +10,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
+// The Control API resolves the hostnames in Kafka brokers and Pulsar service
+// URLs (a DNS A lookup, no connection) and rejects a create when one has no
+// record. example.com and example.net are IANA documentation domains that
+// resolve; their subdomains do not.
 func TestAccAblyRulePulsar(t *testing.T) {
 	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
 	updateAppName := "acc-test-" + appName
@@ -28,7 +32,7 @@ func TestAccAblyRulePulsar(t *testing.T) {
 					"single",
 					"test-key",
 					"my-tenant/my-namespace/my-topic",
-					"pulsar://pulsar.us-west.example.com:6650/",
+					"pulsar://example.com:6650/",
 					"true",
 					"json",
 					"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
@@ -43,7 +47,7 @@ func TestAccAblyRulePulsar(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "request_mode", "single"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.routing_key", "test-key"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.topic", "my-tenant/my-namespace/my-topic"),
-					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.service_url", "pulsar://pulsar.us-west.example.com:6650/"),
+					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.service_url", "pulsar://example.com:6650/"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.enveloped", "true"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.format", "json"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.authentication.mode", "token"),
@@ -78,7 +82,7 @@ func TestAccAblyRulePulsar(t *testing.T) {
 					"single",
 					"test-key1",
 					"my-tenant/my-namespace/my-topic1",
-					"pulsar://pulsar.us-east.example.com:6650/",
+					"pulsar://example.net:6650/",
 					"false",
 					"msgpack",
 					"YWxnOkhTNTEyIHR5cDpKV1QK",
@@ -93,7 +97,7 @@ func TestAccAblyRulePulsar(t *testing.T) {
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "request_mode", "single"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.routing_key", "test-key1"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.topic", "my-tenant/my-namespace/my-topic1"),
-					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.service_url", "pulsar://pulsar.us-east.example.com:6650/"),
+					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.service_url", "pulsar://example.net:6650/"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.enveloped", "false"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.format", "msgpack"),
 					resource.TestCheckResourceAttr("ably_rule_pulsar.rule0", "target.authentication.mode", "token"),
@@ -110,7 +114,7 @@ func TestAccAblyRulePulsar_Minimal(t *testing.T) {
 	config := minimalRuleConfig(appName, "ably_rule_pulsar", `target = {
 		routing_key = "test-key"
 		topic       = "my-tenant/my-namespace/my-topic"
-		service_url = "pulsar://pulsar.us-west.example.com:6650/"
+		service_url = "pulsar://example.com:6650/"
 		authentication = {
 			mode  = "token"
 			token = "fake-test-token"

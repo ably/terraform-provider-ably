@@ -107,11 +107,15 @@ func TestAccAblyRuleKafka(t *testing.T) {
 	})
 }
 
+// The Control API resolves the hostnames in Kafka brokers and Pulsar service
+// URLs (a DNS A lookup, no connection) and rejects a create when one has no
+// record. example.com and example.net are IANA documentation domains that
+// resolve; their subdomains do not.
 func TestAccAblyRuleKafka_Minimal(t *testing.T) {
 	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
 	config := minimalRuleConfig(appName, "ably_rule_kafka", `target = {
 		routing_key = "test-key"
-		brokers     = ["broker1.example.com:9092"]
+		brokers     = ["example.com:9092"]
 		auth = {
 			sasl = {
 				mechanism = "plain"
