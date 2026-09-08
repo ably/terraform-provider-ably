@@ -181,6 +181,33 @@ resource "ably_rule_http" "rule0" {
 `, appName, ruleStatus, channelFilter, sourceType, requestMode, targetHeaders, targetSigningKeyID, targetURL, targetFormat, enveloped)
 }
 
+func TestAccAblyRuleHTTP_Minimal(t *testing.T) {
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	config := minimalRuleConfig(appName, "ably_rule_http", `target = {
+		url = "https://example.com/webhook"
+	}`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("ably_rule_http.rule0", "id"),
+					resource.TestCheckResourceAttr("ably_rule_http.rule0", "status", "enabled"),
+					resource.TestCheckResourceAttr("ably_rule_http.rule0", "request_mode", "single"),
+					resource.TestCheckNoResourceAttr("ably_rule_http.rule0", "source.channel_filter"),
+				),
+			},
+			{
+				Config:   config,
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 func TestAccAblyRule_InvalidStatus(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },

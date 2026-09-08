@@ -107,6 +107,40 @@ func TestAccAblyRuleKafka(t *testing.T) {
 	})
 }
 
+func TestAccAblyRuleKafka_Minimal(t *testing.T) {
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	config := minimalRuleConfig(appName, "ably_rule_kafka", `target = {
+		routing_key = "test-key"
+		brokers     = ["broker1.example.com:9092"]
+		auth = {
+			sasl = {
+				mechanism = "plain"
+				username  = "user"
+				password  = "pass"
+			}
+		}
+	}`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("ably_rule_kafka.rule0", "id"),
+					resource.TestCheckResourceAttr("ably_rule_kafka.rule0", "status", "enabled"),
+					resource.TestCheckResourceAttr("ably_rule_kafka.rule0", "request_mode", "single"),
+				),
+			},
+			{
+				Config:   config,
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 // Function with inline HCL to provision an ably_app resource
 func testAccAblyRuleKafkaConfig(
 	appName string,
