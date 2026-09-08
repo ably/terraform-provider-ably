@@ -321,7 +321,7 @@ func GetRequestMode(plan AblyRule) string {
 
 // GetAwsAuth converts AWS authentication from control SDK format to terraform format.
 // Using plan to fill in values that the api does not return.
-func GetAwsAuth(auth control.AWSAuthentication, plan *AblyRule) AwsAuth {
+func GetAwsAuth(rc *reconciler, auth control.AWSAuthentication, plan *AblyRule) AwsAuth {
 	var planAuth AwsAuth
 
 	switch p := plan.Target.(type) {
@@ -339,25 +339,45 @@ func GetAwsAuth(auth control.AWSAuthentication, plan *AblyRule) AwsAuth {
 		}
 	}
 
-	var respAwsAuth AwsAuth
-	switch control.AWSAuthMode(auth.AuthenticationMode) {
-	case control.AWSAuthModeCredentials:
-		respAwsAuth = AwsAuth{
-			AuthenticationMode: types.StringValue(auth.AuthenticationMode),
-			AccessKeyId:        types.StringValue(auth.AccessKeyID),
-			SecretAccessKey:    planAuth.SecretAccessKey,
-			RoleArn:            types.StringNull(),
-		}
-	case control.AWSAuthModeAssumeRole:
-		respAwsAuth = AwsAuth{
-			AuthenticationMode: types.StringValue(auth.AuthenticationMode),
-			RoleArn:            types.StringValue(auth.AssumeRoleArn),
-			AccessKeyId:        types.StringNull(),
-			SecretAccessKey:    types.StringNull(),
+	// On Read, an out-of-band switch of authentication mode means fields from
+	// the previously active mode no longer apply. Reconciling them against
+	// prior state would echo the stale values (input non-empty, output empty →
+	// echo input), leaving both modes' fields in state at once — drop them.
+	if rc.reading && auth.AuthenticationMode != "" &&
+		!planAuth.AuthenticationMode.IsNull() && !planAuth.AuthenticationMode.IsUnknown() &&
+		planAuth.AuthenticationMode.ValueString() != auth.AuthenticationMode {
+		switch control.AWSAuthMode(auth.AuthenticationMode) {
+		case control.AWSAuthModeCredentials:
+			planAuth.RoleArn = types.StringNull()
+		case control.AWSAuthModeAssumeRole:
+			planAuth.AccessKeyId = types.StringNull()
+			planAuth.SecretAccessKey = types.StringNull()
 		}
 	}
 
-	return respAwsAuth
+	// The API returns different fields depending on auth mode.
+	// Fields not relevant to the current mode are null in the response,
+	// so we pass types.StringNull() as the output for those — reconcile
+	// case 4 (both empty → null) or case 2 (echo plan) handles them.
+	var modeOutput, keyOutput, secretOutput, arnOutput types.String
+	modeOutput = types.StringValue(auth.AuthenticationMode)
+	switch control.AWSAuthMode(auth.AuthenticationMode) {
+	case control.AWSAuthModeCredentials:
+		keyOutput = types.StringValue(auth.AccessKeyID)
+		secretOutput = types.StringNull() // write-only, never returned
+		arnOutput = types.StringNull()
+	case control.AWSAuthModeAssumeRole:
+		keyOutput = types.StringNull()
+		secretOutput = types.StringNull()
+		arnOutput = types.StringValue(auth.AssumeRoleArn)
+	}
+
+	return AwsAuth{
+		AuthenticationMode: rcVal(rc, "target.authentication.mode", planAuth.AuthenticationMode, modeOutput, false),
+		AccessKeyId:        rcVal(rc, "target.authentication.access_key_id", planAuth.AccessKeyId, keyOutput, false),
+		SecretAccessKey:    rcVal(rc, "target.authentication.secret_access_key", planAuth.SecretAccessKey, secretOutput, false),
+		RoleArn:            rcVal(rc, "target.authentication.role_arn", planAuth.RoleArn, arnOutput, false),
+	}
 }
 
 // unmarshalTarget JSON-marshals the generic target from RuleResponse and unmarshals into a typed struct.
@@ -384,91 +404,89 @@ func ToHeaders(headers []control.RuleHeader) []AblyRuleHeaders {
 	return respHeaders
 }
 
-// GetRuleResponse maps response body to resource schema attributes.
-// Using plan to fill in values that the api does not return.
-// Returns (AblyRule, diag.Diagnostics) so callers can check for unmarshal errors.
-func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule) (AblyRule, diag.Diagnostics) {
-	var diags diag.Diagnostics
+// GetRuleResponse maps a rule response onto the resource schema, reconciling
+// each field against plan (Create/Update) or prior state (Read, via a
+// reconciler in read mode). Unmarshal and reconciliation errors are reported
+// through the reconciler's diagnostics; callers check those before using the
+// result.
+func GetRuleResponse(rc *reconciler, ablyRule *control.RuleResponse, plan *AblyRule) AblyRule {
 	var respTarget any
 
 	switch ablyRule.RuleType {
 	case "aws/kinesis":
 		target, err := unmarshalTarget[control.AWSKinesisTarget](ablyRule.Target)
 		if err != nil {
-			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal aws/kinesis target: %s", err.Error()))
-			return AblyRule{}, diags
+			rc.diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal aws/kinesis target: %s", err.Error()))
+			return AblyRule{}
 		}
+		pt := planTarget[AblyRuleTargetKinesis](plan.Target)
 		respTarget = &AblyRuleTargetKinesis{
-			Region:       types.StringValue(target.Region),
-			StreamName:   types.StringValue(target.StreamName),
-			PartitionKey: types.StringValue(target.PartitionKey),
-			AwsAuth:      GetAwsAuth(target.Authentication, plan),
-			Enveloped:    types.BoolValue(deref(target.Enveloped)),
-			Format:       types.StringValue(target.Format),
+			Region:       rcVal(rc, "target.region", pt.Region, types.StringValue(target.Region), false),
+			StreamName:   rcVal(rc, "target.stream_name", pt.StreamName, types.StringValue(target.StreamName), false),
+			PartitionKey: rcVal(rc, "target.partition_key", pt.PartitionKey, types.StringValue(target.PartitionKey), false),
+			AwsAuth:      GetAwsAuth(rc, target.Authentication, plan),
+			Enveloped:    rcVal(rc, "target.enveloped", pt.Enveloped, optBoolValue(target.Enveloped), true),
+			Format:       rcVal(rc, "target.format", pt.Format, types.StringValue(target.Format), true),
 		}
 	case "aws/sqs":
 		target, err := unmarshalTarget[control.AWSSQSTarget](ablyRule.Target)
 		if err != nil {
-			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal aws/sqs target: %s", err.Error()))
-			return AblyRule{}, diags
+			rc.diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal aws/sqs target: %s", err.Error()))
+			return AblyRule{}
 		}
+		pt := planTarget[AblyRuleTargetSqs](plan.Target)
 		respTarget = &AblyRuleTargetSqs{
-			Region:       types.StringValue(target.Region),
-			AwsAccountID: types.StringValue(target.AWSAccountID),
-			QueueName:    types.StringValue(target.QueueName),
-			AwsAuth:      GetAwsAuth(target.Authentication, plan),
-			Enveloped:    types.BoolValue(deref(target.Enveloped)),
-			Format:       types.StringValue(target.Format),
+			Region:       rcVal(rc, "target.region", pt.Region, types.StringValue(target.Region), false),
+			AwsAccountID: rcVal(rc, "target.aws_account_id", pt.AwsAccountID, types.StringValue(target.AWSAccountID), false),
+			QueueName:    rcVal(rc, "target.queue_name", pt.QueueName, types.StringValue(target.QueueName), false),
+			AwsAuth:      GetAwsAuth(rc, target.Authentication, plan),
+			Enveloped:    rcVal(rc, "target.enveloped", pt.Enveloped, optBoolValue(target.Enveloped), true),
+			Format:       rcVal(rc, "target.format", pt.Format, types.StringValue(target.Format), true),
 		}
 	case "aws/lambda":
 		target, err := unmarshalTarget[control.AWSLambdaTarget](ablyRule.Target)
 		if err != nil {
-			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal aws/lambda target: %s", err.Error()))
-			return AblyRule{}, diags
+			rc.diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal aws/lambda target: %s", err.Error()))
+			return AblyRule{}
 		}
+		pt := planTarget[AblyRuleTargetLambda](plan.Target)
 		respTarget = &AblyRuleTargetLambda{
-			Region:       types.StringValue(target.Region),
-			FunctionName: types.StringValue(target.FunctionName),
-			AwsAuth:      GetAwsAuth(target.Authentication, plan),
-			Enveloped:    types.BoolValue(deref(target.Enveloped)),
+			Region:       rcVal(rc, "target.region", pt.Region, types.StringValue(target.Region), false),
+			FunctionName: rcVal(rc, "target.function_name", pt.FunctionName, types.StringValue(target.FunctionName), false),
+			AwsAuth:      GetAwsAuth(rc, target.Authentication, plan),
+			Enveloped:    rcVal(rc, "target.enveloped", pt.Enveloped, optBoolValue(target.Enveloped), true),
 		}
 	case "http/zapier":
 		target, err := unmarshalTarget[control.ZapierRuleTarget](ablyRule.Target)
 		if err != nil {
-			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http/zapier target: %s", err.Error()))
-			return AblyRule{}, diags
+			rc.diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http/zapier target: %s", err.Error()))
+			return AblyRule{}
 		}
-		headers := ToHeaders(target.Headers)
+		pt := planTarget[AblyRuleTargetZapier](plan.Target)
 		respTarget = &AblyRuleTargetZapier{
-			Url:          types.StringValue(target.URL),
-			SigningKeyId: optStringValue(target.SigningKeyID),
-			Headers:      headers,
+			Url:          rcVal(rc, "target.url", pt.Url, types.StringValue(target.URL), false),
+			SigningKeyId: rcVal(rc, "target.signing_key_id", pt.SigningKeyId, optStringValue(target.SigningKeyID), false),
+			Headers:      rcSlice(rc, "target.headers", pt.Headers, ToHeaders(target.Headers), false),
 		}
 	case "http/cloudflare-worker":
 		target, err := unmarshalTarget[control.CloudflareWorkerRuleTarget](ablyRule.Target)
 		if err != nil {
-			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http/cloudflare-worker target: %s", err.Error()))
-			return AblyRule{}, diags
+			rc.diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http/cloudflare-worker target: %s", err.Error()))
+			return AblyRule{}
 		}
-		headers := ToHeaders(target.Headers)
+		pt := planTarget[AblyRuleTargetCloudflareWorker](plan.Target)
 		respTarget = &AblyRuleTargetCloudflareWorker{
-			Url:          types.StringValue(target.URL),
-			SigningKeyId: optStringValue(target.SigningKeyID),
-			Headers:      headers,
+			Url:          rcVal(rc, "target.url", pt.Url, types.StringValue(target.URL), false),
+			SigningKeyId: rcVal(rc, "target.signing_key_id", pt.SigningKeyId, optStringValue(target.SigningKeyID), false),
+			Headers:      rcSlice(rc, "target.headers", pt.Headers, ToHeaders(target.Headers), false),
 		}
 	case "pulsar":
 		target, err := unmarshalTarget[control.PulsarRuleTarget](ablyRule.Target)
 		if err != nil {
-			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal pulsar target: %s", err.Error()))
-			return AblyRule{}, diags
+			rc.diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal pulsar target: %s", err.Error()))
+			return AblyRule{}
 		}
-		// TlsTrustCerts is write-only in the API (accepted on create/update but
-		// never returned on read), so preserve whatever the user configured in
-		// state rather than overwriting it with nil from the API response.
-		var tlsTrustCerts []types.String
-		if p, ok := plan.Target.(*AblyRuleTargetPulsar); ok && p != nil {
-			tlsTrustCerts = p.TlsTrustCerts
-		}
+		pt := planTarget[AblyRuleTargetPulsar](plan.Target)
 		authMode := ""
 		authToken := ""
 		if target.Authentication != nil {
@@ -476,78 +494,80 @@ func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule) (AblyRule, 
 			authToken = target.Authentication.Token
 		}
 		respTarget = &AblyRuleTargetPulsar{
-			RoutingKey:    types.StringValue(target.RoutingKey),
-			Topic:         types.StringValue(target.Topic),
-			ServiceURL:    types.StringValue(target.ServiceURL),
-			TlsTrustCerts: tlsTrustCerts,
+			RoutingKey:    rcVal(rc, "target.routing_key", pt.RoutingKey, types.StringValue(target.RoutingKey), false),
+			Topic:         rcVal(rc, "target.topic", pt.Topic, types.StringValue(target.Topic), false),
+			ServiceURL:    rcVal(rc, "target.service_url", pt.ServiceURL, types.StringValue(target.ServiceURL), false),
+			TlsTrustCerts: rcSlice(rc, "target.tls_trust_certs", pt.TlsTrustCerts, toTypedStringSlice(target.TLSTrustCerts), false),
 			Authentication: PulsarAuthentication{
-				Mode:  types.StringValue(authMode),
-				Token: types.StringValue(authToken),
+				Mode:  rcVal(rc, "target.authentication.mode", pt.Authentication.Mode, types.StringValue(authMode), false),
+				Token: rcVal(rc, "target.authentication.token", pt.Authentication.Token, types.StringValue(authToken), false),
 			},
-			Enveloped: types.BoolValue(deref(target.Enveloped)),
-			Format:    types.StringValue(target.Format),
+			Enveloped: rcVal(rc, "target.enveloped", pt.Enveloped, optBoolValue(target.Enveloped), true),
+			Format:    rcVal(rc, "target.format", pt.Format, types.StringValue(target.Format), true),
 		}
 	case "http/ifttt":
 		target, err := unmarshalTarget[control.IFTTTRuleTarget](ablyRule.Target)
 		if err != nil {
-			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http/ifttt target: %s", err.Error()))
-			return AblyRule{}, diags
+			rc.diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http/ifttt target: %s", err.Error()))
+			return AblyRule{}
 		}
+		pt := planTarget[AblyRuleTargetIFTTT](plan.Target)
 		respTarget = &AblyRuleTargetIFTTT{
-			EventName:  types.StringValue(target.EventName),
-			WebhookKey: types.StringValue(target.WebhookKey),
+			EventName:  rcVal(rc, "target.event_name", pt.EventName, types.StringValue(target.EventName), false),
+			WebhookKey: rcVal(rc, "target.webhook_key", pt.WebhookKey, types.StringValue(target.WebhookKey), false),
 		}
 	case "http/google-cloud-function":
 		target, err := unmarshalTarget[control.GoogleCloudFunctionRuleTarget](ablyRule.Target)
 		if err != nil {
-			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http/google-cloud-function target: %s", err.Error()))
-			return AblyRule{}, diags
+			rc.diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http/google-cloud-function target: %s", err.Error()))
+			return AblyRule{}
 		}
-		headers := ToHeaders(target.Headers)
+		pt := planTarget[AblyRuleTargetGoogleFunction](plan.Target)
 		respTarget = &AblyRuleTargetGoogleFunction{
-			Region:       types.StringValue(target.Region),
-			ProjectID:    types.StringValue(target.ProjectID),
-			FunctionName: types.StringValue(target.FunctionName),
-			Headers:      headers,
-			SigningKeyId: optStringValue(target.SigningKeyID),
-			Enveloped:    types.BoolValue(deref(target.Enveloped)),
-			Format:       types.StringValue(target.Format),
+			Region:       rcVal(rc, "target.region", pt.Region, types.StringValue(target.Region), false),
+			ProjectID:    rcVal(rc, "target.project_id", pt.ProjectID, types.StringValue(target.ProjectID), false),
+			FunctionName: rcVal(rc, "target.function_name", pt.FunctionName, types.StringValue(target.FunctionName), false),
+			Headers:      rcSlice(rc, "target.headers", pt.Headers, ToHeaders(target.Headers), false),
+			SigningKeyId: rcVal(rc, "target.signing_key_id", pt.SigningKeyId, optStringValue(target.SigningKeyID), false),
+			Enveloped:    rcVal(rc, "target.enveloped", pt.Enveloped, optBoolValue(target.Enveloped), true),
+			Format:       rcVal(rc, "target.format", pt.Format, types.StringValue(target.Format), true),
 		}
 	case "http/azure-function":
 		target, err := unmarshalTarget[control.AzureFunctionRuleTarget](ablyRule.Target)
 		if err != nil {
-			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http/azure-function target: %s", err.Error()))
-			return AblyRule{}, diags
+			rc.diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http/azure-function target: %s", err.Error()))
+			return AblyRule{}
 		}
-		headers := ToHeaders(target.Headers)
+		pt := planTarget[AblyRuleTargetAzureFunction](plan.Target)
 		respTarget = &AblyRuleTargetAzureFunction{
-			AzureAppID:        types.StringValue(target.AzureAppID),
-			AzureFunctionName: types.StringValue(target.AzureFunctionName),
-			Headers:           headers,
-			SigningKeyID:      optStringValue(target.SigningKeyID),
-			Enveloped:         types.BoolValue(deref(target.Enveloped)),
-			Format:            types.StringValue(target.Format),
+			AzureAppID:        rcVal(rc, "target.azure_app_id", pt.AzureAppID, types.StringValue(target.AzureAppID), false),
+			AzureFunctionName: rcVal(rc, "target.function_name", pt.AzureFunctionName, types.StringValue(target.AzureFunctionName), false),
+			Headers:           rcSlice(rc, "target.headers", pt.Headers, ToHeaders(target.Headers), false),
+			SigningKeyID:      rcVal(rc, "target.signing_key_id", pt.SigningKeyID, optStringValue(target.SigningKeyID), false),
+			Enveloped:         rcVal(rc, "target.enveloped", pt.Enveloped, optBoolValue(target.Enveloped), true),
+			Format:            rcVal(rc, "target.format", pt.Format, types.StringValue(target.Format), true),
 		}
 	case "http":
 		target, err := unmarshalTarget[control.HTTPRuleTarget](ablyRule.Target)
 		if err != nil {
-			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http target: %s", err.Error()))
-			return AblyRule{}, diags
+			rc.diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal http target: %s", err.Error()))
+			return AblyRule{}
 		}
-		headers := ToHeaders(target.Headers)
+		pt := planTarget[AblyRuleTargetHTTP](plan.Target)
 		respTarget = &AblyRuleTargetHTTP{
-			Url:          types.StringValue(target.URL),
-			Headers:      headers,
-			SigningKeyId: optStringValue(target.SigningKeyID),
-			Format:       types.StringValue(target.Format),
-			Enveloped:    types.BoolValue(deref(target.Enveloped)),
+			Url:          rcVal(rc, "target.url", pt.Url, types.StringValue(target.URL), false),
+			Headers:      rcSlice(rc, "target.headers", pt.Headers, ToHeaders(target.Headers), false),
+			SigningKeyId: rcVal(rc, "target.signing_key_id", pt.SigningKeyId, optStringValue(target.SigningKeyID), false),
+			Format:       rcVal(rc, "target.format", pt.Format, types.StringValue(target.Format), true),
+			Enveloped:    rcVal(rc, "target.enveloped", pt.Enveloped, optBoolValue(target.Enveloped), true),
 		}
 	case "kafka":
 		target, err := unmarshalTarget[control.KafkaRuleTarget](ablyRule.Target)
 		if err != nil {
-			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal kafka target: %s", err.Error()))
-			return AblyRule{}, diags
+			rc.diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal kafka target: %s", err.Error()))
+			return AblyRule{}
 		}
+		pt := planTarget[AblyRuleTargetKafka](plan.Target)
 		saslMechanism := ""
 		saslUsername := ""
 		saslPassword := ""
@@ -557,82 +577,65 @@ func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule) (AblyRule, 
 			saslPassword = target.Auth.SASL.Password
 		}
 		respTarget = &AblyRuleTargetKafka{
-			RoutingKey: types.StringValue(target.RoutingKey),
-			Brokers:    toTypedStringSlice(target.Brokers),
+			RoutingKey: rcVal(rc, "target.routing_key", pt.RoutingKey, types.StringValue(target.RoutingKey), false),
+			Brokers:    rcSlice(rc, "target.brokers", pt.Brokers, toTypedStringSlice(target.Brokers), false),
 			KafkaAuthentication: KafkaAuthentication{
 				Sasl{
-					Mechanism: types.StringValue(saslMechanism),
-					Username:  types.StringValue(saslUsername),
-					Password:  types.StringValue(saslPassword),
+					Mechanism: rcVal(rc, "target.auth.sasl.mechanism", pt.KafkaAuthentication.Sasl.Mechanism, types.StringValue(saslMechanism), false),
+					Username:  rcVal(rc, "target.auth.sasl.username", pt.KafkaAuthentication.Sasl.Username, types.StringValue(saslUsername), false),
+					Password:  rcVal(rc, "target.auth.sasl.password", pt.KafkaAuthentication.Sasl.Password, types.StringValue(saslPassword), false),
 				},
 			},
-			Enveloped: types.BoolValue(deref(target.Enveloped)),
-			Format:    types.StringValue(target.Format),
+			Enveloped: rcVal(rc, "target.enveloped", pt.Enveloped, optBoolValue(target.Enveloped), true),
+			Format:    rcVal(rc, "target.format", pt.Format, types.StringValue(target.Format), true),
 		}
 	case "amqp":
 		target, err := unmarshalTarget[control.AMQPRuleTarget](ablyRule.Target)
 		if err != nil {
-			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal amqp target: %s", err.Error()))
-			return AblyRule{}, diags
+			rc.diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal amqp target: %s", err.Error()))
+			return AblyRule{}
 		}
-		headers := ToHeaders(target.Headers)
+		pt := planTarget[AblyRuleTargetAMQP](plan.Target)
 		respTarget = &AblyRuleTargetAMQP{
-			QueueID:   types.StringValue(target.QueueID),
-			Headers:   headers,
-			Enveloped: types.BoolValue(deref(target.Enveloped)),
-			Format:    types.StringValue(target.Format),
+			QueueID:   rcVal(rc, "target.queue_id", pt.QueueID, types.StringValue(target.QueueID), false),
+			Headers:   rcSlice(rc, "target.headers", pt.Headers, ToHeaders(target.Headers), false),
+			Enveloped: rcVal(rc, "target.enveloped", pt.Enveloped, optBoolValue(target.Enveloped), true),
+			Format:    rcVal(rc, "target.format", pt.Format, types.StringValue(target.Format), true),
 		}
 	case "amqp/external":
 		target, err := unmarshalTarget[control.AMQPExternalRuleTarget](ablyRule.Target)
 		if err != nil {
-			diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal amqp/external target: %s", err.Error()))
-			return AblyRule{}, diags
+			rc.diags.AddError("Error unmarshalling rule target", fmt.Sprintf("Could not unmarshal amqp/external target: %s", err.Error()))
+			return AblyRule{}
 		}
-		headers := ToHeaders(target.Headers)
-
-		// Several target fields are not required in the API response and may
-		// be omitted. When the plan provided values for these fields, preserve
-		// them so Terraform doesn't see a diff (the target block contains the
-		// sensitive "url" field, so ANY field mismatch triggers the opaque
-		// "inconsistent values for sensitive attribute" error).
-		url := types.StringValue(target.URL)
-		exchange := types.StringNull()
-		if target.Exchange != "" {
-			exchange = types.StringValue(target.Exchange)
-		}
+		pt := planTarget[AblyRuleTargetAMQPExternal](plan.Target)
+		// The API reports an unset TTL as 0 rather than omitting it. Treat 0
+		// as unset so a config without message_ttl reconciles to null instead
+		// of tripping case 3; a configured 0 still round-trips via case 2.
 		ttl := types.Int64Null()
 		if target.MessageTTL != nil && *target.MessageTTL != 0 {
 			ttl = types.Int64Value(int64(*target.MessageTTL))
 		}
-		if p, ok := plan.Target.(*AblyRuleTargetAMQPExternal); ok && p != nil {
-			if !p.Url.IsNull() {
-				url = p.Url
-			}
-			if target.Exchange == "" {
-				exchange = p.Exchange
-			}
-			if ttl.IsNull() && !p.MessageTtl.IsNull() {
-				ttl = p.MessageTtl
-			}
-		}
 		respTarget = &AblyRuleTargetAMQPExternal{
-			Url:                url,
-			RoutingKey:         types.StringValue(target.RoutingKey),
-			Exchange:           exchange,
-			MandatoryRoute:     types.BoolValue(deref(target.MandatoryRoute)),
-			PersistentMessages: types.BoolValue(deref(target.PersistentMessages)),
-			MessageTtl:         ttl,
-			Headers:            headers,
-			Enveloped:          types.BoolValue(deref(target.Enveloped)),
-			Format:             types.StringValue(target.Format),
+			Url:                rcVal(rc, "target.url", pt.Url, types.StringValue(target.URL), false),
+			RoutingKey:         rcVal(rc, "target.routing_key", pt.RoutingKey, types.StringValue(target.RoutingKey), false),
+			Exchange:           rcVal(rc, "target.exchange", pt.Exchange, optStringValue(&target.Exchange), false),
+			MandatoryRoute:     rcVal(rc, "target.mandatory_route", pt.MandatoryRoute, optBoolValue(target.MandatoryRoute), false),
+			PersistentMessages: rcVal(rc, "target.persistent_messages", pt.PersistentMessages, optBoolValue(target.PersistentMessages), false),
+			MessageTtl:         rcVal(rc, "target.message_ttl", pt.MessageTtl, ttl, false),
+			Headers:            rcSlice(rc, "target.headers", pt.Headers, ToHeaders(target.Headers), false),
+			Enveloped:          rcVal(rc, "target.enveloped", pt.Enveloped, optBoolValue(target.Enveloped), true),
+			Format:             rcVal(rc, "target.format", pt.Format, types.StringValue(target.Format), true),
 		}
 	default:
-		diags.AddError(
+		rc.diags.AddError(
 			"Unknown rule type in response",
 			fmt.Sprintf("Received unrecognized rule type from API: %q", ablyRule.RuleType),
 		)
-		return AblyRule{}, diags
+		return AblyRule{}
 	}
+
+	ps := planTarget[AblyRuleSource](plan.Source)
 
 	channelFilter := types.StringNull()
 	if ablyRule.Source != nil && ablyRule.Source.ChannelFilter != "" {
@@ -645,20 +648,19 @@ func GetRuleResponse(ablyRule *control.RuleResponse, plan *AblyRule) (AblyRule, 
 	}
 
 	respSource := AblyRuleSource{
-		ChannelFilter: channelFilter,
-		Type:          types.StringValue(sourceType),
+		ChannelFilter: rcVal(rc, "source.channel_filter", ps.ChannelFilter, channelFilter, false),
+		Type:          rcVal(rc, "source.type", ps.Type, types.StringValue(sourceType), false),
 	}
-
 	respRule := AblyRule{
-		ID:          types.StringValue(ablyRule.ID),
-		AppID:       types.StringValue(ablyRule.AppID),
-		Status:      types.StringValue(ablyRule.Status),
+		ID:          rcVal(rc, "id", plan.ID, types.StringValue(ablyRule.ID), true),
+		AppID:       rcVal(rc, "app_id", plan.AppID, types.StringValue(ablyRule.AppID), false),
+		Status:      rcVal(rc, "status", plan.Status, types.StringValue(ablyRule.Status), true),
 		Source:      &respSource,
 		Target:      respTarget,
-		RequestMode: types.StringValue(ablyRule.RequestMode),
+		RequestMode: rcVal(rc, "request_mode", plan.RequestMode, types.StringValue(ablyRule.RequestMode), true),
 	}
 
-	return respRule, diags
+	return respRule
 }
 
 // GetRuleSchema returns the schema for a rule resource.
@@ -833,9 +835,9 @@ func CreateRule[T any](r Rule, ctx context.Context, req resource.CreateRequest, 
 		)
 		return
 	}
+	recordCreatedIdentity(ctx, resp, map[string]string{"app_id": plan.AppID.ValueString(), "id": rule.ID})
 
-	responseValues, respDiags := GetRuleResponse(&rule, &plan)
-	resp.Diagnostics.Append(respDiags...)
+	responseValues := GetRuleResponse(newReconciler(&resp.Diagnostics), &rule, &plan)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -880,8 +882,7 @@ func ReadRule[T any](r Rule, ctx context.Context, req resource.ReadRequest, resp
 		return
 	}
 
-	responseValues, respDiags := GetRuleResponse(&rule, &state)
-	resp.Diagnostics.Append(respDiags...)
+	responseValues := GetRuleResponse(newReconciler(&resp.Diagnostics).forRead(), &rule, &state)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -929,8 +930,7 @@ func UpdateRule[T any](r Rule, ctx context.Context, req resource.UpdateRequest, 
 		return
 	}
 
-	responseValues, respDiags := GetRuleResponse(&rule, &plan)
-	resp.Diagnostics.Append(respDiags...)
+	responseValues := GetRuleResponse(newReconciler(&resp.Diagnostics), &rule, &plan)
 	if resp.Diagnostics.HasError() {
 		return
 	}

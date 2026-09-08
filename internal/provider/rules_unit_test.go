@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/ably/terraform-provider-ably/control"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -196,18 +197,102 @@ func TestGetAwsAuth_ImportWithNilPlan(t *testing.T) {
 		AccessKeyID:        "AKID",
 	}
 
-	// Simulate import: plan target is a typed nil.
+	// Simulate import: plan target is a typed nil, reconciler in read mode.
+	var diags diag.Diagnostics
+	rc := newReconciler(&diags).forRead()
 	plan := &AblyRule{
 		Target: (*AblyRuleTargetLambda)(nil),
 	}
 
-	result := GetAwsAuth(auth, plan)
+	result := GetAwsAuth(rc, auth, plan)
 
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %s", diags.Errors()[0].Detail())
+	}
 	if result.AuthenticationMode.ValueString() != "credentials" {
 		t.Fatalf("expected mode=credentials, got %q", result.AuthenticationMode.ValueString())
 	}
 	if result.AccessKeyId.ValueString() != "AKID" {
 		t.Fatalf("expected access_key_id=AKID, got %q", result.AccessKeyId.ValueString())
+	}
+}
+
+// TestGetAwsAuth_ReadModeSwitchClearsStaleCredentials verifies that when the
+// authentication mode changed out-of-band (credentials → assumeRole), Read
+// does not echo the stale credentials fields from prior state.
+func TestGetAwsAuth_ReadModeSwitchClearsStaleCredentials(t *testing.T) {
+	t.Parallel()
+
+	auth := control.AWSAuthentication{
+		AuthenticationMode: "assumeRole",
+		AssumeRoleArn:      "arn:aws:iam::123:role/test",
+	}
+
+	var diags diag.Diagnostics
+	rc := newReconciler(&diags).forRead()
+	plan := &AblyRule{
+		Target: &AblyRuleTargetLambda{
+			AwsAuth: AwsAuth{
+				AuthenticationMode: types.StringValue("credentials"),
+				AccessKeyId:        types.StringValue("stale-key-id"),
+				SecretAccessKey:    types.StringValue("stale-secret"),
+			},
+		},
+	}
+
+	result := GetAwsAuth(rc, auth, plan)
+
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %s", diags.Errors()[0].Detail())
+	}
+	if result.AuthenticationMode.ValueString() != "assumeRole" {
+		t.Fatalf("expected mode=assumeRole, got %q", result.AuthenticationMode.ValueString())
+	}
+	if result.RoleArn.ValueString() != "arn:aws:iam::123:role/test" {
+		t.Fatalf("expected role_arn from API, got %q", result.RoleArn.ValueString())
+	}
+	if !result.AccessKeyId.IsNull() {
+		t.Fatalf("expected stale access_key_id to be cleared, got %q", result.AccessKeyId.ValueString())
+	}
+	if !result.SecretAccessKey.IsNull() {
+		t.Fatalf("expected stale secret_access_key to be cleared, got %q", result.SecretAccessKey.ValueString())
+	}
+}
+
+// TestGetAwsAuth_ReadModeSwitchClearsStaleRoleArn verifies the reverse
+// out-of-band switch (assumeRole → credentials) drops the stale role ARN.
+func TestGetAwsAuth_ReadModeSwitchClearsStaleRoleArn(t *testing.T) {
+	t.Parallel()
+
+	auth := control.AWSAuthentication{
+		AuthenticationMode: "credentials",
+		AccessKeyID:        "new-key-id",
+	}
+
+	var diags diag.Diagnostics
+	rc := newReconciler(&diags).forRead()
+	plan := &AblyRule{
+		Target: &AblyRuleTargetLambda{
+			AwsAuth: AwsAuth{
+				AuthenticationMode: types.StringValue("assumeRole"),
+				RoleArn:            types.StringValue("arn:aws:iam::123:role/stale"),
+			},
+		},
+	}
+
+	result := GetAwsAuth(rc, auth, plan)
+
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %s", diags.Errors()[0].Detail())
+	}
+	if result.AuthenticationMode.ValueString() != "credentials" {
+		t.Fatalf("expected mode=credentials, got %q", result.AuthenticationMode.ValueString())
+	}
+	if result.AccessKeyId.ValueString() != "new-key-id" {
+		t.Fatalf("expected access_key_id from API, got %q", result.AccessKeyId.ValueString())
+	}
+	if !result.RoleArn.IsNull() {
+		t.Fatalf("expected stale role_arn to be cleared, got %q", result.RoleArn.ValueString())
 	}
 }
 
@@ -219,12 +304,17 @@ func TestGetAwsAuth_AssumeRoleImport(t *testing.T) {
 		AssumeRoleArn:      "arn:aws:iam::123:role/test",
 	}
 
+	var diags diag.Diagnostics
+	rc := newReconciler(&diags).forRead()
 	plan := &AblyRule{
 		Target: (*AblyRuleTargetLambda)(nil),
 	}
 
-	result := GetAwsAuth(auth, plan)
+	result := GetAwsAuth(rc, auth, plan)
 
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %s", diags.Errors()[0].Detail())
+	}
 	if result.AuthenticationMode.ValueString() != "assumeRole" {
 		t.Fatalf("expected mode=assumeRole, got %q", result.AuthenticationMode.ValueString())
 	}
