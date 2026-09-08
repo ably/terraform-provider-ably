@@ -1,9 +1,28 @@
 package provider
 
 import (
+	"context"
+
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
+
+// recordCreatedIdentity stores the identity attributes of a freshly created
+// resource in the Create response state before any later step can fail.
+//
+// Once the remote create call has succeeded the resource exists whether or not
+// Create returns cleanly. If Create then returns an error with no state (a
+// read-back failure, or a reconciliation trip-wire), Terraform has no record
+// of the resource, and every retry creates and leaks another one. With the
+// identity recorded, Terraform instead marks the resource tainted and replaces
+// it on the next apply. The identity must be enough for Delete to work.
+func recordCreatedIdentity(ctx context.Context, resp *resource.CreateResponse, identity map[string]string) {
+	for name, value := range identity {
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root(name), types.StringValue(value))...)
+	}
+}
 
 // ensureConfigured checks that the provider has been configured and appends an
 // error diagnostic if it has not. Returns true when the provider is ready,
