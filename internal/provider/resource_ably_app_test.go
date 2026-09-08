@@ -274,3 +274,50 @@ resource "ably_app" "app0" {
 		},
 	})
 }
+
+// TestAccAblyApp_LegacyEmptyFCMProjectID reproduces INF-8172. The Control API
+// returns "fcmProjectId": "" for apps that were created or patched by the
+// pre-1.0 provider, whose client serialised the field without omitempty. An
+// ably_app whose config never sets fcm_project_id must read that back as null:
+// storing "" turns every plan into an in-place update and every apply into
+// "Provider produced inconsistent result after apply".
+func TestAccAblyApp_LegacyEmptyFCMProjectID(t *testing.T) {
+	if hermeticFake == nil {
+		t.Skip("needs the hermetic fake to seed a legacy app record")
+	}
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	config := fmt.Sprintf(`%s
+resource "ably_app" "app0" {
+	name     = %q
+	status   = "enabled"
+	tls_only = true
+}
+`, tfProvider, appName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check:  resource.TestCheckNoResourceAttr("ably_app.app0", "fcm_project_id"),
+			},
+			{
+				// A legacy client wrote fcmProjectId: "" behind Terraform's
+				// back. The refresh must map it to null so the plan is empty
+				// and the apply a no-op.
+				PreConfig: func() {
+					if !hermeticFake.setAppField(appName, "fcmProjectId", "") {
+						t.Fatalf("app %q not found in the fake", appName)
+					}
+				},
+				Config: config,
+				Check:  resource.TestCheckNoResourceAttr("ably_app.app0", "fcm_project_id"),
+			},
+			{
+				Config:   config,
+				PlanOnly: true,
+			},
+		},
+	})
+}
