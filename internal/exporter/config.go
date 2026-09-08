@@ -167,7 +167,7 @@ func repairConfig(ctx context.Context, bridge *bridge, resourceType, label strin
 				"could not validate the generated config for %s.%s: %s", resourceType, label, err))
 		}
 
-		problems := errorDiagnostics(diagnostics)
+		problems := withoutWithheldRequired(schema, config, errorDiagnostics(diagnostics))
 		if len(problems) == 0 {
 			return config, dropped, unresolved
 		}
@@ -194,7 +194,7 @@ func repairConfig(ctx context.Context, bridge *bridge, resourceType, label strin
 	// up" leaves nothing to act on.
 	diagnostics, err := bridge.validate(ctx, resourceType, config)
 	if err == nil {
-		problems := errorDiagnostics(diagnostics)
+		problems := withoutWithheldRequired(schema, config, errorDiagnostics(diagnostics))
 		if len(problems) == 0 {
 			return config, dropped, unresolved
 		}
@@ -205,6 +205,32 @@ func repairConfig(ctx context.Context, bridge *bridge, resourceType, label strin
 	return config, dropped, append(unresolved, fmt.Sprintf(
 		"gave up repairing the generated config for %s.%s after %d attempts, and could not re-read why: %s",
 		resourceType, label, maxRepairs, err))
+}
+
+// withoutWithheldRequired drops the diagnostics raised against a required
+// attribute whose value the Control API withheld (Kafka SASL credentials, for
+// example, which the provider reads back as null).
+//
+// The provider rightly refuses a null required attribute, but the renderer
+// never writes that null: it writes a TODO, or a variable in vars mode, and
+// reports the gap in Missing. Repeating the provider's complaint as an
+// unfixable problem would bury that one actionable message under a second,
+// and its multi-line detail would land in the file as a broken comment.
+// Anything the provider objects to elsewhere is kept.
+func withoutWithheldRequired(schema *tfprotov6.Schema, config tftypes.Value, problems []*tfprotov6.Diagnostic) []*tfprotov6.Diagnostic {
+	var kept []*tfprotov6.Diagnostic
+	for _, problem := range problems {
+		if problem.Attribute != nil {
+			attribute := attributeAtPath(schema, problem.Attribute.Steps())
+			if attribute != nil && attribute.Required {
+				if current, err := valueAtPath(config, problem.Attribute.Steps()); err == nil && withheld(attribute, current) {
+					continue
+				}
+			}
+		}
+		kept = append(kept, problem)
+	}
+	return kept
 }
 
 // chooseRedundant picks the next deprecated attribute to remove: one the

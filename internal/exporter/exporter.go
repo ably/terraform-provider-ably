@@ -269,7 +269,7 @@ func buildFiles(config Config, exports []exported, variables []variableDecl) []F
 		for _, export := range grouped[name] {
 			buf.WriteString("\n")
 			for _, note := range export.notes {
-				fmt.Fprintf(&buf, "# TODO: %s\n", note)
+				writeTODO(&buf, note)
 			}
 			buf.WriteString(export.hcl)
 		}
@@ -285,6 +285,22 @@ func buildFiles(config Config, exports []exported, variables []variableDecl) []F
 	}
 
 	return files
+}
+
+// writeTODO writes a note as a TODO comment. Provider diagnostics run to
+// several lines, and every one of them has to be commented or the file stops
+// being HCL.
+func writeTODO(buf *strings.Builder, note string) {
+	for index, line := range strings.Split(strings.TrimRight(note, "\n"), "\n") {
+		switch {
+		case index == 0:
+			fmt.Fprintf(buf, "# TODO: %s\n", line)
+		case strings.TrimSpace(line) == "":
+			buf.WriteString("#\n")
+		default:
+			fmt.Fprintf(buf, "# %s\n", line)
+		}
+	}
 }
 
 // generatedMarker opens every generated file, and is how WriteFiles recognises

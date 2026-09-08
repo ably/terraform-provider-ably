@@ -199,10 +199,11 @@ func (r *renderer) writeMissingRequired(buf *strings.Builder, depth int, attribu
 
 // withheld reports whether a value looks like one the Control API withheld.
 //
-// Null is the obvious case. An empty string counts only for sensitive
-// attributes: the provider maps absent credentials to "" rather than null (see
-// GetRuleResponse), and an empty credential is never intended. Elsewhere an empty
-// string can be legitimate.
+// Null is the usual case: the provider reconciles a credential the API did not
+// return to null (see GetRuleResponse). An empty string counts too, but only
+// for sensitive attributes: older provider builds mapped absent credentials to
+// "", and an empty credential is never intended. Elsewhere an empty string can
+// be legitimate.
 func withheld(attribute *tfprotov6.SchemaAttribute, value tftypes.Value) bool {
 	if value.IsNull() {
 		return true

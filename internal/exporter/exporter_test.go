@@ -594,6 +594,29 @@ func TestRunFlagsConfigItCannotRepair(t *testing.T) {
 	assertAssigns(t, config, "failed_action", `"not-a-valid-action"`)
 }
 
+// TestWriteTODOCommentsEveryLine covers a note carrying a multi-line provider
+// diagnostic: a bare continuation line would make the whole file invalid HCL.
+func TestWriteTODOCommentsEveryLine(t *testing.T) {
+	var buf strings.Builder
+	writeTODO(&buf, "the provider rejected the generated config for x.y, review it by hand: Missing value\n\nRefer to the provider documentation; and a second problem")
+	buf.WriteString("resource \"ably_app\" \"x\" {\n  name = \"x\"\n}\n")
+
+	for _, line := range strings.Split(strings.TrimSpace(buf.String()), "\n") {
+		if strings.HasPrefix(line, "resource") || strings.HasPrefix(line, "  ") || line == "}" {
+			continue
+		}
+		if !strings.HasPrefix(line, "#") {
+			t.Errorf("line is not a comment: %q", line)
+		}
+	}
+	if !strings.HasPrefix(buf.String(), "# TODO: the provider rejected") {
+		t.Errorf("first line should carry the TODO marker:\n%s", buf.String())
+	}
+	if _, diagnostics := hclparse.NewParser().ParseHCL([]byte(buf.String()), "todo.tf"); diagnostics.HasErrors() {
+		t.Errorf("multi-line TODO produced invalid HCL: %s\n%s", diagnostics.Error(), buf.String())
+	}
+}
+
 // TestRunDoesNotWriteTheAccountID checks nothing identifying the account reaches
 // the output, which is meant to be committed.
 func TestRunDoesNotWriteTheAccountID(t *testing.T) {
