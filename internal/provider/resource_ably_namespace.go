@@ -132,9 +132,6 @@ func (r ResourceNamespace) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Optional:    true,
 				Computed:    true,
 				Description: "When configured, sets the maximum batching interval in the channel.",
-				PlanModifiers: []planmodifier.Int64{
-					DefaultInt64Attribute(types.Int64Null()),
-				},
 				Validators: []validator.Int64{
 					int64validator.AtLeast(0),
 				},
@@ -151,9 +148,6 @@ func (r ResourceNamespace) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Optional:    true,
 				Computed:    true,
 				Description: "The interval in milliseconds at which messages are conflated. This determines how frequently messages are combined into a single message.",
-				PlanModifiers: []planmodifier.Int64{
-					DefaultInt64Attribute(types.Int64Null()),
-				},
 				Validators: []validator.Int64{
 					int64validator.AtLeast(0),
 				},
@@ -162,9 +156,6 @@ func (r ResourceNamespace) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Optional:    true,
 				Computed:    true,
 				Description: "The key used to determine which messages should be conflated. Messages with the same conflation key will be combined into a single message.",
-				PlanModifiers: []planmodifier.String{
-					DefaultStringAttribute(types.StringNull()),
-				},
 			},
 		},
 		MarkdownDescription: "The Ably namespace resource allows you to manage namespaces for channel rules in Ably. Read more in the Ably documentation: https://ably.com/docs/general/channel-rules-namespaces.",
