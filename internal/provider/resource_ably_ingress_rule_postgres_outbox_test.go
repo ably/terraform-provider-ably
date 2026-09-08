@@ -93,6 +93,37 @@ func TestAccAblyIngressRulePostgresOutbox(t *testing.T) {
 	})
 }
 
+func TestAccAblyIngressRulePostgresOutbox_Minimal(t *testing.T) {
+	appName := acctest.RandStringFromCharSet(15, acctest.CharSetAlphaNum)
+	config := minimalIngressRuleConfig(appName, "ably_ingress_rule_postgres_outbox", `target = {
+		url                  = "postgres://test:test@example.com:5432/testdb"
+		outbox_table_schema  = "public"
+		outbox_table_name    = "outbox"
+		nodes_table_schema   = "public"
+		nodes_table_name     = "nodes"
+		ssl_mode             = "prefer"
+		primary_site         = "us-east-1-A"
+	}`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("ably_ingress_rule_postgres_outbox.rule0", "id"),
+					resource.TestCheckResourceAttr("ably_ingress_rule_postgres_outbox.rule0", "status", "enabled"),
+				),
+			},
+			{
+				Config:   config,
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 // Function with inline HCL to provision an ably_app resource
 func testAccAblyIngressRulePostgresOutboxConfig(
 	appName string,
